@@ -1,39 +1,59 @@
 {
   "Files": [
     {
-      "Id": "/home/user/todo-pwa/obj/Debug/net8.0/scopedcss/projectbundle/myapp.bundle.scp.css",
-      "PackagePath": "staticwebassets/myapp.bundle.scp.css"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\blazor.webassembly.js",
+      "PackagePath": "staticwebassets\\_framework\\blazor.webassembly.js"
     },
     {
-      "Id": "/home/user/todo-pwa/wwwroot/app.css",
-      "PackagePath": "staticwebassets/app.css"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\app.css",
+      "PackagePath": "staticwebassets\\css\\app.css"
     },
     {
-      "Id": "/home/user/todo-pwa/wwwroot/bootstrap/bootstrap.min.css",
-      "PackagePath": "staticwebassets/bootstrap/bootstrap.min.css"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\open-iconic\\font\\css\\open-iconic-bootstrap.min.css",
+      "PackagePath": "staticwebassets\\css\\open-iconic\\font\\css\\open-iconic-bootstrap.min.css"
     },
     {
-      "Id": "/home/user/todo-pwa/wwwroot/bootstrap/bootstrap.min.css.map",
-      "PackagePath": "staticwebassets/bootstrap/bootstrap.min.css.map"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\icon-192.png",
+      "PackagePath": "staticwebassets\\icon-192.png"
     },
     {
-      "Id": "/home/user/todo-pwa/wwwroot/favicon.png",
-      "PackagePath": "staticwebassets/favicon.png"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\icon-512.png",
+      "PackagePath": "staticwebassets\\icon-512.png"
     },
     {
-      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.myapp.props",
-      "PackagePath": "build\\myapp.props"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\images\\google-icon.png",
+      "PackagePath": "staticwebassets\\images\\google-icon.png"
     },
     {
-      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.myapp.props",
-      "PackagePath": "buildMultiTargeting\\myapp.props"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
     },
     {
-      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.myapp.props",
-      "PackagePath": "buildTransitive\\myapp.props"
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\js\\firebaseAuth.js",
+      "PackagePath": "staticwebassets\\js\\firebaseAuth.js"
     },
     {
-      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.myapp.Microsoft.AspNetCore.StaticWebAssets.props",
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\manifest.webmanifest",
+      "PackagePath": "staticwebassets\\manifest.webmanifest"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.todo_pwa.props",
+      "PackagePath": "build\\todo_pwa.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.todo_pwa.props",
+      "PackagePath": "buildMultiTargeting\\todo_pwa.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.todo_pwa.props",
+      "PackagePath": "buildTransitive\\todo_pwa.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.todo_pwa.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.todo_pwa.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     }
   ],

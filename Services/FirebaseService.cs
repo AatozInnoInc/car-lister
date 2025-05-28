@@ -1,41 +1,66 @@
-using Microsoft.JSInterop;
+﻿using Microsoft.JSInterop;
 using System.Threading.Tasks;
 
-namespace myapp.Services
+namespace todo_pwa.Services;
+
+
+public class FirebaseService
 {
-    public class FirebaseService
+    private readonly IJSRuntime _jsRuntime;
+
+    public FirebaseService(IJSRuntime jsRuntime)
     {
-        private readonly IJSRuntime _jsRuntime;
+        _jsRuntime = jsRuntime;
+    }
 
-        public FirebaseService(IJSRuntime jsRuntime)
+    // Google OAuth Authentication
+    public async Task<bool> SignInWithGoogle()
+    {
+        try
         {
-            _jsRuntime = jsRuntime;
+            return await _jsRuntime.InvokeAsync<bool>("firebaseAuth.signInWithGoogle");
         }
+        catch
+        {
+            return false;
+        }
+    }
 
-        // Example: Sign in with email and password
-        public async Task<string> SignInWithEmailPassword(string email, string password)
-        {
-            return await _jsRuntime.InvokeAsync<string>("firebase.auth().signInWithEmailAndPassword", email, password);
-        }
+    public async Task SignOut()
+    {
+        await _jsRuntime.InvokeVoidAsync("firebaseAuth.signOut");
+    }
 
-        // Example: Sign up with email and password
-        public async Task<string> SignUpWithEmailPassword(string email, string password)
-        {
-            return await _jsRuntime.InvokeAsync<string>("firebase.auth().createUserWithEmailAndPassword", email, password);
-        }
+    public async Task<bool> IsUserAuthenticated()
+    {
+        return await _jsRuntime.InvokeAsync<bool>("firebaseAuth.isUserAuthenticated");
+    }
 
-        // Example: Send data to the database
-        public async Task SetDatabaseValue(string path, object value)
-        {
-            await _jsRuntime.InvokeVoidAsync("firebase.database().ref", path).InvokeVoidAsync("set", value);
-        }
+    // Example: Sign in with email and password
+    public async Task<string> SignInWithEmailPassword(string email, string password)
+    {
+        return await _jsRuntime.InvokeAsync<string>("firebase.auth().signInWithEmailAndPassword", email, password);
+    }
 
-        // Example: Get data from the database
-        public async Task<T> GetDatabaseValue<T>(string path)
-        {
-            var snapshot = await _jsRuntime.InvokeAsync<object>("firebase.database().ref", path).InvokeAsync<object>("once", "value");
-            // You'll need to handle deserialization of the snapshot value
-            return default; // Placeholder
-        }
+    // Example: Sign up with email and password
+    public async Task<string> SignUpWithEmailPassword(string email, string password)
+    {
+        return await _jsRuntime.InvokeAsync<string>("firebase.auth().createUserWithEmailAndPassword", email, password);
+    }
+
+    // Example: Send data to the database
+    public async Task SetDatabaseValue(string path, object value)
+    {
+        await _jsRuntime.InvokeVoidAsync("firebase.database().ref", path);
+        await _jsRuntime.InvokeVoidAsync("set", value);
+    }
+
+    // Example: Get data from the database
+    public async Task<T> GetDatabaseValue<T>(string path)
+    {
+        var snapshot = await _jsRuntime.InvokeAsync<object>("firebase.database().ref", path);
+        await _jsRuntime.InvokeAsync<object>("once", "value");
+        // You'll need to handle deserialization of the snapshot value
+        return default; // Placeholder
     }
 }
