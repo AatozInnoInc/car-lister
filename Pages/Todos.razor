@@ -3,6 +3,7 @@
 @using todo_pwa.Models
 @using todo_pwa.Services
 @inject TodoService TodoService
+@inject ReminderService ReminderService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @attribute [Authorize]
@@ -34,7 +35,7 @@
         <h1>@(string.IsNullOrEmpty(userName) ? "Tasks" : $"{userName}'s Tasks")</h1>
     </div>
 
-    <div class="fab" @onclick="() => showAddForm = true">
+    <div class="fab" @onclick="() => { ResetAddForm(); showAddForm = true; }">
         <span class="oi oi-plus"></span>
     </div>
 
@@ -53,9 +54,31 @@
                     <div class="form-group">
                         <textarea class="form-control" placeholder="Description (optional)" @bind="newTodo.Description"></textarea>
                     </div>
+                    <div class="form-group">
+                        <div class="reminder-section">
+                            <label>
+                                <input type="checkbox" @bind="showReminderFields" />
+                                Set a reminder
+                            </label>
+                            @if (showReminderFields)
+                            {
+                                newTodo.ReminderDateTime = DateTime.Now;
+                                <div class="reminder-fields">
+                                    <input type="datetime-local" 
+                                           class="form-control" 
+                                           @bind="newTodo.ReminderDateTime" 
+                                           min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                                    <input type="text" 
+                                           class="form-control mt-2" 
+                                           placeholder="Reminder note (optional)" 
+                                           @bind="newTodo.ReminderNote" />
+                                </div>
+                            }
+                        </div>
+                    </div>
                 </div>
                 <div class="form-actions">
-                    <button class="btn btn-secondary" @onclick="() => showAddForm = false">Cancel</button>
+                    <button class="btn btn-secondary" @onclick="ResetAddForm">Cancel</button>
                     <button class="btn btn-primary" @onclick="AddTodo">Add Task</button>
                 </div>
             </div>
@@ -99,6 +122,27 @@
                                 <textarea class="form-control" 
                                           @bind="editingTodo.Description" 
                                           @onclick:stopPropagation></textarea>
+                                <div class="reminder-section pt-2">
+                                    <label>
+                                        <input type="checkbox" 
+                                               checked="@(editingTodo.ReminderDateTime != null)"
+                                               @onchange="@(e => HandleReminderToggle(e, editingTodo))" />
+                                        Set a reminder
+                                    </label>
+                                    @if (editingTodo.ReminderDateTime != null)
+                                    {
+                                        <div class="reminder-fields">
+                                            <input type="datetime-local" 
+                                                   class="form-control" 
+                                                   @bind="editingTodo.ReminderDateTime" 
+                                                   min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                                            <input type="text" 
+                                                   class="form-control mt-2" 
+                                                   placeholder="Reminder note (optional)" 
+                                                   @bind="editingTodo.ReminderNote" />
+                                        </div>
+                                    }
+                                </div>
                                 <div class="edit-actions">
                                     <button class="btn btn-sm btn-secondary" @onclick:stopPropagation @onclick="CancelEdit">Cancel</button>
                                     <button class="btn btn-sm btn-primary" @onclick:stopPropagation @onclick="SaveEdit">Save</button>
@@ -118,6 +162,17 @@
                                             @(expandedTodos.Contains(todo.Id) ? "Show less" : "Show more")
                                         </span>
                                     }
+                                }
+                                @if (todo.HasReminder && !todo.IsCompleted)
+                                {
+                                    <div class="reminder-info @(todo.IsReminderAcknowledged ? "acknowledged" : "pending")">
+                                        <span class="oi oi-bell"></span>
+                                        <span>@FormatReminderTime(todo.ReminderDateTime)</span>
+                                        @if (!string.IsNullOrWhiteSpace(todo.ReminderNote))
+                                        {
+                                            <span class="reminder-note">@todo.ReminderNote</span>
+                                        }
+                                    </div>
                                 }
                             </div>
                             <div class="todo-meta">
@@ -147,6 +202,7 @@
     private string error;
     private bool isIndexBuilding = false;
     private bool showAddForm = false;
+    private bool showReminderFields = false;
     private string userName;
     private HashSet<string> expandedTodos = new();
 
@@ -163,10 +219,8 @@
             }
 
             string userId = user["uid"].ToString();
-            // Get the display name from the user object
             userName = user.ContainsKey("displayName") ? user["displayName"]?.ToString() : null;
             
-            // If display name is not available, try to get email and use the part before @ symbol
             if (string.IsNullOrEmpty(userName) && user.ContainsKey("email"))
             {
                 string email = user["email"].ToString();
@@ -177,6 +231,7 @@
             {
                 todos = await TodoService.GetUserTodos(userId);
                 newTodo.UserId = userId;
+                await ReminderService.Initialize(userId);
             }
             catch (Exception ex)
             {
@@ -195,6 +250,14 @@
         }
     }
 
+    private void ResetAddForm()
+    {
+        newTodo = new Todo { UserId = newTodo.UserId }; // Preserve the userId
+        showAddForm = false;
+        showReminderFields = false;
+        StateHasChanged();
+    }
+
     private async Task AddTodo()
     {
         if (string.IsNullOrWhiteSpace(newTodo.Title))
@@ -202,13 +265,19 @@
 
         try
         {
+            if (showReminderFields) {
+                newTodo.ReminderDateTime = newTodo.ReminderDateTime.Value.ToLocalTime();
+            }
+            else {
+                newTodo.ReminderDateTime = null;
+                newTodo.ReminderNote = null;
+            }
+
             var success = await TodoService.AddTodo(newTodo);
             if (success)
             {
                 todos.Add(newTodo);
-                newTodo = new Todo { UserId = newTodo.UserId };
-                showAddForm = false;
-                StateHasChanged();
+                ResetAddForm();
             }
             else
             {
@@ -228,6 +297,13 @@
         {
             todo.IsCompleted = !todo.IsCompleted;
             todo.CompletedAt = todo.IsCompleted ? DateTime.UtcNow : null;
+            
+            // If completing the todo, acknowledge any reminder
+            if (todo.IsCompleted)
+            {
+                todo.IsReminderAcknowledged = true;
+            }
+            
             var success = await TodoService.UpdateTodo(todo);
             
             if (!success)
@@ -235,6 +311,7 @@
                 // Revert the change if update failed
                 todo.IsCompleted = !todo.IsCompleted;
                 todo.CompletedAt = todo.IsCompleted ? DateTime.UtcNow : null;
+                todo.IsReminderAcknowledged = !todo.IsCompleted;
                 error = "Failed to update todo status. Please try again.";
             }
         }
@@ -261,8 +338,28 @@
                 Description = todo.Description,
                 IsCompleted = todo.IsCompleted,
                 CreatedAt = todo.CreatedAt,
-                CompletedAt = todo.CompletedAt
+                CompletedAt = todo.CompletedAt,
+                ReminderDateTime = todo.ReminderDateTime,
+                ReminderNote = todo.ReminderNote,
+                IsReminderAcknowledged = todo.IsReminderAcknowledged
             };
+        }
+    }
+
+    private void HandleReminderToggle(ChangeEventArgs e, Todo todo)
+    {
+        bool isChecked = (bool)e.Value;
+        if (isChecked)
+        {
+            // Set default reminder time to current time + 1 hour
+            todo.ReminderDateTime = DateTime.Now.AddHours(1);
+            todo.IsReminderAcknowledged = false;
+        }
+        else
+        {
+            todo.ReminderDateTime = null;
+            todo.ReminderNote = null;
+            todo.IsReminderAcknowledged = false;
         }
     }
 
@@ -272,36 +369,41 @@
             return;
 
         var original = todos.FirstOrDefault(t => t.Id == editingTodo.Id);
-        if (original != null && 
-            original.Title == editingTodo.Title && 
-            original.Description == editingTodo.Description)
+        if (original != null)
         {
-            // No changes made, just cancel edit mode
-            editingTodo = null;
-            return;
-        }
+            bool hasChanges = original.Title != editingTodo.Title ||
+                            original.Description != editingTodo.Description ||
+                            original.ReminderDateTime != editingTodo.ReminderDateTime ||
+                            original.ReminderNote != editingTodo.ReminderNote;
 
-        try
-        {
-            var success = await TodoService.UpdateTodo(editingTodo);
-            if (success)
+            if (!hasChanges)
             {
-                if (original != null)
+                editingTodo = null;
+                return;
+            }
+
+            try
+            {
+                var success = await TodoService.UpdateTodo(editingTodo);
+                if (success)
                 {
                     original.Title = editingTodo.Title;
                     original.Description = editingTodo.Description;
+                    original.ReminderDateTime = editingTodo.ReminderDateTime;
+                    original.ReminderNote = editingTodo.ReminderNote;
+                    original.IsReminderAcknowledged = editingTodo.IsReminderAcknowledged;
+                    editingTodo = null;
                 }
-                editingTodo = null;
+                else
+                {
+                    error = "Failed to save changes. Please try again.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                error = "Failed to save changes. Please try again.";
+                error = "Error saving changes. Please try again.";
+                Console.WriteLine($"Error in SaveEdit: {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            error = "Error saving changes. Please try again.";
-            Console.WriteLine($"Error in SaveEdit: {ex.Message}");
         }
     }
 
@@ -343,5 +445,26 @@
     private bool ShouldShowMoreToggle(string text)
     {
         return !string.IsNullOrWhiteSpace(text) && text.Length > 100;
+    }
+
+    private string FormatReminderTime(DateTime? reminderTime)
+    {
+        if (!reminderTime.HasValue)
+            return string.Empty;
+
+        var now = DateTime.Now;
+        var reminder = reminderTime.Value;
+        var diff = reminder - now;
+
+        if (diff.TotalDays >= 1)
+            return reminder.ToString("MMM d 'at' h:mm tt");
+        else if (diff.TotalHours >= 1)
+            return $"in {Math.Floor(diff.TotalHours)} hour{(Math.Floor(diff.TotalHours) == 1 ? "" : "s")}";
+        else if (diff.TotalMinutes >= 1)
+            return $"in {Math.Floor(diff.TotalMinutes)} minute{(Math.Floor(diff.TotalMinutes) == 1 ? "" : "s")}";
+        else if (diff.TotalMinutes > -1)
+            return "now";
+        else
+            return reminder.ToString("MMM d 'at' h:mm tt");
     }
 } 

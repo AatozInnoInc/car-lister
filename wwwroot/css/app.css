@@ -180,7 +180,7 @@ code {
 /* Global scrollbar styles */
 :root {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 255, 135, 0.3) rgba(255, 255, 255, 0.05);
+    scrollbar-color: rgba(46, 214, 136, 0.514) rgba(255, 255, 255, 0.05);
 }
 
 /* Custom scrollbar for webkit browsers */

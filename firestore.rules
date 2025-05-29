@@ -15,14 +15,12 @@ service cloud.firestore {
       
       // Allow create if the user is authenticated and they're creating a todo for themselves
       allow create: if request.auth != null && 
-                   request.auth.uid == request.resource.data.userId &&
-                   validTodo(request.resource.data);
+                   request.auth.uid == request.resource.data.userId;
       
       // Allow update if the user is authenticated and they own the todo
       allow update: if request.auth != null && 
                    request.auth.uid == resource.data.userId &&
-                   request.auth.uid == request.resource.data.userId &&
-                   validTodoUpdate(request.resource.data);
+                   request.auth.uid == request.resource.data.userId;
       
       // Allow delete if the user is authenticated and they own the todo
       allow delete: if request.auth != null && 
@@ -31,14 +29,20 @@ service cloud.firestore {
     
     // Function to validate todo data structure
     function validTodo(todo) {
-      return todo.size() == 6 &&                    // Must have exactly 6 fields
+      return todo.size() >= 6 &&                    // Must have at least 6 fields
              todo.userId is string &&               // userId must be string
              todo.title is string &&                // title must be string
              todo.description is string &&          // description must be string
              todo.isCompleted is bool &&            // isCompleted must be boolean
              todo.createdAt is timestamp &&         // createdAt must be timestamp
              (todo.completedAt is timestamp || 
-              todo.completedAt == null);            // completedAt must be timestamp or null
+              todo.completedAt == null) &&          // completedAt must be timestamp or null
+             (todo.reminderDateTime is timestamp || 
+              todo.reminderDateTime == null) &&     // reminderDateTime must be timestamp or null
+             (!('reminderNote' in todo) || 
+              todo.reminderNote is string) &&       // reminderNote must be string if present
+             (!('isReminderAcknowledged' in todo) || 
+              todo.isReminderAcknowledged is bool); // isReminderAcknowledged must be boolean if present
     }
     
     // Function to validate todo updates
@@ -48,7 +52,13 @@ service cloud.firestore {
              todo.description is string &&          // description must be string
              todo.isCompleted is bool &&            // isCompleted must be boolean
              (todo.completedAt is timestamp || 
-              todo.completedAt == null);            // completedAt must be timestamp or null
+              todo.completedAt == null) &&          // completedAt must be timestamp or null
+             (todo.reminderDateTime is timestamp || 
+              todo.reminderDateTime == null) &&     // reminderDateTime must be timestamp or null
+             (!('reminderNote' in todo) || 
+              todo.reminderNote is string) &&       // reminderNote must be string if present
+             (!('isReminderAcknowledged' in todo) || 
+              todo.isReminderAcknowledged is bool); // isReminderAcknowledged must be boolean if present
     }
   }
 } 

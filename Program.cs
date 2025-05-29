@@ -12,6 +12,8 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<FirebaseService>();
 builder.Services.AddScoped<TodoService>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthenticationStateProvider>();
+builder.Services.AddScoped<FirebaseAuthService>();
+builder.Services.AddScoped<ReminderService>();
 builder.Services.AddAuthorizationCore();
 
 await builder.Build().RunAsync();
