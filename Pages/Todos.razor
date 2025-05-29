@@ -1,0 +1,316 @@
+@page "/todos"
+@using Microsoft.AspNetCore.Authorization
+@using todo_pwa.Models
+@using todo_pwa.Services
+@inject TodoService TodoService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+
+<PageTitle>Tasks</PageTitle>
+<link href="css/todos.css" rel="stylesheet" />
+
+<div class="todos-container">
+    @if (isIndexBuilding)
+    {
+        <div class="alert alert-info" role="alert">
+            <div>
+                <strong>Note:</strong> The database index is currently building. Some features might be temporarily slower.
+                This usually takes a few minutes. You can continue using the app normally.
+            </div>
+            <button type="button" class="btn-close" @onclick="() => isIndexBuilding = false">×</button>
+        </div>
+    }
+
+    @if (error != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            <div>@error</div>
+            <button type="button" class="btn-close" @onclick="() => error = null">×</button>
+        </div>
+    }
+
+    <div class="header">
+        <h1>Tasks</h1>
+    </div>
+
+    <div class="fab" @onclick="() => showAddForm = true">
+        <span class="oi oi-plus"></span>
+    </div>
+
+    @if (showAddForm)
+    {
+        <div class="modal-overlay" @onclick="() => showAddForm = false">
+            <div class="add-todo-form" @onclick:stopPropagation>
+                <div class="form-header">
+                    <h2>New Task</h2>
+                    <button class="btn-close" @onclick="() => showAddForm = false">×</button>
+                </div>
+                <div class="form-content">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Task title" @bind="newTodo.Title" />
+                    </div>
+                    <div class="form-group">
+                        <textarea class="form-control" placeholder="Description (optional)" @bind="newTodo.Description"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" @onclick="() => showAddForm = false">Cancel</button>
+                    <button class="btn btn-primary" @onclick="AddTodo">Add Task</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (todos == null)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading your tasks...</p>
+        </div>
+    }
+    else if (!todos.Any())
+    {
+        <div class="empty-state">
+            <span class="oi oi-task"></span>
+            <h3>No tasks yet</h3>
+            <p>Add your first task to get started!</p>
+            <button class="btn btn-primary" @onclick="() => showAddForm = true">Add Task</button>
+        </div>
+    }
+    else
+    {
+        <div class="todo-list">
+            @foreach (var todo in todos.OrderByDescending(t => t.CreatedAt))
+            {
+                <div class="todo-item @(todo.IsCompleted ? "completed" : "")">
+                    <div class="todo-checkbox" @onclick:stopPropagation @onclick="@(() => ToggleTodoStatus(todo))">
+                        <input type="checkbox" checked="@todo.IsCompleted" />
+                        <span class="checkmark"></span>
+                    </div>
+                    <div class="todo-content" @onclick="@(() => StartEdit(todo))">
+                        @if (editingTodo?.Id == todo.Id)
+                        {
+                            <div class="edit-form" @onclick:stopPropagation>
+                                <input type="text" 
+                                       class="form-control" 
+                                       @bind="editingTodo.Title" 
+                                       @onclick:stopPropagation />
+                                <textarea class="form-control" 
+                                          @bind="editingTodo.Description" 
+                                          @onclick:stopPropagation></textarea>
+                                <div class="edit-actions">
+                                    <button class="btn btn-sm btn-secondary" @onclick:stopPropagation @onclick="CancelEdit">Cancel</button>
+                                    <button class="btn btn-sm btn-primary" @onclick:stopPropagation @onclick="SaveEdit">Save</button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="todo-text">
+                                <h3>@todo.Title</h3>
+                                @if (!string.IsNullOrWhiteSpace(todo.Description))
+                                {
+                                    <p>@todo.Description</p>
+                                }
+                            </div>
+                            <div class="todo-meta">
+                                <small>@todo.CreatedAt.ToString("MMM d, h:mm tt")</small>
+                                @if (todo.IsCompleted && todo.CompletedAt.HasValue)
+                                {
+                                    <small class="completed-at">Completed @todo.CompletedAt.Value.ToString("MMM d")</small>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="todo-actions" @onclick:stopPropagation>
+                        <button class="btn-icon" @onclick="@(() => DeleteTodo(todo.Id))">
+                            <span class="oi oi-trash"></span>
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Todo> todos;
+    private Todo newTodo = new();
+    private Todo editingTodo;
+    private string error;
+    private bool isIndexBuilding = false;
+    private bool showAddForm = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await JSRuntime.InvokeAsync<IDictionary<string, object>>("firebaseAuth.getCurrentUser");
+            
+            if (user == null)
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            string userId = user["uid"].ToString();
+            try
+            {
+                todos = await TodoService.GetUserTodos(userId);
+                newTodo.UserId = userId;
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("requires an index"))
+                {
+                    isIndexBuilding = true;
+                    StateHasChanged();
+                }
+                throw;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Error loading todos. Please try refreshing the page.";
+            Console.WriteLine($"Error in OnInitializedAsync: {ex.Message}");
+        }
+    }
+
+    private async Task AddTodo()
+    {
+        if (string.IsNullOrWhiteSpace(newTodo.Title))
+            return;
+
+        try
+        {
+            var success = await TodoService.AddTodo(newTodo);
+            if (success)
+            {
+                todos.Add(newTodo);
+                newTodo = new Todo { UserId = newTodo.UserId };
+                showAddForm = false;
+                StateHasChanged();
+            }
+            else
+            {
+                error = "Failed to add todo. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Error adding todo. Please try again.";
+            Console.WriteLine($"Error in AddTodo: {ex.Message}");
+        }
+    }
+
+    private async Task ToggleTodoStatus(Todo todo)
+    {
+        try
+        {
+            todo.IsCompleted = !todo.IsCompleted;
+            todo.CompletedAt = todo.IsCompleted ? DateTime.UtcNow : null;
+            var success = await TodoService.UpdateTodo(todo);
+            
+            if (!success)
+            {
+                // Revert the change if update failed
+                todo.IsCompleted = !todo.IsCompleted;
+                todo.CompletedAt = todo.IsCompleted ? DateTime.UtcNow : null;
+                error = "Failed to update todo status. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Error updating todo status. Please try again.";
+            Console.WriteLine($"Error in ToggleTodoStatus: {ex.Message}");
+        }
+    }
+
+    private void StartEdit(Todo todo)
+    {
+        if (editingTodo?.Id == todo.Id)
+        {
+            editingTodo = null;
+        }
+        else
+        {
+            editingTodo = new Todo
+            {
+                Id = todo.Id,
+                UserId = todo.UserId,
+                Title = todo.Title,
+                Description = todo.Description,
+                IsCompleted = todo.IsCompleted,
+                CreatedAt = todo.CreatedAt,
+                CompletedAt = todo.CompletedAt
+            };
+        }
+    }
+
+    private async Task SaveEdit()
+    {
+        if (editingTodo == null || string.IsNullOrWhiteSpace(editingTodo.Title))
+            return;
+
+        var original = todos.FirstOrDefault(t => t.Id == editingTodo.Id);
+        if (original != null && 
+            original.Title == editingTodo.Title && 
+            original.Description == editingTodo.Description)
+        {
+            // No changes made, just cancel edit mode
+            editingTodo = null;
+            return;
+        }
+
+        try
+        {
+            var success = await TodoService.UpdateTodo(editingTodo);
+            if (success)
+            {
+                if (original != null)
+                {
+                    original.Title = editingTodo.Title;
+                    original.Description = editingTodo.Description;
+                }
+                editingTodo = null;
+            }
+            else
+            {
+                error = "Failed to save changes. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Error saving changes. Please try again.";
+            Console.WriteLine($"Error in SaveEdit: {ex.Message}");
+        }
+    }
+
+    private void CancelEdit()
+    {
+        editingTodo = null;
+    }
+
+    private async Task DeleteTodo(string todoId)
+    {
+        try
+        {
+            var success = await TodoService.DeleteTodo(todoId);
+            if (success)
+            {
+                todos.RemoveAll(t => t.Id == todoId);
+                StateHasChanged();
+            }
+            else
+            {
+                error = "Failed to delete todo. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Error deleting todo. Please try again.";
+            Console.WriteLine($"Error in DeleteTodo: {ex.Message}");
+        }
+    }
+} 

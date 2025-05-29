@@ -7,6 +7,9 @@
 	<title>todo_pwa</title>
 	<base href="/" />
 	<link rel="stylesheet" href="css/app.css" />
+	<link rel="stylesheet" href="css/todos.css" />
+	<link rel="stylesheet" href="css/navmenu.css" />
+	<link rel="stylesheet" href="css/authlayout.css" />
 	<!-- If you add any scoped CSS files, uncomment the following to load them
 	<link href="todo_pwa.styles.css" rel="stylesheet" /> -->
 	<link href="manifest.webmanifest" rel="manifest" />
@@ -33,7 +36,7 @@
 
 	<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
 	<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
-	<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-database-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
 
 	<script>
 		// Your web app's Firebase configuration
@@ -46,10 +49,13 @@
 			appId: "1:293461333865:web:f8e59a56241f7f1d6ccff8"
 		};
 
-		// Initialize Firebase with compat version
+		// Initialize Firebase
 		firebase.initializeApp(firebaseConfig);
+		// Initialize Firestore
+		const db = firebase.firestore();
 	</script>
 	<script src="js/firebaseAuth.js"></script>
+	<script src="js/firestore.js"></script>
 </body>
 
 </html>

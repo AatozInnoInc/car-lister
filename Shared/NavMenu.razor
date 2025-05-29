@@ -3,19 +3,24 @@
 @inject FirebaseService FirebaseService
 @inject AuthenticationStateProvider AuthStateProvider
 
-<div class="top-row ps-3 navbar navbar-dark">
+<link href="css/navmenu.css" rel="stylesheet" />
+
+<div class="top-row navbar">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Todo PWA</a>
+        <a class="navbar-brand" href="">
+            <span class="app-icon">📝</span>
+            Todo PWA
+        </a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+<div class="nav-scrollable @(isExpanded ? "show" : "")">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CollapseNavMenu">
                 <span class="oi oi-home" aria-hidden="true"></span> Home
             </NavLink>
         </div>
@@ -23,7 +28,12 @@
         <AuthorizeView>
             <Authorized>
                 <div class="nav-item px-3">
-                    <button class="nav-link btn btn-link" @onclick="HandleLogout">
+                    <NavLink class="nav-link" href="todos" @onclick="CollapseNavMenu">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> My Todos
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <button class="nav-link btn btn-link" @onclick="async () => { await HandleLogout(); CollapseNavMenu(); }">
                         <span class="oi oi-account-logout" aria-hidden="true"></span> Logout
                     </button>
                 </div>
@@ -32,29 +42,17 @@
     </nav>
 </div>
 
-<style>
-    .btn-link {
-        border: none;
-        padding: 0.9rem 1rem;
-        color: rgba(255,255,255,0.7);
-        text-align: left;
-        width: 100%;
-    }
-
-    .btn-link:hover {
-        color: rgba(255,255,255,0.9);
-        background-color: rgba(255,255,255,0.1);
-    }
-</style>
-
 @code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private bool isExpanded = false;
 
     private void ToggleNavMenu()
     {
-        collapseNavMenu = !collapseNavMenu;
+        isExpanded = !isExpanded;
+    }
+
+    private void CollapseNavMenu()
+    {
+        isExpanded = false;
     }
 
     private async Task HandleLogout()

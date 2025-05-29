@@ -1,0 +1,32 @@
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+}
+
+main {
+    flex: 1;
+    background-color: #f8f9fa;
+}
+
+.sidebar {
+    background-color: white;
+    width: 250px;
+    height: calc(100vh - 3.5rem);
+    position: sticky;
+    top: 0;
+    border-right: 1px solid #eee;
+}
+
+@media (max-width: 640.98px) {
+    .page {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        z-index: 999;
+    }
+} 

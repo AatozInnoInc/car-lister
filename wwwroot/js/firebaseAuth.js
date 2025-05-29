@@ -30,6 +30,14 @@ window.firebaseAuth = {
     },
 
     getCurrentUser: function() {
-        return firebase.auth().currentUser;
+        const user = firebase.auth().currentUser;
+        if (!user) return null;
+        
+        return {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL
+        };
     }
 }; 

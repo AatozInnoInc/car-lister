@@ -9,8 +9,24 @@
       "PackagePath": "staticwebassets\\css\\app.css"
     },
     {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\authlayout.css",
+      "PackagePath": "staticwebassets\\css\\authlayout.css"
+    },
+    {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\login.css",
+      "PackagePath": "staticwebassets\\css\\login.css"
+    },
+    {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\navmenu.css",
+      "PackagePath": "staticwebassets\\css\\navmenu.css"
+    },
+    {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\open-iconic\\font\\css\\open-iconic-bootstrap.min.css",
       "PackagePath": "staticwebassets\\css\\open-iconic\\font\\css\\open-iconic-bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\todos.css",
+      "PackagePath": "staticwebassets\\css\\todos.css"
     },
     {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\icon-192.png",
@@ -19,6 +35,14 @@
     {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\icon-512.png",
       "PackagePath": "staticwebassets\\icon-512.png"
+    },
+    {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\images\\Cow in Space with Flaming CRT.png",
+      "PackagePath": "staticwebassets\\images\\Cow in Space with Flaming CRT.png"
+    },
+    {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\images\\favicon.ico",
+      "PackagePath": "staticwebassets\\images\\favicon.ico"
     },
     {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\images\\google-icon.png",
@@ -31,6 +55,10 @@
     {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\js\\firebaseAuth.js",
       "PackagePath": "staticwebassets\\js\\firebaseAuth.js"
+    },
+    {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\js\\firestore.js",
+      "PackagePath": "staticwebassets\\js\\firestore.js"
     },
     {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\manifest.webmanifest",
