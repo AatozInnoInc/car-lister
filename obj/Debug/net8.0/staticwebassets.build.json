@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "zS7NrdEgvEvLjgygCqblU8Z8by2TS/THRfN3SLK3CaA=",
+  "Hash": "oPb6WJBmMhW5xHoqcW9SpB0DdfgOu8jKlrfFiHOK4hg=",
   "Source": "todo_pwa",
   "BasePath": "/",
   "Mode": "Root",
@@ -31,8 +31,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "WasmResource",
       "AssetTraitValue": "manifest",
-      "Fingerprint": "2hnn3jimjp",
-      "Integrity": "loUH5at+fRg2WST0XiYY/RDs2QTvHXdA68WGWSm5oC4=",
+      "Fingerprint": "vyqx6gh6gy",
+      "Integrity": "x5wpdvNvmRNZszyRLkryzv+vcX8VBs/1jk+8CmaIBKE=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "obj\\Debug\\net8.0\\blazor.boot.json"
@@ -4294,8 +4294,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "WasmResource",
       "AssetTraitValue": "symbol",
-      "Fingerprint": "x5kgv26g15",
-      "Integrity": "6w5xDB/8FOXuis4iNwBiXI+wG639wY0Cu/Q7/uMRo1w=",
+      "Fingerprint": "3vb4cnuut7",
+      "Integrity": "8UI8KXB3sP/OLP3XwB7ntKk0z6nAzbLfHZpZoqOZv74=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "obj\\Debug\\net8.0\\todo_pwa.pdb"
@@ -4315,8 +4315,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "WasmResource",
       "AssetTraitValue": "runtime",
-      "Fingerprint": "bkdyntp53o",
-      "Integrity": "1asCxtD3TRecMl5lcEvvvXbsKmjmw5nAvIB8Lpwg1Ys=",
+      "Fingerprint": "zi3xa9irpg",
+      "Integrity": "G35Qw5EAiqkxgMD3MjGIRVw43bkl0MGmjrNsKDSG5iQ=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\webcil\\todo_pwa.wasm"
@@ -4511,7 +4511,7 @@
       "OriginalItemSpec": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\System.Collections.Concurrent.wasm"
     },
     {
-      "Identity": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\2jifd3m8rl-x5kgv26g15.gz",
+      "Identity": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\2jifd3m8rl-3vb4cnuut7.gz",
       "SourceId": "todo_pwa",
       "SourceType": "Computed",
       "ContentRoot": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\",
@@ -4525,8 +4525,8 @@
       "RelatedAsset": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\todo_pwa.pdb",
       "AssetTraitName": "Content-Encoding",
       "AssetTraitValue": "gzip",
-      "Fingerprint": "3mk0se3wgb",
-      "Integrity": "pdN7CdUBghS8OnorQBULlsBK+xqduglWfKWIZBYWQ0g=",
+      "Fingerprint": "a3g47j2d75",
+      "Integrity": "dh2zNC7BOLVozO7Q3i41OJYpt0ITuptZYJguteM5iiw=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\todo_pwa.pdb"
@@ -5540,7 +5540,7 @@
       "OriginalItemSpec": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\System.Text.Encoding.wasm"
     },
     {
-      "Identity": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\avyh38mzbf-bkdyntp53o.gz",
+      "Identity": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\avyh38mzbf-zi3xa9irpg.gz",
       "SourceId": "todo_pwa",
       "SourceType": "Computed",
       "ContentRoot": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\",
@@ -5554,8 +5554,8 @@
       "RelatedAsset": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\todo_pwa.wasm",
       "AssetTraitName": "Content-Encoding",
       "AssetTraitValue": "gzip",
-      "Fingerprint": "gvdnydefqc",
-      "Integrity": "/PvUwwntbhl+LNWmx6CSzZtq/XkhWijobwar8zsw1+Q=",
+      "Fingerprint": "xt8avdwyoo",
+      "Integrity": "NZ56mofK2KdHUh+9UR6EeWHHb2se76cJlXvqLAGRL2Q=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\todo_pwa.wasm"
@@ -8459,7 +8459,7 @@
       "OriginalItemSpec": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\System.Diagnostics.Tools.wasm"
     },
     {
-      "Identity": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\ydqdar8cqh-2hnn3jimjp.gz",
+      "Identity": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\ydqdar8cqh-vyqx6gh6gy.gz",
       "SourceId": "todo_pwa",
       "SourceType": "Computed",
       "ContentRoot": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\",
@@ -8473,8 +8473,8 @@
       "RelatedAsset": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\blazor.boot.json",
       "AssetTraitName": "Content-Encoding",
       "AssetTraitValue": "gzip",
-      "Fingerprint": "m2f1qeofg4",
-      "Integrity": "cmsAPi0tjPCcEXQ0CiaVS+Ixw7HS0WDl/K5a6dUQ7bU=",
+      "Fingerprint": "8z947oyso4",
+      "Integrity": "fA2TwN6ugBWX+p4KLUcdWfg0696XCIwl0ofRggsBw+g=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\bin\\Debug\\net8.0\\wwwroot\\_framework\\blazor.boot.json"
@@ -8683,8 +8683,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "BlazorServiceWorker",
       "AssetTraitValue": "ServiceWorkerJs",
-      "Fingerprint": "h7bjqkxjzx",
-      "Integrity": "fbkzbEhmKY1clOmJdnyRlysh+hLZktVnQ8aAA2KQMqs=",
+      "Fingerprint": "0vqi51f9mf",
+      "Integrity": "fFHMDlTbtxd2Kdw+17fSQehQOjsv1xxZs1aob1mwRwY=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "wwwroot\\service-worker.js"
@@ -8704,8 +8704,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "BlazorServiceWorker",
       "AssetTraitValue": "ServiceWorkerManifest",
-      "Fingerprint": "ro2ms1lxn5",
-      "Integrity": "5Xh6UHPU5ai75WmY8xOF8KmK/0TclZj+PIKDVsbQYks=",
+      "Fingerprint": "q7joni5m6f",
+      "Integrity": "RkbVBfAKUdwd5XBEiEe0L5JmgQZH6uQXFhD4IBEflA4=",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "Never",
       "OriginalItemSpec": "obj\\Debug\\net8.0\\service-worker\\service-worker-assets.js.build"
@@ -8767,8 +8767,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "",
       "AssetTraitValue": "",
-      "Fingerprint": "0ybjgzuhhi",
-      "Integrity": "yKDEY1KmlrqpZqPROhHRIp7wbYOI8+R34V+XwdPb6rQ=",
+      "Fingerprint": "3db9m53sox",
+      "Integrity": "OST47y2xN+usyZn5/pOx8MDLW9J4+HMh++SWZJb09cg=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\css\\login.css"
@@ -8788,8 +8788,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "",
       "AssetTraitValue": "",
-      "Fingerprint": "saq1pcqohk",
-      "Integrity": "nLsvYqtbyPmOyGZOkawPr2dH4HF+sgEg//tzYaAK7A8=",
+      "Fingerprint": "83j71ho3rk",
+      "Integrity": "nN4stgkU5CK1p8OuFvfTz6dZLuLajVsW8lnsv9TkZ7s=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\css\\navmenu.css"
@@ -8956,8 +8956,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "",
       "AssetTraitValue": "",
-      "Fingerprint": "wot9y39b0t",
-      "Integrity": "cGMJetjnFJ7WtXMCyxyH1ynaJ/AyDcqeq0n+YUXq9hw=",
+      "Fingerprint": "apolc52xdh",
+      "Integrity": "sm9SO3eprRPRoTEcPyGTHrenIFdHxX6f/F5iPQ13s64=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\index.html"
@@ -9019,8 +9019,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "",
       "AssetTraitValue": "",
-      "Fingerprint": "1wmanhbdv3",
-      "Integrity": "Yd2zQuLoNABxt46GiLxFk8gW+aS1NLWTwouJ9fZUzOw=",
+      "Fingerprint": "eme1th4rrk",
+      "Integrity": "RiFFZXp4jfMJYM5TH/6SDn2CdgD8LovHjrTOaV9ShAo=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\manifest.webmanifest"
@@ -9046,11 +9046,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"loUH5at+fRg2WST0XiYY/RDs2QTvHXdA68WGWSm5oC4=\""
+          "Value": "\"x5wpdvNvmRNZszyRLkryzv+vcX8VBs/1jk+8CmaIBKE=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:12:47 GMT"
+          "Value": "Thu, 29 May 2025 02:25:57 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -9060,18 +9060,18 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-loUH5at+fRg2WST0XiYY/RDs2QTvHXdA68WGWSm5oC4="
+          "Value": "sha256-x5wpdvNvmRNZszyRLkryzv+vcX8VBs/1jk+8CmaIBKE="
         }
       ]
     },
     {
       "Route": "_framework/blazor.boot.json",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\ydqdar8cqh-2hnn3jimjp.gz",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\ydqdar8cqh-vyqx6gh6gy.gz",
       "Selectors": [
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.000112701454"
+          "Quality": "0.000112676056"
         }
       ],
       "ResponseHeaders": [
@@ -9081,15 +9081,15 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "8872"
+          "Value": "8874"
         },
         {
           "Name": "ETag",
-          "Value": "\"cmsAPi0tjPCcEXQ0CiaVS+Ixw7HS0WDl/K5a6dUQ7bU=\""
+          "Value": "\"fA2TwN6ugBWX+p4KLUcdWfg0696XCIwl0ofRggsBw+g=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:59 GMT"
+          "Value": "Thu, 29 May 2025 02:24:07 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -9109,19 +9109,19 @@
         },
         {
           "Name": "ETag",
-          "Value": "W/\"loUH5at+fRg2WST0XiYY/RDs2QTvHXdA68WGWSm5oC4=\""
+          "Value": "W/\"x5wpdvNvmRNZszyRLkryzv+vcX8VBs/1jk+8CmaIBKE=\""
         }
       ],
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-loUH5at+fRg2WST0XiYY/RDs2QTvHXdA68WGWSm5oC4="
+          "Value": "sha256-x5wpdvNvmRNZszyRLkryzv+vcX8VBs/1jk+8CmaIBKE="
         }
       ]
     },
     {
       "Route": "_framework/blazor.boot.json.gz",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\ydqdar8cqh-2hnn3jimjp.gz",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\ydqdar8cqh-vyqx6gh6gy.gz",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -9130,7 +9130,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "8872"
+          "Value": "8874"
         },
         {
           "Name": "Content-Type",
@@ -9138,11 +9138,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"cmsAPi0tjPCcEXQ0CiaVS+Ixw7HS0WDl/K5a6dUQ7bU=\""
+          "Value": "\"fA2TwN6ugBWX+p4KLUcdWfg0696XCIwl0ofRggsBw+g=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:59 GMT"
+          "Value": "Thu, 29 May 2025 02:24:07 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -9160,7 +9160,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-cmsAPi0tjPCcEXQ0CiaVS+Ixw7HS0WDl/K5a6dUQ7bU="
+          "Value": "sha256-fA2TwN6ugBWX+p4KLUcdWfg0696XCIwl0ofRggsBw+g="
         }
       ]
     },
@@ -36849,7 +36849,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "39776"
+          "Value": "39900"
         },
         {
           "Name": "Content-Type",
@@ -36857,11 +36857,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"6w5xDB/8FOXuis4iNwBiXI+wG639wY0Cu/Q7/uMRo1w=\""
+          "Value": "\"8UI8KXB3sP/OLP3XwB7ntKk0z6nAzbLfHZpZoqOZv74=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:58 GMT"
+          "Value": "Thu, 29 May 2025 02:25:56 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -36871,18 +36871,18 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-6w5xDB/8FOXuis4iNwBiXI+wG639wY0Cu/Q7/uMRo1w="
+          "Value": "sha256-8UI8KXB3sP/OLP3XwB7ntKk0z6nAzbLfHZpZoqOZv74="
         }
       ]
     },
     {
       "Route": "_framework/todo_pwa.pdb",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\2jifd3m8rl-x5kgv26g15.gz",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\2jifd3m8rl-3vb4cnuut7.gz",
       "Selectors": [
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.000034911325"
+          "Quality": "0.000034775351"
         }
       ],
       "ResponseHeaders": [
@@ -36892,15 +36892,15 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "28643"
+          "Value": "28755"
         },
         {
           "Name": "ETag",
-          "Value": "\"pdN7CdUBghS8OnorQBULlsBK+xqduglWfKWIZBYWQ0g=\""
+          "Value": "\"dh2zNC7BOLVozO7Q3i41OJYpt0ITuptZYJguteM5iiw=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:58 GMT"
+          "Value": "Thu, 29 May 2025 02:21:33 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -36920,19 +36920,19 @@
         },
         {
           "Name": "ETag",
-          "Value": "W/\"6w5xDB/8FOXuis4iNwBiXI+wG639wY0Cu/Q7/uMRo1w=\""
+          "Value": "W/\"8UI8KXB3sP/OLP3XwB7ntKk0z6nAzbLfHZpZoqOZv74=\""
         }
       ],
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-6w5xDB/8FOXuis4iNwBiXI+wG639wY0Cu/Q7/uMRo1w="
+          "Value": "sha256-8UI8KXB3sP/OLP3XwB7ntKk0z6nAzbLfHZpZoqOZv74="
         }
       ]
     },
     {
       "Route": "_framework/todo_pwa.pdb.gz",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\2jifd3m8rl-x5kgv26g15.gz",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\2jifd3m8rl-3vb4cnuut7.gz",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -36941,7 +36941,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "28643"
+          "Value": "28755"
         },
         {
           "Name": "Content-Type",
@@ -36949,11 +36949,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"pdN7CdUBghS8OnorQBULlsBK+xqduglWfKWIZBYWQ0g=\""
+          "Value": "\"dh2zNC7BOLVozO7Q3i41OJYpt0ITuptZYJguteM5iiw=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:58 GMT"
+          "Value": "Thu, 29 May 2025 02:21:33 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -36971,7 +36971,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-pdN7CdUBghS8OnorQBULlsBK+xqduglWfKWIZBYWQ0g="
+          "Value": "sha256-dh2zNC7BOLVozO7Q3i41OJYpt0ITuptZYJguteM5iiw="
         }
       ]
     },
@@ -36986,7 +36986,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "55061"
+          "Value": "55573"
         },
         {
           "Name": "Content-Type",
@@ -36994,11 +36994,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"1asCxtD3TRecMl5lcEvvvXbsKmjmw5nAvIB8Lpwg1Ys=\""
+          "Value": "\"G35Qw5EAiqkxgMD3MjGIRVw43bkl0MGmjrNsKDSG5iQ=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:58 GMT"
+          "Value": "Thu, 29 May 2025 02:25:56 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -37008,18 +37008,18 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-1asCxtD3TRecMl5lcEvvvXbsKmjmw5nAvIB8Lpwg1Ys="
+          "Value": "sha256-G35Qw5EAiqkxgMD3MjGIRVw43bkl0MGmjrNsKDSG5iQ="
         }
       ]
     },
     {
       "Route": "_framework/todo_pwa.wasm",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\avyh38mzbf-bkdyntp53o.gz",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\avyh38mzbf-zi3xa9irpg.gz",
       "Selectors": [
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.000047194299"
+          "Quality": "0.000046950561"
         }
       ],
       "ResponseHeaders": [
@@ -37029,15 +37029,15 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "21188"
+          "Value": "21298"
         },
         {
           "Name": "ETag",
-          "Value": "\"/PvUwwntbhl+LNWmx6CSzZtq/XkhWijobwar8zsw1+Q=\""
+          "Value": "\"NZ56mofK2KdHUh+9UR6EeWHHb2se76cJlXvqLAGRL2Q=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:58 GMT"
+          "Value": "Thu, 29 May 2025 02:21:33 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -37057,19 +37057,19 @@
         },
         {
           "Name": "ETag",
-          "Value": "W/\"1asCxtD3TRecMl5lcEvvvXbsKmjmw5nAvIB8Lpwg1Ys=\""
+          "Value": "W/\"G35Qw5EAiqkxgMD3MjGIRVw43bkl0MGmjrNsKDSG5iQ=\""
         }
       ],
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-1asCxtD3TRecMl5lcEvvvXbsKmjmw5nAvIB8Lpwg1Ys="
+          "Value": "sha256-G35Qw5EAiqkxgMD3MjGIRVw43bkl0MGmjrNsKDSG5iQ="
         }
       ]
     },
     {
       "Route": "_framework/todo_pwa.wasm.gz",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\avyh38mzbf-bkdyntp53o.gz",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\obj\\Debug\\net8.0\\compressed\\avyh38mzbf-zi3xa9irpg.gz",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -37078,7 +37078,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "21188"
+          "Value": "21298"
         },
         {
           "Name": "Content-Type",
@@ -37086,11 +37086,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"/PvUwwntbhl+LNWmx6CSzZtq/XkhWijobwar8zsw1+Q=\""
+          "Value": "\"NZ56mofK2KdHUh+9UR6EeWHHb2se76cJlXvqLAGRL2Q=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:10:58 GMT"
+          "Value": "Thu, 29 May 2025 02:21:33 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -37108,7 +37108,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-/PvUwwntbhl+LNWmx6CSzZtq/XkhWijobwar8zsw1+Q="
+          "Value": "sha256-NZ56mofK2KdHUh+9UR6EeWHHb2se76cJlXvqLAGRL2Q="
         }
       ]
     },
@@ -37414,7 +37414,7 @@
       ]
     },
     {
-      "Route": "css/login.0ybjgzuhhi.css",
+      "Route": "css/login.3db9m53sox.css",
       "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\login.css",
       "Selectors": [],
       "ResponseHeaders": [
@@ -37424,7 +37424,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "2354"
+          "Value": "3344"
         },
         {
           "Name": "Content-Type",
@@ -37432,11 +37432,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"yKDEY1KmlrqpZqPROhHRIp7wbYOI8+R34V+XwdPb6rQ=\""
+          "Value": "\"OST47y2xN+usyZn5/pOx8MDLW9J4+HMh++SWZJb09cg=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:12:44 GMT"
+          "Value": "Thu, 29 May 2025 02:23:45 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -37446,7 +37446,7 @@
       "EndpointProperties": [
         {
           "Name": "fingerprint",
-          "Value": "0ybjgzuhhi"
+          "Value": "3db9m53sox"
         },
         {
           "Name": "label",
@@ -37454,7 +37454,7 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-yKDEY1KmlrqpZqPROhHRIp7wbYOI8+R34V+XwdPb6rQ="
+          "Value": "sha256-OST47y2xN+usyZn5/pOx8MDLW9J4+HMh++SWZJb09cg="
         }
       ]
     },
@@ -37469,7 +37469,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "2354"
+          "Value": "3344"
         },
         {
           "Name": "Content-Type",
@@ -37477,11 +37477,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"yKDEY1KmlrqpZqPROhHRIp7wbYOI8+R34V+XwdPb6rQ=\""
+          "Value": "\"OST47y2xN+usyZn5/pOx8MDLW9J4+HMh++SWZJb09cg=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:12:44 GMT"
+          "Value": "Thu, 29 May 2025 02:23:45 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -37491,7 +37491,52 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-yKDEY1KmlrqpZqPROhHRIp7wbYOI8+R34V+XwdPb6rQ="
+          "Value": "sha256-OST47y2xN+usyZn5/pOx8MDLW9J4+HMh++SWZJb09cg="
+        }
+      ]
+    },
+    {
+      "Route": "css/navmenu.83j71ho3rk.css",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\navmenu.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "3265"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"nN4stgkU5CK1p8OuFvfTz6dZLuLajVsW8lnsv9TkZ7s=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Thu, 29 May 2025 02:25:40 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "83j71ho3rk"
+        },
+        {
+          "Name": "label",
+          "Value": "css/navmenu.css"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-nN4stgkU5CK1p8OuFvfTz6dZLuLajVsW8lnsv9TkZ7s="
         }
       ]
     },
@@ -37506,7 +37551,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "2703"
+          "Value": "3265"
         },
         {
           "Name": "Content-Type",
@@ -37514,11 +37559,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"nLsvYqtbyPmOyGZOkawPr2dH4HF+sgEg//tzYaAK7A8=\""
+          "Value": "\"nN4stgkU5CK1p8OuFvfTz6dZLuLajVsW8lnsv9TkZ7s=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 01:55:55 GMT"
+          "Value": "Thu, 29 May 2025 02:25:40 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -37528,52 +37573,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-nLsvYqtbyPmOyGZOkawPr2dH4HF+sgEg//tzYaAK7A8="
-        }
-      ]
-    },
-    {
-      "Route": "css/navmenu.saq1pcqohk.css",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\navmenu.css",
-      "Selectors": [],
-      "ResponseHeaders": [
-        {
-          "Name": "Accept-Ranges",
-          "Value": "bytes"
-        },
-        {
-          "Name": "Content-Length",
-          "Value": "2703"
-        },
-        {
-          "Name": "Content-Type",
-          "Value": "text/css"
-        },
-        {
-          "Name": "ETag",
-          "Value": "\"nLsvYqtbyPmOyGZOkawPr2dH4HF+sgEg//tzYaAK7A8=\""
-        },
-        {
-          "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 01:55:55 GMT"
-        },
-        {
-          "Name": "Cache-Control",
-          "Value": "max-age=31536000, immutable"
-        }
-      ],
-      "EndpointProperties": [
-        {
-          "Name": "fingerprint",
-          "Value": "saq1pcqohk"
-        },
-        {
-          "Name": "label",
-          "Value": "css/navmenu.css"
-        },
-        {
-          "Name": "integrity",
-          "Value": "sha256-nLsvYqtbyPmOyGZOkawPr2dH4HF+sgEg//tzYaAK7A8="
+          "Value": "sha256-nN4stgkU5CK1p8OuFvfTz6dZLuLajVsW8lnsv9TkZ7s="
         }
       ]
     },
@@ -38152,6 +38152,51 @@
       ]
     },
     {
+      "Route": "index.apolc52xdh.html",
+      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\index.html",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "2266"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/html"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"sm9SO3eprRPRoTEcPyGTHrenIFdHxX6f/F5iPQ13s64=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Thu, 29 May 2025 02:14:51 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "apolc52xdh"
+        },
+        {
+          "Name": "label",
+          "Value": "index.html"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-sm9SO3eprRPRoTEcPyGTHrenIFdHxX6f/F5iPQ13s64="
+        }
+      ]
+    },
+    {
       "Route": "index.html",
       "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\index.html",
       "Selectors": [],
@@ -38162,7 +38207,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "2077"
+          "Value": "2266"
         },
         {
           "Name": "Content-Type",
@@ -38170,11 +38215,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"cGMJetjnFJ7WtXMCyxyH1ynaJ/AyDcqeq0n+YUXq9hw=\""
+          "Value": "\"sm9SO3eprRPRoTEcPyGTHrenIFdHxX6f/F5iPQ13s64=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 01:29:28 GMT"
+          "Value": "Thu, 29 May 2025 02:14:51 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -38184,52 +38229,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-cGMJetjnFJ7WtXMCyxyH1ynaJ/AyDcqeq0n+YUXq9hw="
-        }
-      ]
-    },
-    {
-      "Route": "index.wot9y39b0t.html",
-      "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\index.html",
-      "Selectors": [],
-      "ResponseHeaders": [
-        {
-          "Name": "Accept-Ranges",
-          "Value": "bytes"
-        },
-        {
-          "Name": "Content-Length",
-          "Value": "2077"
-        },
-        {
-          "Name": "Content-Type",
-          "Value": "text/html"
-        },
-        {
-          "Name": "ETag",
-          "Value": "\"cGMJetjnFJ7WtXMCyxyH1ynaJ/AyDcqeq0n+YUXq9hw=\""
-        },
-        {
-          "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 01:29:28 GMT"
-        },
-        {
-          "Name": "Cache-Control",
-          "Value": "max-age=31536000, immutable"
-        }
-      ],
-      "EndpointProperties": [
-        {
-          "Name": "fingerprint",
-          "Value": "wot9y39b0t"
-        },
-        {
-          "Name": "label",
-          "Value": "index.html"
-        },
-        {
-          "Name": "integrity",
-          "Value": "sha256-cGMJetjnFJ7WtXMCyxyH1ynaJ/AyDcqeq0n+YUXq9hw="
+          "Value": "sha256-sm9SO3eprRPRoTEcPyGTHrenIFdHxX6f/F5iPQ13s64="
         }
       ]
     },
@@ -38398,7 +38398,7 @@
       ]
     },
     {
-      "Route": "manifest.1wmanhbdv3.webmanifest",
+      "Route": "manifest.eme1th4rrk.webmanifest",
       "AssetFile": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\manifest.webmanifest",
       "Selectors": [],
       "ResponseHeaders": [
@@ -38408,7 +38408,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "443"
+          "Value": "572"
         },
         {
           "Name": "Content-Type",
@@ -38416,11 +38416,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"Yd2zQuLoNABxt46GiLxFk8gW+aS1NLWTwouJ9fZUzOw=\""
+          "Value": "\"RiFFZXp4jfMJYM5TH/6SDn2CdgD8LovHjrTOaV9ShAo=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Wed, 28 May 2025 21:30:06 GMT"
+          "Value": "Thu, 29 May 2025 02:14:41 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -38430,7 +38430,7 @@
       "EndpointProperties": [
         {
           "Name": "fingerprint",
-          "Value": "1wmanhbdv3"
+          "Value": "eme1th4rrk"
         },
         {
           "Name": "label",
@@ -38438,7 +38438,7 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-Yd2zQuLoNABxt46GiLxFk8gW+aS1NLWTwouJ9fZUzOw="
+          "Value": "sha256-RiFFZXp4jfMJYM5TH/6SDn2CdgD8LovHjrTOaV9ShAo="
         }
       ]
     },
@@ -38453,7 +38453,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "443"
+          "Value": "572"
         },
         {
           "Name": "Content-Type",
@@ -38461,11 +38461,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"Yd2zQuLoNABxt46GiLxFk8gW+aS1NLWTwouJ9fZUzOw=\""
+          "Value": "\"RiFFZXp4jfMJYM5TH/6SDn2CdgD8LovHjrTOaV9ShAo=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Wed, 28 May 2025 21:30:06 GMT"
+          "Value": "Thu, 29 May 2025 02:14:41 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -38475,7 +38475,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-Yd2zQuLoNABxt46GiLxFk8gW+aS1NLWTwouJ9fZUzOw="
+          "Value": "sha256-RiFFZXp4jfMJYM5TH/6SDn2CdgD8LovHjrTOaV9ShAo="
         }
       ]
     },
@@ -38498,7 +38498,7 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"fbkzbEhmKY1clOmJdnyRlysh+hLZktVnQ8aAA2KQMqs=\""
+          "Value": "\"fFHMDlTbtxd2Kdw+17fSQehQOjsv1xxZs1aob1mwRwY=\""
         },
         {
           "Name": "Last-Modified",
@@ -38512,7 +38512,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-fbkzbEhmKY1clOmJdnyRlysh+hLZktVnQ8aAA2KQMqs="
+          "Value": "sha256-fFHMDlTbtxd2Kdw+17fSQehQOjsv1xxZs1aob1mwRwY="
         }
       ]
     },
@@ -38535,11 +38535,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"5Xh6UHPU5ai75WmY8xOF8KmK/0TclZj+PIKDVsbQYks=\""
+          "Value": "\"RkbVBfAKUdwd5XBEiEe0L5JmgQZH6uQXFhD4IBEflA4=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Thu, 29 May 2025 02:12:47 GMT"
+          "Value": "Thu, 29 May 2025 02:25:57 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -38549,7 +38549,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-5Xh6UHPU5ai75WmY8xOF8KmK/0TclZj+PIKDVsbQYks="
+          "Value": "sha256-RkbVBfAKUdwd5XBEiEe0L5JmgQZH6uQXFhD4IBEflA4="
         }
       ]
     }

@@ -1,22 +1,24 @@
 {
-  "name": "todo_pwa",
-  "short_name": "todo_pwa",
+  "name": "Space Tasks",
+  "short_name": "Space Tasks",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#03173d",
+  "background_color": "#f8f9fa",
+  "theme_color": "#007bff",
   "prefer_related_applications": false,
+  "description": "A modern task manager with a cosmic twist",
   "icons": [
     {
-      "src": "icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "images/favicon.ico",
+      "type": "image/x-icon",
+      "sizes": "64x64"
     },
     {
-      "src": "icon-192.png",
+      "src": "images/Cow in Space with Flaming CRT.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "512x512",
+      "purpose": "any"
     }
   ]
 }
