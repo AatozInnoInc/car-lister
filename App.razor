@@ -4,9 +4,11 @@
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             @{
-                var isLoginPage = routeData.PageType.FullName?.EndsWith("Login") ?? false;
+                var isPublicPage = routeData.PageType.FullName.EndsWith("Login") ||
+                                   routeData.PageType.FullName.EndsWith("PrivacyPolicy") ||
+                                   routeData.PageType.FullName.EndsWith("TermsOfService");
             }
-            @if (isLoginPage)
+            @if (isPublicPage)
             {
                 <RouteView RouteData="@routeData" DefaultLayout="@typeof(EmptyLayout)" />
             }

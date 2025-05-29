@@ -1,0 +1,63 @@
+@page "/privacy-policy"
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Privacy Policy - Space Tasks</PageTitle>
+<link href="css/policy.css" rel="stylesheet" />
+
+<div class="policy-container">
+    <div class="policy-content">
+        <div class="policy-header">
+            <img src="images/Cow in Space with Flaming CRT.png" alt="Space Tasks Logo" class="policy-logo" />
+            <h1>Privacy Policy</h1>
+            <p class="subtitle">Your data security is our top priority</p>
+        </div>
+
+        <div class="policy-sections">
+            <section>
+                <h2><span class="oi oi-shield"></span> Data Protection</h2>
+                <p>At Space Tasks, we take your privacy seriously. Your data is stored securely in our space-grade vault and is never shared with third parties. We use industry-standard encryption to protect your information during transmission and storage.</p>
+            </section>
+
+            <section>
+                <h2><span class="oi oi-lock-locked"></span> Data Collection</h2>
+                <p>We only collect essential information needed to provide you with our service:</p>
+                <ul>
+                    <li>Your Google account information for authentication</li>
+                    <li>Your tasks and their associated data</li>
+                    <li>Basic usage statistics to improve our service</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2><span class="oi oi-data-transfer-download"></span> Data Usage</h2>
+                <p>Your data is used exclusively to:</p>
+                <ul>
+                    <li>Provide and maintain the Space Tasks service</li>
+                    <li>Improve your user experience</li>
+                    <li>Send important service-related notifications</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2><span class="oi oi-person"></span> User Rights</h2>
+                <p>You have the right to:</p>
+                <ul>
+                    <li>Access your personal data</li>
+                    <li>Request data deletion</li>
+                    <li>Export your data</li>
+                    <li>Opt-out of non-essential data collection</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2><span class="oi oi-envelope-closed"></span> Contact Us</h2>
+                <p>If you have any questions about our privacy policy or how we handle your data, please contact our support team.</p>
+            </section>
+        </div>
+
+        <div class="policy-footer">
+            <p>Last updated: @DateTime.Now.ToString("MMMM dd, yyyy")</p>
+            <NavLink href="/" class="return-home">Return to Home</NavLink>
+        </div>
+    </div>
+</div> 

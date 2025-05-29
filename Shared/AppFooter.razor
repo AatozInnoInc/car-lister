@@ -1,0 +1,59 @@
+@inject NavigationManager NavigationManager
+
+<footer class="app-footer">
+    <div class="footer-content">
+        <div class="footer-links">
+            <NavLink href="/privacy-policy" target="_blank">Privacy Policy</NavLink>
+            <span class="separator">•</span>
+            <NavLink href="/terms-of-service" target="_blank">Terms of Service</NavLink>
+        </div>
+        <div class="footer-copyright">
+            <span>© @DateTime.Now.Year Space Tasks</span>
+        </div>
+    </div>
+</footer>
+
+<style>
+    .app-footer {
+        background-color: white;
+        border-top: 1px solid #eee;
+        padding: 1rem;
+        margin-top: auto;
+    }
+
+    .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .footer-links {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+        .footer-links a {
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease;
+        }
+
+            .footer-links a:hover {
+                color: #007bff;
+            }
+
+    .separator {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .footer-copyright {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+</style>

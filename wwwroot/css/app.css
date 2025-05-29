@@ -30,6 +30,14 @@ html, body {
         padding-top: 0;
         height: calc(100vh - 3.5rem);
     }
+
+    .app-footer {
+        padding: 1rem 0.5rem;
+    }
+
+    .footer-content {
+        gap: 0.75rem;
+    }
 }
 
 h1:focus {

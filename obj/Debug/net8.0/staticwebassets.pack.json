@@ -29,6 +29,10 @@
       "PackagePath": "staticwebassets\\css\\open-iconic\\font\\css\\open-iconic-bootstrap.min.css"
     },
     {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\policy.css",
+      "PackagePath": "staticwebassets\\css\\policy.css"
+    },
+    {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\todos.css",
       "PackagePath": "staticwebassets\\css\\todos.css"
     },
@@ -43,6 +47,10 @@
     {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\images\\Cow in Space with Flaming CRT.png",
       "PackagePath": "staticwebassets\\images\\Cow in Space with Flaming CRT.png"
+    },
+    {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\images\\cow-server-whoops.png",
+      "PackagePath": "staticwebassets\\images\\cow-server-whoops.png"
     },
     {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\images\\favicon.ico",

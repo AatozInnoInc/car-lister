@@ -10,11 +10,14 @@
                     <NavMenu />
                 </div>
 
-                <main>
-                    <article class="content px-4">
-                        @Body
-                    </article>
-                </main>
+                <div class="main-content">
+                    <main>
+                        <article class="content px-4">
+                            @Body
+                        </article>
+                    </main>
+                    <AppFooter />
+                </div>
             </div>
         </Authorized>
         <NotAuthorized>
