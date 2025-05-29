@@ -34,9 +34,8 @@
 		<a href="" class="reload">Reload</a>
 		<a class="dismiss">🗙</a>
 	</div>
-	<script src="_framework/blazor.webassembly.js"></script>
-	<script>navigator.serviceWorker.register('service-worker.js');</script>
 
+	<!-- Firebase scripts first -->
 	<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
 	<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
 	<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
@@ -56,9 +55,18 @@
 		firebase.initializeApp(firebaseConfig);
 		// Initialize Firestore
 		const db = firebase.firestore();
+
+		// Add initialization check
+		window.firebaseInitialized = true;
 	</script>
+	
+	<!-- Custom Firebase interface scripts -->
 	<script src="js/firebaseAuth.js"></script>
 	<script src="js/firestore.js"></script>
+
+	<!-- Blazor script last -->
+	<script src="_framework/blazor.webassembly.js"></script>
+	<script>navigator.serviceWorker.register('service-worker.js');</script>
 </body>
 
 </html>

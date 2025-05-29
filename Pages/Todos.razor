@@ -31,7 +31,7 @@
     }
 
     <div class="header">
-        <h1>Tasks</h1>
+        <h1>@(string.IsNullOrEmpty(userName) ? "Tasks" : $"{userName}'s Tasks")</h1>
     </div>
 
     <div class="fab" @onclick="() => showAddForm = true">
@@ -141,6 +141,7 @@
     private string error;
     private bool isIndexBuilding = false;
     private bool showAddForm = false;
+    private string userName;
 
     protected override async Task OnInitializedAsync()
     {
@@ -155,6 +156,16 @@
             }
 
             string userId = user["uid"].ToString();
+            // Get the display name from the user object
+            userName = user.ContainsKey("displayName") ? user["displayName"]?.ToString() : null;
+            
+            // If display name is not available, try to get email and use the part before @ symbol
+            if (string.IsNullOrEmpty(userName) && user.ContainsKey("email"))
+            {
+                string email = user["email"].ToString();
+                userName = email.Split('@')[0];
+            }
+
             try
             {
                 todos = await TodoService.GetUserTodos(userId);
