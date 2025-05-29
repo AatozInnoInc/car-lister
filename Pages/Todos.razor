@@ -202,7 +202,20 @@
     private string error;
     private bool isIndexBuilding = false;
     private bool showAddForm = false;
-    private bool showReminderFields = false;
+    private bool _showReminderFields;
+    public bool showReminderFields
+    {
+        get => _showReminderFields;
+        set
+        {
+            if (value && !_showReminderFields && newTodo.ReminderDateTime == null)
+            {
+                // Only set default time when first showing the fields and no time is set
+                newTodo.ReminderDateTime = DateTime.Now.AddHours(1);
+            }
+            _showReminderFields = value;
+        }
+    }
     private string userName;
     private HashSet<string> expandedTodos = new();
 
@@ -349,13 +362,13 @@
     private void HandleReminderToggle(ChangeEventArgs e, Todo todo)
     {
         bool isChecked = (bool)e.Value;
-        if (isChecked)
+        if (isChecked && todo.ReminderDateTime == null)
         {
-            // Set default reminder time to current time + 1 hour
+            // Only set default time if no time is already set
             todo.ReminderDateTime = DateTime.Now.AddHours(1);
             todo.IsReminderAcknowledged = false;
         }
-        else
+        else if (!isChecked)
         {
             todo.ReminderDateTime = null;
             todo.ReminderNote = null;
