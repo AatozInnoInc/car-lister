@@ -111,7 +111,13 @@
                                 <h3>@todo.Title</h3>
                                 @if (!string.IsNullOrWhiteSpace(todo.Description))
                                 {
-                                    <p>@todo.Description</p>
+                                    <p class="@(expandedTodos.Contains(todo.Id) ? "expanded" : "")">@todo.Description</p>
+                                    @if (ShouldShowMoreToggle(todo.Description))
+                                    {
+                                        <span class="show-more" @onclick:stopPropagation @onclick="@(() => ToggleExpand(todo.Id))">
+                                            @(expandedTodos.Contains(todo.Id) ? "Show less" : "Show more")
+                                        </span>
+                                    }
                                 }
                             </div>
                             <div class="todo-meta">
@@ -142,6 +148,7 @@
     private bool isIndexBuilding = false;
     private bool showAddForm = false;
     private string userName;
+    private HashSet<string> expandedTodos = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -323,5 +330,18 @@
             error = "Error deleting todo. Please try again.";
             Console.WriteLine($"Error in DeleteTodo: {ex.Message}");
         }
+    }
+
+    private void ToggleExpand(string todoId)
+    {
+        if (expandedTodos.Contains(todoId))
+            expandedTodos.Remove(todoId);
+        else
+            expandedTodos.Add(todoId);
+    }
+
+    private bool ShouldShowMoreToggle(string text)
+    {
+        return !string.IsNullOrWhiteSpace(text) && text.Length > 100;
     }
 } 

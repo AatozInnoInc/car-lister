@@ -13,6 +13,10 @@
       "PackagePath": "staticwebassets\\css\\authlayout.css"
     },
     {
+      "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\home.css",
+      "PackagePath": "staticwebassets\\css\\home.css"
+    },
+    {
       "Id": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\todo-pwa\\wwwroot\\css\\login.css",
       "PackagePath": "staticwebassets\\css\\login.css"
     },

@@ -2,7 +2,34 @@
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.main {
+    flex: 1;
+    overflow-y: auto;
+}
+
+@media (max-width: 640.98px) {
+    .main {
+        padding-top: 0;
+        height: calc(100vh - 3.5rem);
+    }
 }
 
 h1:focus {
@@ -66,7 +93,6 @@ h1:focus {
 }
 
 .oi {
-    width: 2rem;
     font-size: 1.1rem;
     vertical-align: text-top;
     top: -2px;
@@ -141,4 +167,42 @@ h1:focus {
 
 code {
     color: #c02d76;
+}
+
+/* Global scrollbar styles */
+:root {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 255, 135, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 135, 0.3);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 135, 0.5);
+}
+
+/* Ensure content is always scrollable on mobile */
+@media (max-width: 640.98px) {
+    .nav-scrollable {
+        height: calc(100vh - 3.5rem);
+    }
+
+    .content {
+        height: 100%;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    }
 }

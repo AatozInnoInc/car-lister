@@ -1,7 +1,237 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+@using Microsoft.AspNetCore.Components.Authorization
+@using todo_pwa.Models
+@using todo_pwa.Services
 
-<h1>Hello, world!</h1>
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject TodoService TodoService
+@inject IJSRuntime JSRuntime
 
-Welcome to your new app.
+<PageTitle>Space Tasks - Your Cosmic Task Manager</PageTitle>
+<link href="css/home.css" rel="stylesheet" />
+
+<div class="home-container">
+    <AuthorizeView>
+        <Authorized>
+            <div class="dashboard">
+                <div class="welcome-section">
+                    <div class="hero-content">
+                        <img src="images/Cow in Space with Flaming CRT.png" alt="Space Tasks Logo" class="hero-logo" />
+                        <h1>Welcome Back, <span class="user-name">@(GetUserName())</span>!</h1>
+                        <p class="subtitle">Your mission control center for tasks</p>
+                    </div>
+                </div>
+
+                @if (taskStats != null)
+                {
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="oi oi-task stat-icon"></span>
+                            <div class="stat-content">
+                                <h3>@taskStats.TotalTasks</h3>
+                                <p>Total Tasks</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="oi oi-check stat-icon completed"></span>
+                            <div class="stat-content">
+                                <h3>@taskStats.CompletedTasks</h3>
+                                <p>Completed</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="oi oi-clock stat-icon pending"></span>
+                            <div class="stat-content">
+                                <h3>@taskStats.PendingTasks</h3>
+                                <p>Pending</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="oi oi-graph stat-icon"></span>
+                            <div class="stat-content">
+                                <h3>@taskStats.CompletionRate%</h3>
+                                <p>Completion Rate</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (recentTasks != null && recentTasks.Any())
+                    {
+                        <div class="recent-tasks-section">
+                            <h2>Recent Tasks</h2>
+                            <div class="recent-tasks-grid">
+                                @foreach (var task in recentTasks.Take(3))
+                                {
+                                    <div class="task-card @(task.IsCompleted ? "completed" : "")">
+                                        <div class="task-status">
+                                            <span class="oi @(task.IsCompleted ? "oi-check" : "oi-timer")"></span>
+                                        </div>
+                                        <div class="task-content">
+                                            <h3>@task.Title</h3>
+                                            @if (!string.IsNullOrEmpty(task.Description))
+                                            {
+                                                <p class="@(expandedTasks.Contains(task.Id) ? "expanded" : "")">@task.Description</p>
+                                                @if (ShouldShowMoreToggle(task.Description))
+                                                {
+                                                    <span class="show-more" @onclick:stopPropagation @onclick="@(() => ToggleExpand(task.Id))">
+                                                        @(expandedTasks.Contains(task.Id) ? "Show less" : "Show more")
+                                                    </span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <p>No description</p>
+                                            }
+                                            <small>@task.CreatedAt.ToString("MMM d, h:mm tt")</small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <button class="btn btn-primary view-all" @onclick="NavigateToTasks">View All Tasks</button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="loading-stats">
+                        <div class="spinner"></div>
+                        <p>Loading your task statistics...</p>
+                    </div>
+                }
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="landing-page">
+                <div class="hero-section">
+                    <img src="images/Cow in Space with Flaming CRT.png" alt="Space Tasks Logo" class="hero-logo" />
+                    <h1>Space Tasks</h1>
+                    <p class="tagline">Your cosmic companion for task management</p>
+                    <button class="btn btn-primary get-started" @onclick="NavigateToLogin">Get Started</button>
+                </div>
+
+                <div class="features-section">
+                    <h2>Why Space Tasks?</h2>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <span class="oi oi-cloud feature-icon"></span>
+                            <h3>Cloud Sync</h3>
+                            <p>Access your tasks from anywhere in the universe</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="oi oi-mobile feature-icon"></span>
+                            <h3>Works Offline</h3>
+                            <p>Keep working even when signal is lost in space</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="oi oi-lock-locked feature-icon"></span>
+                            <h3>Secure</h3>
+                            <p>Your data is encrypted and safe with us</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="oi oi-flash feature-icon"></span>
+                            <h3>Lightning Fast</h3>
+                            <p>Blazing fast performance at light speed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private TaskStats taskStats;
+    private List<Todo> recentTasks;
+    private HashSet<string> expandedTasks = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            await LoadUserData();
+        }
+    }
+
+    private async Task LoadUserData()
+    {
+        try
+        {
+            var user = await JSRuntime.InvokeAsync<IDictionary<string, object>>("firebaseAuth.getCurrentUser");
+            if (user != null)
+            {
+                string userId = user["uid"].ToString();
+                var allTasks = await TodoService.GetUserTodos(userId);
+                recentTasks = allTasks.OrderByDescending(t => t.CreatedAt).ToList();
+
+                int total = allTasks.Count;
+                int completed = allTasks.Count(t => t.IsCompleted);
+                taskStats = new TaskStats
+                {
+                    TotalTasks = total,
+                    CompletedTasks = completed,
+                    PendingTasks = total - completed,
+                    CompletionRate = total > 0 ? (int)((double)completed / total * 100) : 0
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user data: {ex.Message}");
+        }
+    }
+
+    private string GetUserName()
+    {
+        try
+        {
+            var user = JSRuntime.InvokeAsync<IDictionary<string, object>>("firebaseAuth.getCurrentUser").Result;
+            if (user != null && user.ContainsKey("displayName") && user["displayName"] != null)
+            {
+                return user["displayName"].ToString();
+            }
+            else if (user != null && user.ContainsKey("email"))
+            {
+                return user["email"].ToString().Split('@')[0];
+            }
+            return "Explorer";
+        }
+        catch
+        {
+            return "Explorer";
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void NavigateToTasks()
+    {
+        NavigationManager.NavigateTo("/todos");
+    }
+
+    private void ToggleExpand(string taskId)
+    {
+        if (expandedTasks.Contains(taskId))
+            expandedTasks.Remove(taskId);
+        else
+            expandedTasks.Add(taskId);
+    }
+
+    private bool ShouldShowMoreToggle(string text)
+    {
+        return !string.IsNullOrWhiteSpace(text) && text.Length > 100;
+    }
+
+    private class TaskStats
+    {
+        public int TotalTasks { get; set; }
+        public int CompletedTasks { get; set; }
+        public int PendingTasks { get; set; }
+        public int CompletionRate { get; set; }
+    }
+}
