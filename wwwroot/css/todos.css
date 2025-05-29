@@ -514,6 +514,7 @@ textarea.form-control {
 }
 
 .reminder-info .oi-bell {
+    top: 2px;
     font-size: 0.9em;
 }
 
