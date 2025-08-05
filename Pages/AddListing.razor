@@ -262,9 +262,10 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error calling Python API: {ex.Message}");
-            // Fallback to mock data
-            return await MockScrapeCarGurus(url);
+            // TODO: Nice error formatted on page
         }
+
+        return null;
     }
 
     public class ScrapeApiResponse
