@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
-namespace todo_pwa.Services;
+namespace car_lister.Services;
 
 public class FirebaseAuthenticationStateProvider : AuthenticationStateProvider
 {

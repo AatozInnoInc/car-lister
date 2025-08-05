@@ -1,7 +1,7 @@
 using Microsoft.JSInterop;
 using System.Threading.Tasks;
 
-namespace todo_pwa.Services
+namespace car_lister.Services
 {
     public interface IFirebaseAuthService
     {

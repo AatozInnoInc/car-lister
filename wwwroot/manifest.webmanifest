@@ -1,13 +1,13 @@
 {
-  "name": "Space Tasks",
-  "short_name": "Space Tasks",
+  "name": "Car Lister",
+  "short_name": "Car Lister",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f8f9fa",
   "theme_color": "#007bff",
   "prefer_related_applications": false,
-  "description": "A modern task manager with a cosmic twist",
+  "description": "Find your perfect ride or sell your car with ease",
   "icons": [
     {
       "src": "images/favicon.ico",

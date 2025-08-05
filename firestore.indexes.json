@@ -1,7 +1,7 @@
 {
   "indexes": [
     {
-      "collectionGroup": "todos",
+      "collectionGroup": "cars",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -15,24 +15,34 @@
       ]
     },
     {
-      "collectionGroup": "todos",
+      "collectionGroup": "cars",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "userId",
+          "fieldPath": "make",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "isCompleted",
+          "fieldPath": "model",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "isReminderAcknowledged",
+          "fieldPath": "year",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "cars",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "price",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "reminderDateTime",
-          "order": "ASCENDING"
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     }

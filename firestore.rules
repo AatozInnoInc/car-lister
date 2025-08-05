@@ -7,58 +7,40 @@ service cloud.firestore {
       allow read, write: if false;
     }
     
-    // Rules for the todos collection
-    match /todos/{todoId} {
-      // Allow read if the user is authenticated and the todo belongs to them
-      allow read: if request.auth != null && 
-                 request.auth.uid == resource.data.userId;
+    // Rules for the cars collection
+    match /cars/{carId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
       
-      // Allow create if the user is authenticated and they're creating a todo for themselves
+      // Allow create if the user is authenticated and they're creating a car listing
       allow create: if request.auth != null && 
                    request.auth.uid == request.resource.data.userId;
       
-      // Allow update if the user is authenticated and they own the todo
+      // Allow update if the user is authenticated and they own the car listing
       allow update: if request.auth != null && 
                    request.auth.uid == resource.data.userId &&
                    request.auth.uid == request.resource.data.userId;
       
-      // Allow delete if the user is authenticated and they own the todo
+      // Allow delete if the user is authenticated and they own the car listing
       allow delete: if request.auth != null && 
                    request.auth.uid == resource.data.userId;
     }
     
-    // Function to validate todo data structure
-    function validTodo(todo) {
-      return todo.size() >= 6 &&                    // Must have at least 6 fields
-             todo.userId is string &&               // userId must be string
-             todo.title is string &&                // title must be string
-             todo.description is string &&          // description must be string
-             todo.isCompleted is bool &&            // isCompleted must be boolean
-             todo.createdAt is timestamp &&         // createdAt must be timestamp
-             (todo.completedAt is timestamp || 
-              todo.completedAt == null) &&          // completedAt must be timestamp or null
-             (todo.reminderDateTime is timestamp || 
-              todo.reminderDateTime == null) &&     // reminderDateTime must be timestamp or null
-             (!('reminderNote' in todo) || 
-              todo.reminderNote is string) &&       // reminderNote must be string if present
-             (!('isReminderAcknowledged' in todo) || 
-              todo.isReminderAcknowledged is bool); // isReminderAcknowledged must be boolean if present
-    }
-    
-    // Function to validate todo updates
-    function validTodoUpdate(todo) {
-      return todo.userId is string &&               // userId must be string
-             todo.title is string &&                // title must be string
-             todo.description is string &&          // description must be string
-             todo.isCompleted is bool &&            // isCompleted must be boolean
-             (todo.completedAt is timestamp || 
-              todo.completedAt == null) &&          // completedAt must be timestamp or null
-             (todo.reminderDateTime is timestamp || 
-              todo.reminderDateTime == null) &&     // reminderDateTime must be timestamp or null
-             (!('reminderNote' in todo) || 
-              todo.reminderNote is string) &&       // reminderNote must be string if present
-             (!('isReminderAcknowledged' in todo) || 
-              todo.isReminderAcknowledged is bool); // isReminderAcknowledged must be boolean if present
+    // Function to validate car data structure
+    function validCar(car) {
+      return car.size() >= 5 &&                    // Must have at least 5 fields
+             car.userId is string &&               // userId must be string
+             car.make is string &&                 // make must be string
+             car.model is string &&                // model must be string
+             car.year is number &&                 // year must be number
+             car.price is number &&                // price must be number
+             car.createdAt is timestamp &&         // createdAt must be timestamp
+             (!('description' in car) || 
+              car.description is string) &&        // description must be string if present
+             (!('mileage' in car) || 
+              car.mileage is number) &&            // mileage must be number if present
+             (!('images' in car) || 
+              car.images is list);                 // images must be list if present
     }
   }
 } 

@@ -1,22 +1,22 @@
 @page "/login"
 @using Microsoft.AspNetCore.Components.Authorization
-@using todo_pwa.Services
+@using car_lister.Services
 @inject FirebaseService FirebaseService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Login - Space Tasks</PageTitle>
+<PageTitle>Login - Car Lister</PageTitle>
 <link href="css/login.css" rel="stylesheet" />
 
 <div class="login-page">
     <div class="login-content">
         <div class="app-logo">
-            <img src="images/Cow in Space with Flaming CRT.png" alt="Space Tasks Logo" />
+            <img src="images/Cow in Space with Flaming CRT.png" alt="Car Lister Logo" />
         </div>
         <div class="login-container">
             <div class="login-header">
-                <h1>Space Tasks</h1>
-                <p>Your cosmic task manager</p>
+                <h1>Car Lister</h1>
+                <p>Your personal car marketplace</p>
             </div>
             
             <div class="security-message">

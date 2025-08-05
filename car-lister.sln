@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "todo-pwa", "todo-pwa.csproj", "{A90F2441-FCEC-40CE-AE0A-A0590EA45831}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "car-lister", "car-lister.csproj", "{A90F2441-FCEC-40CE-AE0A-A0590EA45831}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
