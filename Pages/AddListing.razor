@@ -32,48 +32,117 @@
                 <div class="car-preview">
                     @if (scrapedCar.Images != null && scrapedCar.Images.Any())
                     {
-                        <div class="image-gallery">
-                            <img src="@scrapedCar.Images.First()" alt="@scrapedCar.Make @scrapedCar.Model" class="main-image" />
+                        <div class="image-gallery-container">
+                            <div class="main-image-container">
+                                <img src="@scrapedCar.Images[currentImageIndex]" alt="@scrapedCar.Make @scrapedCar.Model" class="main-image" />
+                                @if (scrapedCar.Images.Count > 1)
+                                {
+                                    <div class="image-navigation">
+                                        <button class="nav-btn prev" @onclick="PreviousImage" disabled="@(currentImageIndex == 0)">
+                                            <span class="oi oi-chevron-left"></span>
+                                        </button>
+                                        <div class="image-counter">
+                                            @(currentImageIndex + 1) of @scrapedCar.Images.Count
+                                        </div>
+                                        <button class="nav-btn next" @onclick="NextImage" disabled="@(currentImageIndex == scrapedCar.Images.Count - 1)">
+                                            <span class="oi oi-chevron-right"></span>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                            
                             @if (scrapedCar.Images.Count > 1)
                             {
-                                <div class="thumbnail-grid">
-                                    @foreach (var image in scrapedCar.Images.Skip(1).Take(4))
-                                    {
-                                        <img src="@image" alt="Car image" class="thumbnail" />
-                                    }
+                                <div class="thumbnail-scroll">
+                                    <div class="thumbnail-container">
+                                        @for (int i = 0; i < scrapedCar.Images.Count; i++)
+                                        {
+                                            var index = i;
+                                            <div class="thumbnail-wrapper @(index == currentImageIndex ? "active" : "")" @onclick="() => SelectImage(index)">
+                                                <img src="@scrapedCar.Images[i]" alt="Car image @(i + 1)" class="thumbnail" />
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
                             }
                         </div>
                     }
                     
                     <div class="car-details">
-                        <h2>@scrapedCar.Year @scrapedCar.Make @scrapedCar.Model</h2>
-                        <div class="price">$@scrapedCar.Price.ToString("N0")</div>
+                        <div class="car-header">
+                            <div class="car-title">
+                                <h2>@scrapedCar.Year @scrapedCar.Make @scrapedCar.Model</h2>
+                                <div class="car-badge">@scrapedCar.Year</div>
+                            </div>
+                            <div class="price-container">
+                                <div class="price">$@scrapedCar.Price.ToString("N0")</div>
+                                <div class="price-label">Listed Price</div>
+                            </div>
+                        </div>
                         
                         @if (!string.IsNullOrEmpty(scrapedCar.Description))
                         {
-                            <div class="description">
-                                <h3>Overview</h3>
-                                <p>@scrapedCar.Description</p>
+                            <div class="overview-section">
+                                <div class="section-header">
+                                    <span class="oi oi-document"></span>
+                                    <h3>Overview</h3>
+                                </div>
+                                <div class="overview-content">
+                                    @{
+                                        var descriptionParts = scrapedCar.Description.Split("[!@@Additional Info@@!]");
+                                        var mainDescription = descriptionParts[0].Trim();
+                                    }
+                                    <p class="main-description">@mainDescription</p>
+                                    @if (descriptionParts.Length > 1)
+                                    {
+                                        <div class="additional-features">
+                                            <h4>Additional Features</h4>
+                                            <div class="feature-tags">
+                                                @foreach (var feature in descriptionParts[1].Split(',').Take(10))
+                                                {
+                                                    <span class="feature-tag">@feature.Trim()</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         }
                         
                         @if (scrapedCar.Features != null && scrapedCar.Features.Any())
                         {
-                            <div class="features">
-                                <h3>Features</h3>
-                                <ul>
-                                    @foreach (var feature in scrapedCar.Features)
+                            <div class="features-section">
+                                <div class="section-header">
+                                    <span class="oi oi-list"></span>
+                                    <h3>Features & Specifications</h3>
+                                </div>
+                                <div class="features-grid">
+                                    @foreach (var feature in scrapedCar.Features.Take(12))
                                     {
-                                        <li>@feature</li>
+                                        <div class="feature-item">
+                                            <span class="oi oi-check"></span>
+                                            <span>@feature</span>
+                                        </div>
                                     }
-                                </ul>
+                                    @if (scrapedCar.Features.Count > 12)
+                                    {
+                                        <div class="feature-more">
+                                            <span>+@(scrapedCar.Features.Count - 12) more features</span>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         }
                         
                         <div class="actions">
-                            <button class="btn btn-primary" @onclick="SaveListing">Save Listing</button>
-                            <button class="btn btn-secondary" @onclick="ScrapeAgain">Scrape Different Car</button>
+                            <button class="btn btn-primary" @onclick="SaveListing">
+                                <span class="oi oi-plus"></span>
+                                Save Listing
+                            </button>
+                            <button class="btn btn-secondary" @onclick="ScrapeAgain">
+                                <span class="oi oi-reload"></span>
+                                Scrape Different Car
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -119,6 +188,7 @@
     private bool isLoading = false;
     private ScrapedCar? scrapedCar = null;
     private string errorMessage = "";
+    private int currentImageIndex = 0;
 
     private void GoBack()
     {
@@ -344,6 +414,31 @@
         scrapedCar = null;
         cargurusUrl = "";
         errorMessage = "";
+        currentImageIndex = 0;
+        StateHasChanged();
+    }
+
+    private void PreviousImage()
+    {
+        if (currentImageIndex > 0)
+        {
+            currentImageIndex--;
+            StateHasChanged();
+        }
+    }
+
+    private void NextImage()
+    {
+        if (scrapedCar?.Images != null && currentImageIndex < scrapedCar.Images.Count - 1)
+        {
+            currentImageIndex++;
+            StateHasChanged();
+        }
+    }
+
+    private void SelectImage(int index)
+    {
+        currentImageIndex = index;
         StateHasChanged();
     }
 
