@@ -96,9 +96,9 @@
                                     @if (descriptionParts.Length > 1)
                                     {
                                         <div class="additional-features">
-                                            <h4>Additional Features</h4>
+                                            <h4>Additional Features (@(descriptionParts[1].Split(',').Length))</h4>
                                             <div class="feature-tags">
-                                                @foreach (var feature in descriptionParts[1].Split(',').Take(10))
+                                                @foreach (var feature in descriptionParts[1].Split(','))
                                                 {
                                                     <span class="feature-tag">@feature.Trim()</span>
                                                 }
@@ -115,19 +115,14 @@
                                 <div class="section-header">
                                     <span class="oi oi-list"></span>
                                     <h3>Features & Specifications</h3>
+                                    <div class="feature-count">@scrapedCar.Features.Count features</div>
                                 </div>
                                 <div class="features-grid">
-                                    @foreach (var feature in scrapedCar.Features.Take(12))
+                                    @foreach (var feature in scrapedCar.Features)
                                     {
                                         <div class="feature-item">
                                             <span class="oi oi-check"></span>
                                             <span>@feature</span>
-                                        </div>
-                                    }
-                                    @if (scrapedCar.Features.Count > 12)
-                                    {
-                                        <div class="feature-more">
-                                            <span>+@(scrapedCar.Features.Count - 12) more features</span>
                                         </div>
                                     }
                                 </div>
