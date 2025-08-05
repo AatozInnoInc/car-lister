@@ -258,9 +258,6 @@
                     return result.Data;
                 }
             }
-            
-            // Fallback to mock data if API fails
-            return await MockScrapeCarGurus(url);
         }
         catch (Exception ex)
         {
@@ -277,105 +274,6 @@
         public string? Error { get; set; }
     }
 
-    private async Task<ScrapedCar> MockScrapeCarGurus(string url)
-    {
-        // Mock car data based on URL
-        var mockCars = new Dictionary<string, ScrapedCar>
-        {
-            ["toyota-camry"] = new ScrapedCar
-            {
-                Make = "Toyota",
-                Model = "Camry",
-                Year = 2022,
-                Price = 28500,
-                Description = "This 2022 Toyota Camry offers excellent fuel economy, comfortable interior, and advanced safety features. Perfect for daily commuting and family trips.",
-                Features = new List<string>
-                {
-                    "Bluetooth Connectivity",
-                    "Backup Camera",
-                    "Lane Departure Warning",
-                    "Adaptive Cruise Control",
-                    "Apple CarPlay/Android Auto",
-                    "Heated Seats",
-                    "Keyless Entry"
-                },
-                Images = new List<string>
-                {
-                    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop"
-                },
-                OriginalUrl = url
-            },
-            ["honda-civic"] = new ScrapedCar
-            {
-                Make = "Honda",
-                Model = "Civic",
-                Year = 2023,
-                Price = 24500,
-                Description = "The 2023 Honda Civic combines sporty styling with practical functionality. Features a responsive engine and modern technology throughout.",
-                Features = new List<string>
-                {
-                    "Honda Sensing Suite",
-                    "7-inch Touchscreen",
-                    "HondaLink",
-                    "Bluetooth Audio",
-                    "USB Audio Interface",
-                    "Multi-Angle Rearview Camera",
-                    "Automatic Climate Control"
-                },
-                Images = new List<string>
-                {
-                    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop"
-                },
-                OriginalUrl = url
-            },
-            ["ford-mustang"] = new ScrapedCar
-            {
-                Make = "Ford",
-                Model = "Mustang",
-                Year = 2023,
-                Price = 42000,
-                Description = "The iconic Ford Mustang delivers thrilling performance with its powerful V8 engine. Features aggressive styling and advanced driver assistance systems.",
-                Features = new List<string>
-                {
-                    "5.0L V8 Engine",
-                    "10-Speed Automatic Transmission",
-                    "SYNC 3 Infotainment",
-                    "Ford Co-Pilot360",
-                    "Track Apps",
-                    "Launch Control",
-                    "Line Lock"
-                },
-                Images = new List<string>
-                {
-                    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop"
-                },
-                OriginalUrl = url
-            }
-        };
-
-        // Try to match URL to a mock car, or use default
-        var carData = mockCars["toyota-camry"]; // default
-        
-        foreach (var kvp in mockCars)
-        {
-            if (url.ToLower().Contains(kvp.Key))
-            {
-                carData = kvp.Value;
-                break;
-            }
-        }
-
-        return carData;
-    }
 
     private async Task<ScrapedCar?> RealScrapeCarGurus(string url)
     {

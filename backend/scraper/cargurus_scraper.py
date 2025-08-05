@@ -55,11 +55,15 @@ class CarGurusScraper:
             listing_id = self._extract_listing_id(url)
             if not listing_id:
                 logger.error(f"Could not extract listing ID from URL: {url}")
+                logger.info(f"URL analysis - Domain: {urlparse(url).netloc}, Path: {urlparse(url).path}")
                 return None
+            
+            logger.info(f"Extracted listing ID: {listing_id}")
             
             # Fetch JSON data from CarGurus API
             json_data = self._fetch_json_data(listing_id)
             if not json_data:
+                logger.error(f"Failed to fetch JSON data for listing ID: {listing_id}")
                 return None
             
             # Extract car data from JSON
@@ -70,29 +74,41 @@ class CarGurusScraper:
                 logger.info(f"Successfully scraped car in {processing_time:.2f}s: {car_data.make} {car_data.model} {car_data.year}")
                 return car_data
             else:
-                logger.warning(f"Failed to extract car data from JSON")
+                logger.warning(f"Failed to extract car data from JSON for listing ID: {listing_id}")
                 return None
                 
         except Exception as e:
             logger.error(f"Error scraping {url}: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return None
     
     def _is_valid_cargurus_url(self, url: str) -> bool:
         """Validate that the URL is a valid CarGurus.com URL"""
         try:
             parsed = urlparse(url)
-            return (
-                parsed.scheme in ('http', 'https') and
-                parsed.netloc in ('www.cargurus.com', 'cargurus.com') and
-                '/Cars/' in parsed.path
-            )
+            # Check if it's a CarGurus domain
+            if parsed.netloc not in ('www.cargurus.com', 'cargurus.com'):
+                return False
+            
+            # Check if it's a car-related page (more flexible)
+            car_indicators = [
+                '/Cars/',
+                '/inventorylisting/',
+                '/listing',
+                'cargurus.com'
+            ]
+            
+            url_lower = url.lower()
+            return any(indicator.lower() in url_lower for indicator in car_indicators)
+            
         except Exception:
             return False
     
     def _extract_listing_id(self, url: str) -> Optional[str]:
-        """Extract listing ID from CarGurus URL"""
+        """Extract listing ID from CarGurus URL using multiple patterns"""
         try:
-            # Look for listingId parameter
+            # Pattern 1: listingId parameter (e.g., ?listingId=123456789)
             if 'listingId=' in url:
                 start = url.find('listingId=') + len('listingId=')
                 end = url.find('&', start)
@@ -100,19 +116,94 @@ class CarGurusScraper:
                     end = url.find('#', start)
                 if end == -1:
                     end = len(url)
-                return url[start:end]
+                listing_id = url[start:end]
+                if listing_id.isdigit():
+                    return listing_id
             
-            # Look for listing ID in path
+            # Pattern 2: /listing=ID/ format (e.g., #listing=123456789/NONE/DEFAULT)
             if '/listing=' in url:
                 start = url.find('/listing=') + len('/listing=')
                 end = url.find('/', start)
                 if end == -1:
                     end = len(url)
-                return url[start:end]
+                listing_part = url[start:end]
+                # Extract just the ID part before any slashes
+                listing_id = listing_part.split('/')[0]
+                if listing_id.isdigit():
+                    return listing_id
             
+            # Pattern 3: #listing=ID format (e.g., #listing=123456789/NONE/DEFAULT)
+            if '#listing=' in url:
+                start = url.find('#listing=') + len('#listing=')
+                end = url.find('/', start)
+                if end == -1:
+                    end = len(url)
+                listing_part = url[start:end]
+                # Extract just the ID part before any slashes
+                listing_id = listing_part.split('/')[0]
+                if listing_id.isdigit():
+                    return listing_id
+            
+            # Pattern 4: Extract from URL path (e.g., /Cars/l-123456789)
+            # Look for patterns like /l-123456789 or similar
+            import re
+            path_patterns = [
+                r'/l-(\d+)',  # /l-123456789
+                r'/listing/(\d+)',  # /listing/123456789
+                r'/inventorylisting/(\d+)',  # /inventorylisting/123456789
+            ]
+            
+            for pattern in path_patterns:
+                match = re.search(pattern, url)
+                if match:
+                    listing_id = match.group(1)
+                    if listing_id.isdigit():
+                        return listing_id
+            
+            # Pattern 5: Extract from query parameters (various formats)
+            query_patterns = [
+                r'[?&]id=(\d+)',
+                r'[?&]listing=(\d+)',
+                r'[?&]inventoryId=(\d+)',
+            ]
+            
+            for pattern in query_patterns:
+                match = re.search(pattern, url)
+                if match:
+                    listing_id = match.group(1)
+                    if listing_id.isdigit():
+                        return listing_id
+            
+            # Pattern 6: Look for any sequence of 6+ digits that might be a listing ID
+            digit_pattern = r'(\d{6,})'
+            matches = re.findall(digit_pattern, url)
+            for match in matches:
+                # Check if this looks like a listing ID (not a zip code, year, etc.)
+                if len(match) >= 6 and not self._is_likely_not_listing_id(match, url):
+                    return match
+            
+            logger.warning(f"Could not extract listing ID from URL: {url}")
             return None
-        except Exception:
+            
+        except Exception as e:
+            logger.error(f"Error extracting listing ID from {url}: {str(e)}")
             return None
+    
+    def _is_likely_not_listing_id(self, candidate: str, url: str) -> bool:
+        """Check if a candidate ID is likely not a listing ID"""
+        # Years are not listing IDs
+        if len(candidate) == 4 and 1900 <= int(candidate) <= 2030:
+            return True
+        
+        # Zip codes are not listing IDs
+        if len(candidate) == 5 and url.find('zip=' + candidate) != -1:
+            return True
+        
+        # Phone numbers are not listing IDs
+        if len(candidate) == 10 and candidate.startswith(('1', '2', '3', '4', '5', '6', '7', '8', '9')):
+            return True
+        
+        return False
     
     def _fetch_json_data(self, listing_id: str) -> Optional[dict]:
         """
