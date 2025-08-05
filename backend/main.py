@@ -69,7 +69,7 @@ async def scrape_cargurus(request: ScrapeRequest):
             raise HTTPException(status_code=400, detail="Invalid CarGurus URL")
         
         # Scrape the car details
-        car_data = await scraper.scrape_car(request.url)
+        car_data = scraper.scrape_car(request.url)
         
         if car_data:
             logger.info(f"Successfully scraped: {car_data.make} {car_data.model} {car_data.year}")

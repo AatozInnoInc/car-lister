@@ -1,5 +1,4 @@
-import asyncio
-import aiohttp
+import requests
 import logging
 from typing import Optional, List
 from bs4 import BeautifulSoup
@@ -19,7 +18,7 @@ class CarGurusScraper:
     """
     
     def __init__(self):
-        self.session = None
+        self.session = requests.Session()
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -28,20 +27,11 @@ class CarGurusScraper:
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         }
+        self.session.headers.update(self.headers)
         self.max_retries = 3
         self.timeout = 30
-        
-    async def __aenter__(self):
-        """Async context manager entry"""
-        self.session = aiohttp.ClientSession(headers=self.headers)
-        return self
-        
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit"""
-        if self.session:
-            await self.session.close()
     
-    async def scrape_car(self, url: str) -> Optional[ScrapedCar]:
+    def scrape_car(self, url: str) -> Optional[ScrapedCar]:
         """
         Main scraping method that orchestrates the entire scraping process.
         
@@ -96,7 +86,7 @@ class CarGurusScraper:
         except Exception:
             return False
     
-    async def _fetch_html(self, url: str) -> Optional[str]:
+    def _fetch_html(self, url: str) -> Optional[str]:
         """
         Fetch HTML content with retry logic and error handling.
         
@@ -106,28 +96,27 @@ class CarGurusScraper:
         Returns:
             HTML content as string, or None if failed
         """
-        if not self.session:
-            self.session = aiohttp.ClientSession(headers=self.headers)
+        import time
         
         for attempt in range(self.max_retries):
             try:
-                async with self.session.get(url, timeout=self.timeout) as response:
-                    if response.status == 200:
-                        return await response.text()
-                    else:
-                        logger.warning(f"HTTP {response.status} for {url} (attempt {attempt + 1})")
-                        
-            except asyncio.TimeoutError:
+                response = self.session.get(url, timeout=self.timeout)
+                if response.status_code == 200:
+                    return response.text
+                else:
+                    logger.warning(f"HTTP {response.status_code} for {url} (attempt {attempt + 1})")
+                    
+            except requests.Timeout:
                 logger.warning(f"Timeout for {url} (attempt {attempt + 1})")
             except Exception as e:
                 logger.error(f"Error fetching {url} (attempt {attempt + 1}): {str(e)}")
             
             if attempt < self.max_retries - 1:
-                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                time.sleep(2 ** attempt)  # Exponential backoff
         
         return None
     
-    async def _extract_car_data(self, soup: BeautifulSoup, url: str) -> Optional[ScrapedCar]:
+    def _extract_car_data(self, soup: BeautifulSoup, url: str) -> Optional[ScrapedCar]:
         """
         Extract car data using multiple strategies and fallbacks.
         
