@@ -52,7 +52,7 @@ class CarGurusScraper:
                 return None
             
             # Fetch HTML content
-            html_content = await self._fetch_html(url)
+            html_content = self._fetch_html(url)
             if not html_content:
                 return None
             
@@ -60,7 +60,7 @@ class CarGurusScraper:
             soup = BeautifulSoup(html_content, 'html5lib')
             
             # Extract car data using different strategies
-            car_data = await self._extract_car_data(soup, url)
+            car_data = self._extract_car_data(soup, url)
             
             if car_data:
                 processing_time = time.time() - start_time
