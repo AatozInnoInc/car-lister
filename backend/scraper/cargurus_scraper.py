@@ -1,9 +1,9 @@
 import requests
 import logging
-from typing import Optional, List
-from bs4 import BeautifulSoup
+import json
 import re
-from urllib.parse import urljoin, urlparse
+from typing import Optional, List
+from urllib.parse import urlparse
 from .models import ScrapedCar
 import time
 
@@ -11,21 +11,21 @@ logger = logging.getLogger(__name__)
 
 class CarGurusScraper:
     """
-    Professional CarGurus.com scraper with robust error handling and retry logic.
+    Professional CarGurus.com scraper using the JSON API endpoint.
     
-    This class implements the Strategy pattern for different scraping approaches
-    and uses the Factory pattern for creating different extractors based on page type.
+    This scraper uses CarGurus' internal JSON API to extract complete car data
+    including all images, specifications, and detailed information.
     """
     
     def __init__(self):
         self.session = requests.Session()
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate',
             'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
+            'Referer': 'https://www.cargurus.com/',
         }
         self.session.headers.update(self.headers)
         self.max_retries = 3
@@ -33,7 +33,7 @@ class CarGurusScraper:
     
     def scrape_car(self, url: str) -> Optional[ScrapedCar]:
         """
-        Main scraping method that orchestrates the entire scraping process.
+        Main scraping method using CarGurus JSON API.
         
         Args:
             url: CarGurus.com URL to scrape
@@ -51,23 +51,26 @@ class CarGurusScraper:
                 logger.error(f"Invalid CarGurus URL: {url}")
                 return None
             
-            # Fetch HTML content
-            html_content = self._fetch_html(url)
-            if not html_content:
+            # Extract listing ID from URL
+            listing_id = self._extract_listing_id(url)
+            if not listing_id:
+                logger.error(f"Could not extract listing ID from URL: {url}")
                 return None
             
-            # Parse HTML using html5lib to avoid compilation issues
-            soup = BeautifulSoup(html_content, 'html5lib')
+            # Fetch JSON data from CarGurus API
+            json_data = self._fetch_json_data(listing_id)
+            if not json_data:
+                return None
             
-            # Extract car data using different strategies
-            car_data = self._extract_car_data(soup, url)
+            # Extract car data from JSON
+            car_data = self._extract_car_data_from_json(json_data, url)
             
             if car_data:
                 processing_time = time.time() - start_time
                 logger.info(f"Successfully scraped car in {processing_time:.2f}s: {car_data.make} {car_data.model} {car_data.year}")
                 return car_data
             else:
-                logger.warning(f"Failed to extract car data from: {url}")
+                logger.warning(f"Failed to extract car data from JSON")
                 return None
                 
         except Exception as e:
@@ -86,60 +89,111 @@ class CarGurusScraper:
         except Exception:
             return False
     
-    def _fetch_html(self, url: str) -> Optional[str]:
+    def _extract_listing_id(self, url: str) -> Optional[str]:
+        """Extract listing ID from CarGurus URL"""
+        try:
+            # Look for listingId parameter
+            if 'listingId=' in url:
+                start = url.find('listingId=') + len('listingId=')
+                end = url.find('&', start)
+                if end == -1:
+                    end = url.find('#', start)
+                if end == -1:
+                    end = len(url)
+                return url[start:end]
+            
+            # Look for listing ID in path
+            if '/listing=' in url:
+                start = url.find('/listing=') + len('/listing=')
+                end = url.find('/', start)
+                if end == -1:
+                    end = len(url)
+                return url[start:end]
+            
+            return None
+        except Exception:
+            return None
+    
+    def _fetch_json_data(self, listing_id: str) -> Optional[dict]:
         """
-        Fetch HTML content with retry logic and error handling.
+        Fetch JSON data from CarGurus API.
         
         Args:
-            url: URL to fetch
+            listing_id: The listing ID to fetch
             
         Returns:
-            HTML content as string, or None if failed
+            JSON data as dict, or None if failed
         """
         import time
         
+        # Construct the API URL
+        api_url = f"https://www.cargurus.com/Cars/detailListingJson.action"
+        params = {
+            'inventoryListing': listing_id,
+            'searchZip': '27401',  # Default zip, could be made configurable
+            'searchDistance': '100',
+            'inclusionType': 'DEFAULT',
+            'pid': 'null',
+            'sourceContext': 'carGurusHomePageModel',
+            'isDAVE': 'true'
+        }
+        
         for attempt in range(self.max_retries):
             try:
-                response = self.session.get(url, timeout=self.timeout)
+                response = self.session.get(api_url, params=params, timeout=self.timeout)
                 if response.status_code == 200:
-                    return response.text
+                    try:
+                        json_data = response.json()
+                        if 'listing' in json_data:
+                            logger.info(f"Successfully fetched JSON data for listing {listing_id}")
+                            return json_data
+                        else:
+                            logger.warning(f"Invalid JSON response structure for listing {listing_id}")
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to parse JSON for listing {listing_id}: {str(e)}")
                 else:
-                    logger.warning(f"HTTP {response.status_code} for {url} (attempt {attempt + 1})")
+                    logger.warning(f"HTTP {response.status_code} for listing {listing_id} (attempt {attempt + 1})")
                     
             except requests.Timeout:
-                logger.warning(f"Timeout for {url} (attempt {attempt + 1})")
+                logger.warning(f"Timeout for listing {listing_id} (attempt {attempt + 1})")
             except Exception as e:
-                logger.error(f"Error fetching {url} (attempt {attempt + 1}): {str(e)}")
+                logger.error(f"Error fetching listing {listing_id} (attempt {attempt + 1}): {str(e)}")
             
             if attempt < self.max_retries - 1:
                 time.sleep(2 ** attempt)  # Exponential backoff
         
         return None
     
-    def _extract_car_data(self, soup: BeautifulSoup, url: str) -> Optional[ScrapedCar]:
+    def _extract_car_data_from_json(self, json_data: dict, url: str) -> Optional[ScrapedCar]:
         """
-        Extract car data using multiple strategies and fallbacks.
+        Extract car data from CarGurus JSON response.
         
         Args:
-            soup: BeautifulSoup object of the page
+            json_data: The JSON response from CarGurus API
             url: Original URL
             
         Returns:
             ScrapedCar object if successful, None otherwise
         """
         try:
+            listing = json_data.get('listing', {})
+            
             # Extract basic car information
-            make = self._extract_make(soup)
-            model = self._extract_model(soup)
-            year = self._extract_year(soup)
-            price = self._extract_price(soup)
-            description = self._extract_description(soup)
-            features = self._extract_features(soup)
-            images = self._extract_images(soup, url)
+            make = listing.get('makeName', 'Unknown')
+            model = listing.get('modelName', 'Unknown')
+            year = listing.get('year', 0)
+            price = listing.get('price', 0.0)
+            description = listing.get('description', 'No description available.')
+            
+            # Extract features from options and description
+            features = self._extract_features_from_json(listing)
+            
+            # Extract all images
+            images = self._extract_images_from_json(listing)
             
             # Validate that we have at least basic information
             if not make or not model or year == 0:
-                logger.warning(f"Insufficient car data extracted from {url}")
+                logger.warning(f"Insufficient car data extracted from JSON")
                 return None
             
             return ScrapedCar(
@@ -154,170 +208,55 @@ class CarGurusScraper:
             )
             
         except Exception as e:
-            logger.error(f"Error extracting car data: {str(e)}")
+            logger.error(f"Error extracting car data from JSON: {str(e)}")
             return None
     
-    def _extract_make(self, soup: BeautifulSoup) -> str:
-        """Extract car make using multiple selectors"""
-        selectors = [
-            'span[class*="make"]',
-            'div[class*="vehicle-title"] span[class*="make"]',
-            'h1[class*="title"] span[class*="make"]',
-            'div[class*="car-info"] span[class*="make"]'
-        ]
-        
-        for selector in selectors:
-            element = soup.select_one(selector)
-            if element and element.get_text().strip():
-                return element.get_text().strip()
-        
-        # Fallback: try to extract from page title
-        title = soup.find('title')
-        if title:
-            title_text = title.get_text()
-            # Common car makes to look for
-            makes = ['Toyota', 'Honda', 'Ford', 'Chevrolet', 'Nissan', 'BMW', 'Mercedes', 'Audi', 'Lexus', 'Hyundai']
-            for make in makes:
-                if make.lower() in title_text.lower():
-                    return make
-        
-        return "Unknown"
-    
-    def _extract_model(self, soup: BeautifulSoup) -> str:
-        """Extract car model using multiple selectors"""
-        selectors = [
-            'span[class*="model"]',
-            'div[class*="vehicle-title"] span[class*="model"]',
-            'h1[class*="title"] span[class*="model"]',
-            'div[class*="car-info"] span[class*="model"]'
-        ]
-        
-        for selector in selectors:
-            element = soup.select_one(selector)
-            if element and element.get_text().strip():
-                return element.get_text().strip()
-        
-        return "Unknown"
-    
-    def _extract_year(self, soup: BeautifulSoup) -> int:
-        """Extract car year using multiple strategies"""
-        # Try various selectors
-        year_selectors = [
-            'span[class*="year"]',
-            'div[class*="vehicle-title"] span[class*="year"]',
-            'h1[class*="title"] span[class*="year"]'
-        ]
-        
-        for selector in year_selectors:
-            element = soup.select_one(selector)
-            if element:
-                year_text = element.get_text().strip()
-                year_match = re.search(r'\b(19|20)\d{2}\b', year_text)
-                if year_match:
-                    year = int(year_match.group())
-                    if 1900 <= year <= 2030:
-                        return year
-        
-        # Fallback: search in page content
-        page_text = soup.get_text()
-        year_match = re.search(r'\b(19|20)\d{2}\b', page_text)
-        if year_match:
-            year = int(year_match.group())
-            if 1900 <= year <= 2030:
-                return year
-        
-        return 2024  # Default year
-    
-    def _extract_price(self, soup: BeautifulSoup) -> float:
-        """Extract car price using multiple strategies"""
-        price_selectors = [
-            'span[class*="price"]',
-            'div[class*="price"]',
-            'span[class*="listing-price"]',
-            'div[class*="listing-price"]',
-            'span[class*="car-price"]'
-        ]
-        
-        for selector in price_selectors:
-            element = soup.select_one(selector)
-            if element:
-                price_text = element.get_text().strip()
-                # Remove currency symbols and commas
-                price_text = re.sub(r'[^\d.]', '', price_text)
-                try:
-                    price = float(price_text)
-                    if price > 0:
-                        return price
-                except ValueError:
-                    continue
-        
-        return 0.0
-    
-    def _extract_description(self, soup: BeautifulSoup) -> str:
-        """Extract car description"""
-        desc_selectors = [
-            'div[class*="description"]',
-            'div[class*="overview"]',
-            'div[class*="vehicle-description"]',
-            'p[class*="description"]',
-            'div[class*="car-description"]'
-        ]
-        
-        for selector in desc_selectors:
-            element = soup.select_one(selector)
-            if element:
-                description = element.get_text().strip()
-                if description and len(description) > 10:
-                    return description
-        
-        return "No description available."
-    
-    def _extract_features(self, soup: BeautifulSoup) -> List[str]:
-        """Extract car features"""
+    def _extract_features_from_json(self, listing: dict) -> List[str]:
+        """Extract features from JSON data"""
         features = []
-        feature_selectors = [
-            'div[class*="features"] li',
-            'div[class*="specs"] li',
-            'ul[class*="features"] li',
-            'div[class*="vehicle-features"] li',
-            'div[class*="car-features"] li'
-        ]
         
-        for selector in feature_selectors:
-            elements = soup.select(selector)
-            for element in elements:
-                feature = element.get_text().strip()
-                if feature and feature not in features:
-                    features.append(feature)
+        # Add options from the listing
+        options = listing.get('options', [])
+        features.extend(options)
+        
+        # Extract features from description
+        description = listing.get('description', '')
+        if description:
+            # Split description by common separators and extract features
+            desc_parts = description.split('[!@@Additional Info@@!]')
+            if len(desc_parts) > 1:
+                additional_info = desc_parts[1]
+                # Split by commas and clean up
+                additional_features = [feature.strip() for feature in additional_info.split(',') if feature.strip()]
+                features.extend(additional_features)
+        
+        # Add some basic specs if available
+        if listing.get('localizedTransmission'):
+            features.append(f"Transmission: {listing['localizedTransmission']}")
+        if listing.get('localizedDriveTrain'):
+            features.append(f"Drivetrain: {listing['localizedDriveTrain']}")
+        if listing.get('localizedEngineDisplayName'):
+            features.append(f"Engine: {listing['localizedEngineDisplayName']}")
+        if listing.get('mileageString'):
+            features.append(f"Mileage: {listing['mileageString']}")
         
         if not features:
             features.append("Features not available")
         
         return features
     
-    def _extract_images(self, soup: BeautifulSoup, base_url: str) -> List[str]:
-        """Extract car images"""
+    def _extract_images_from_json(self, listing: dict) -> List[str]:
+        """Extract all images from JSON data"""
         images = []
-        image_selectors = [
-            'img[class*="vehicle-image"]',
-            'img[class*="car-image"]',
-            'div[class*="gallery"] img',
-            'img[class*="listing-image"]',
-            'div[class*="car-gallery"] img'
-        ]
         
-        for selector in image_selectors:
-            elements = soup.select(selector)
-            for element in elements:
-                src = element.get('src')
-                if src:
-                    # Ensure URL is absolute
-                    if not src.startswith('http'):
-                        src = urljoin(base_url, src)
-                    if src not in images:
-                        images.append(src)
+        pictures = listing.get('pictures', [])
+        for picture in pictures:
+            # Use the main URL (1024x768) for best quality
+            url = picture.get('url')
+            if url and url not in images:
+                images.append(url)
         
-        # Add placeholder if no images found
+        # If no images found, add placeholder
         if not images:
             images.append("https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop")
         
