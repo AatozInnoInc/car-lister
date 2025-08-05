@@ -183,7 +183,7 @@
             // Call the Python API (update this URL with your Render service URL)
             using var httpClient = new HttpClient();
             var request = new { url = url };
-            var response = await httpClient.PostAsJsonAsync("https://car-lister-api.onrender.com/api/scrape", request);
+            var response = await httpClient.PostAsJsonAsync("https://car-lister.onrender.com/api/scrape", request);
             
             if (response.IsSuccessStatusCode)
             {
