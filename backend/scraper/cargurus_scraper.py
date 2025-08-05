@@ -66,8 +66,8 @@ class CarGurusScraper:
             if not html_content:
                 return None
             
-            # Parse HTML
-            soup = BeautifulSoup(html_content, 'html.parser')
+            # Parse HTML using html5lib to avoid compilation issues
+            soup = BeautifulSoup(html_content, 'html5lib')
             
             # Extract car data using different strategies
             car_data = await self._extract_car_data(soup, url)

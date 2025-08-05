@@ -6,7 +6,7 @@ import uvicorn
 from scraper.cargurus_scraper import CarGurusScraper
 from scraper.models import ScrapedCar
 import logging
-import functions_framework
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,12 +18,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS for Firebase hosting
+# Configure CORS for Firebase hosting and Render
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://car-lister-be093.web.app",
         "https://car-lister-be093.firebaseapp.com",
+        "https://*.onrender.com",  # For Render deployment
         "http://localhost:5212",  # For development
         "http://localhost:3000"   # For development
     ],
@@ -99,74 +100,7 @@ async def health_check():
         "timestamp": "2024-01-01T00:00:00Z"
     }
 
-# Firebase Functions entry point
-@functions_framework.http
-def car_lister_api(request):
-    """Firebase Functions HTTP trigger for Car Lister API"""
-    import asyncio
-    from fastapi.middleware.wsgi import WSGIMiddleware
-    from fastapi.responses import JSONResponse
-    
-    # Handle CORS preflight requests
-    if request.method == 'OPTIONS':
-        headers = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-        }
-        return ('', 204, headers)
-    
-    # Convert Flask request to FastAPI request
-    async def handle_request():
-        # Create a mock request object for FastAPI
-        from fastapi import Request
-        from starlette.datastructures import State
-        
-        # Extract request data
-        body = request.get_data()
-        headers = dict(request.headers)
-        
-        # Create FastAPI request context
-        scope = {
-            "type": "http",
-            "method": request.method,
-            "path": request.path,
-            "headers": [(k.encode(), v.encode()) for k, v in headers.items()],
-            "query_string": request.query_string,
-        }
-        
-        # Handle different endpoints
-        if request.path == "/" and request.method == "GET":
-            return await root()
-        elif request.path == "/api/scrape" and request.method == "POST":
-            # Parse JSON body
-            import json
-            data = json.loads(body.decode())
-            scrape_request = ScrapeRequest(url=data.get("url", ""))
-            return await scrape_cargurus(scrape_request)
-        elif request.path == "/api/health" and request.method == "GET":
-            return await health_check()
-        else:
-            return JSONResponse(
-                status_code=404,
-                content={"error": "Endpoint not found"}
-            )
-    
-    # Run async function
-    result = asyncio.run(handle_request())
-    
-    # Add CORS headers
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-    }
-    
-    if hasattr(result, 'body'):
-        return (result.body, result.status_code, {**headers, **result.headers})
-    else:
-        import json
-        return (json.dumps(result), 200, headers)
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 
