@@ -27,7 +27,7 @@
                         <span class="oi oi-plus action-icon"></span>
                         <h3>List Your Car</h3>
                         <p>Sell your vehicle quickly and easily</p>
-                        <button class="btn btn-primary">Get Started</button>
+                        <button class="btn btn-primary" @onclick="NavigateToAddListing">Get Started</button>
                     </div>
                     <div class="action-card">
                         <span class="oi oi-search action-icon"></span>
@@ -108,5 +108,10 @@
     private void NavigateToLogin()
     {
         NavigationManager.NavigateTo("/login");
+    }
+
+    private void NavigateToAddListing()
+    {
+        NavigationManager.NavigateTo("/add-listing");
     }
 }
