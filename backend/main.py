@@ -50,7 +50,7 @@ async def root():
     """Health check endpoint"""
     return {"message": "Car Lister API is running", "version": "1.0.0"}
 
-@app.post("/api/scrape", response_model=ScrapeResponse)
+@app.post("/api/scrape")
 async def scrape_cargurus(request: ScrapeRequest):
     """
     Scrape car details from CarGurus.com
