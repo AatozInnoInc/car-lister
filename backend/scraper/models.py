@@ -13,6 +13,7 @@ class ScrapedCar(BaseModel):
         price: Car price in USD
         description: Car description/overview
         features: List of car features
+        stats: List of car statistics (header/value pairs)
         images: List of image URLs
         original_url: Original CarGurus URL
         full_title: Complete car title (Year Make Model Trim)
@@ -24,6 +25,7 @@ class ScrapedCar(BaseModel):
     price: float = Field(..., description="Car price in USD", ge=0)
     description: str = Field(default="", description="Car description")
     features: List[str] = Field(default_factory=list, description="List of car features")
+    stats: List[dict] = Field(default_factory=list, description="List of car statistics (header/value pairs)")
     images: List[str] = Field(default_factory=list, description="List of image URLs")
     original_url: str = Field(..., description="Original CarGurus URL")
     full_title: str = Field(default="", description="Complete car title (Year Make Model Trim)")
@@ -38,6 +40,7 @@ class ScrapedCar(BaseModel):
                 "price": 28500.0,
                 "description": "This 2022 Toyota Camry offers excellent fuel economy...",
                 "features": ["Bluetooth Connectivity", "Backup Camera", "Lane Departure Warning"],
+                "stats": [{"header": "Mileage", "value": "15,000 miles"}, {"header": "Transmission", "value": "Automatic"}],
                 "images": ["https://example.com/car1.jpg", "https://example.com/car2.jpg"],
                 "original_url": "https://www.cargurus.com/Cars/l-toyota-camry",
                 "full_title": "2022 Toyota Camry LE",
@@ -71,6 +74,7 @@ class ScrapingResult(BaseModel):
                     "price": 28500.0,
                     "description": "This 2022 Toyota Camry...",
                     "features": ["Bluetooth Connectivity"],
+                    "stats": [{"header": "Mileage", "value": "15,000 miles"}],
                     "images": ["https://example.com/car1.jpg"],
                     "original_url": "https://www.cargurus.com/Cars/l-toyota-camry",
                     "full_title": "2022 Toyota Camry LE",

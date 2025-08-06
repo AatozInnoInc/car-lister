@@ -129,6 +129,26 @@
                             </div>
                         }
                         
+                        @if (scrapedCar.Stats != null && scrapedCar.Stats.Any())
+                        {
+                            <div class="stats-section">
+                                <div class="section-header">
+                                    <span class="oi oi-graph"></span>
+                                    <h3>Detailed Specifications</h3>
+                                    <div class="stats-count">@scrapedCar.Stats.Count specifications</div>
+                                </div>
+                                <div class="stats-grid">
+                                    @foreach (var stat in scrapedCar.Stats)
+                                    {
+                                        <div class="stat-item">
+                                            <span class="stat-header">@stat["header"]</span>
+                                            <span class="stat-value">@stat["value"]</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        
                         <div class="actions">
                             <button class="btn btn-primary" @onclick="SaveListing">
                                 <span class="oi oi-plus"></span>
@@ -362,6 +382,7 @@
         public decimal Price { get; set; }
         public string Description { get; set; } = "";
         public List<string> Features { get; set; } = new();
+        public List<Dictionary<string, string>> Stats { get; set; } = new();
         public List<string> Images { get; set; } = new();
         public string OriginalUrl { get; set; } = "";
         public string FullTitle { get; set; } = "";

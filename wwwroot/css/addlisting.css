@@ -597,4 +597,124 @@
     .btn-large {
         padding: 0.875rem 1.5rem;
     }
+}
+
+/* Stats Section */
+.stats-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+.stats-count {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.stats-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.stats-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.stats-grid::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.stats-grid::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    min-height: 60px;
+    justify-content: center;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.stat-header {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.stat-value {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+/* Special styling for category headers */
+.stat-item:has(.stat-header:contains("📋")) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.stat-item:has(.stat-header:contains("📋")) .stat-header,
+.stat-item:has(.stat-header:contains("📋")) .stat-value {
+    color: white;
+}
+
+.stat-item:has(.stat-header:contains("🔧")) {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.stat-item:has(.stat-header:contains("🔧")) .stat-header,
+.stat-item:has(.stat-header:contains("🔧")) .stat-value {
+    color: white;
+}
+
+/* Option items with bullet points */
+.stat-item:has(.stat-header:contains("  • ")) {
+    background: #f0f9ff;
+    border-color: #bae6fd;
+}
+
+.stat-item:has(.stat-header:contains("  • ")) .stat-header {
+    color: #0369a1;
+    font-weight: 500;
+}
+
+.stat-item:has(.stat-header:contains("  • ")) .stat-value {
+    color: #0ea5e9;
+    font-weight: 600;
 } 

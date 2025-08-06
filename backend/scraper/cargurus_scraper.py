@@ -288,6 +288,9 @@ class CarGurusScraper:
             # Extract features from options and description
             features = self._extract_features_from_json(listing)
             
+            # Extract stats information
+            stats = self._extract_stats_from_json(listing)
+            
             # Extract all images
             images = self._extract_images_from_json(listing)
             
@@ -305,6 +308,7 @@ class CarGurusScraper:
                 price=price,
                 description=description,
                 features=features,
+                stats=stats,
                 images=images,
                 original_url=url,
                 full_title=full_title  # Add the constructed title
@@ -347,6 +351,69 @@ class CarGurusScraper:
             features.append("Features not available")
         
         return features
+    
+    def _extract_stats_from_json(self, listing: dict) -> List[dict]:
+        """Extract stats information from listingDetailStatsSectionDto"""
+        stats = []
+        
+        try:
+            # Extract stats from listingDetailStatsSectionDto
+            stats_section = listing.get('listingDetailStatsSectionDto', [])
+            
+            if not isinstance(stats_section, list):
+                logger.warning("listingDetailStatsSectionDto is not a list")
+                return stats
+            
+            for category in stats_section:
+                if not isinstance(category, dict):
+                    continue
+                
+                category_name = category.get('categoryName', '')
+                items = category.get('items', [])
+                options_list = category.get('optionsList', [])
+                
+                # Add category header if it has items
+                if items and category_name:
+                    stats.append({
+                        'header': f"📋 {category_name}",
+                        'value': f"{len(items)} items"
+                    })
+                
+                # Add individual items
+                if items:  # Check if items is not None
+                    for item in items:
+                        if isinstance(item, dict):
+                            label = item.get('label', '')
+                            display_value = item.get('displayValue', '')
+                            if label and display_value:
+                                stats.append({
+                                    'header': label,
+                                    'value': display_value
+                                })
+                
+                # Add options if they exist
+                if options_list and category_name and options_list is not None:
+                    option_names = [opt.get('name', '') for opt in options_list if isinstance(opt, dict) and opt.get('name')]
+                    if option_names:
+                        stats.append({
+                            'header': f"🔧 {category_name} Options",
+                            'value': f"{len(option_names)} options"
+                        })
+                        # Add individual options
+                        for option_name in option_names:
+                            stats.append({
+                                'header': "  • " + option_name,
+                                'value': "✓"
+                            })
+            
+            logger.info(f"Extracted {len(stats)} stats from listing")
+            
+        except Exception as e:
+            logger.warning(f"Error extracting stats: {str(e)}")
+            # Return empty list if there's an error
+            stats = []
+        
+        return stats
     
     def _extract_images_from_json(self, listing: dict) -> List[str]:
         """Extract all images from JSON data"""

@@ -52,8 +52,13 @@ def test_new_url_format():
         print(f"   Price: ${result.price:,.2f}")
         print(f"   Images: {len(result.images)} found")
         print(f"   Features: {len(result.features)} found")
+        print(f"   Stats: {len(result.stats)} found")
         
         print(f"\n📝 Description: {result.description[:150]}...")
+        
+        print(f"\n📊 Stats Information:")
+        for i, stat in enumerate(result.stats[:5]):
+            print(f"   {i+1}. {stat['header']}: {stat['value']}")
         
         print(f"\n🔧 First 5 Features:")
         for i, feature in enumerate(result.features[:5]):
