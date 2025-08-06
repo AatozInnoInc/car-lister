@@ -71,7 +71,7 @@
                     <div class="car-details">
                         <div class="car-header">
                             <div class="car-title">
-                                <h2>@scrapedCar.Year @scrapedCar.Make @scrapedCar.Model</h2>
+                                <h2>@scrapedCar.FullTitle</h2>
                                 <div class="car-badge">@scrapedCar.Year</div>
                             </div>
                             <div class="price-container">
@@ -364,5 +364,6 @@
         public List<string> Features { get; set; } = new();
         public List<string> Images { get; set; } = new();
         public string OriginalUrl { get; set; } = "";
+        public string FullTitle { get; set; } = "";
     }
 } 

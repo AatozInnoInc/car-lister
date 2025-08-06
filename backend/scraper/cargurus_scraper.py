@@ -221,8 +221,6 @@ class CarGurusScraper:
         api_url = f"https://www.cargurus.com/Cars/detailListingJson.action"
         params = {
             'inventoryListing': listing_id,
-            'searchZip': '27401',  # Default zip, could be made configurable
-            'searchDistance': '100',
             'inclusionType': 'DEFAULT',
             'pid': 'null',
             'sourceContext': 'carGurusHomePageModel',
@@ -269,10 +267,21 @@ class CarGurusScraper:
         try:
             listing = json_data.get('listing', {})
             
-            # Extract basic car information
-            make = listing.get('makeName', 'Unknown')
-            model = listing.get('modelName', 'Unknown')
-            year = listing.get('year', 0)
+            # Extract car information from autoEntityInfo for more accurate data
+            auto_entity_info = listing.get('autoEntityInfo', {})
+            
+            # Extract year, make, model, and trim from autoEntityInfo
+            year = auto_entity_info.get('year', listing.get('year', 0))
+            make = auto_entity_info.get('make', listing.get('makeName', 'Unknown'))
+            model = auto_entity_info.get('model', listing.get('modelName', 'Unknown'))
+            trim = auto_entity_info.get('trim', '')
+            
+            # Construct the full title: Year Make Model Trim
+            if trim and trim.strip():
+                full_title = f"{year} {make} {model} {trim}".strip()
+            else:
+                full_title = f"{year} {make} {model}".strip()
+            
             price = listing.get('price', 0.0)
             description = listing.get('description', 'No description available.')
             
@@ -287,6 +296,8 @@ class CarGurusScraper:
                 logger.warning(f"Insufficient car data extracted from JSON")
                 return None
             
+            logger.info(f"Extracted car title: {full_title}")
+            
             return ScrapedCar(
                 make=make,
                 model=model,
@@ -295,7 +306,8 @@ class CarGurusScraper:
                 description=description,
                 features=features,
                 images=images,
-                original_url=url
+                original_url=url,
+                full_title=full_title  # Add the constructed title
             )
             
         except Exception as e:

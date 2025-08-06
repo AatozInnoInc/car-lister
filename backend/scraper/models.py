@@ -15,6 +15,7 @@ class ScrapedCar(BaseModel):
         features: List of car features
         images: List of image URLs
         original_url: Original CarGurus URL
+        full_title: Complete car title (Year Make Model Trim)
         scraped_at: Timestamp when data was scraped
     """
     make: str = Field(..., description="Car manufacturer")
@@ -25,6 +26,7 @@ class ScrapedCar(BaseModel):
     features: List[str] = Field(default_factory=list, description="List of car features")
     images: List[str] = Field(default_factory=list, description="List of image URLs")
     original_url: str = Field(..., description="Original CarGurus URL")
+    full_title: str = Field(default="", description="Complete car title (Year Make Model Trim)")
     scraped_at: datetime = Field(default_factory=datetime.utcnow, description="Scraping timestamp")
     
     class Config:
@@ -38,6 +40,7 @@ class ScrapedCar(BaseModel):
                 "features": ["Bluetooth Connectivity", "Backup Camera", "Lane Departure Warning"],
                 "images": ["https://example.com/car1.jpg", "https://example.com/car2.jpg"],
                 "original_url": "https://www.cargurus.com/Cars/l-toyota-camry",
+                "full_title": "2022 Toyota Camry LE",
                 "scraped_at": "2024-01-01T12:00:00Z"
             }
         }
@@ -70,6 +73,7 @@ class ScrapingResult(BaseModel):
                     "features": ["Bluetooth Connectivity"],
                     "images": ["https://example.com/car1.jpg"],
                     "original_url": "https://www.cargurus.com/Cars/l-toyota-camry",
+                    "full_title": "2022 Toyota Camry LE",
                     "scraped_at": "2024-01-01T12:00:00Z"
                 },
                 "error_message": None,
