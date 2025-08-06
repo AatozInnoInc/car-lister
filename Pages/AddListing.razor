@@ -109,26 +109,6 @@
                             </div>
                         }
                         
-                        @if (scrapedCar.Features != null && scrapedCar.Features.Any())
-                        {
-                            <div class="features-section">
-                                <div class="section-header">
-                                    <span class="oi oi-list"></span>
-                                    <h3>Features & Specifications</h3>
-                                    <div class="feature-count">@scrapedCar.Features.Count features</div>
-                                </div>
-                                <div class="features-grid">
-                                    @foreach (var feature in scrapedCar.Features)
-                                    {
-                                        <div class="feature-item">
-                                            <span class="oi oi-check"></span>
-                                            <span>@feature</span>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                        
                         @if (scrapedCar.Stats != null && scrapedCar.Stats.Any())
                         {
                             <div class="stats-section">

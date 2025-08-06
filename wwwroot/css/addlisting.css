@@ -362,7 +362,7 @@
 }
 
 /* Enhanced Overview Section */
-.overview-section, .features-section {
+.overview-section {
     margin-bottom: 2.5rem;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 1rem;
@@ -392,15 +392,7 @@
     flex: 1;
 }
 
-.feature-count {
-    background: rgba(0, 255, 135, 0.1);
-    color: #00ff87;
-    padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border: 1px solid rgba(0, 255, 135, 0.3);
-}
+
 
 .overview-content {
     color: #cccccc;
@@ -455,66 +447,6 @@
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* Enhanced Features Section */
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
-    max-height: 600px;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-}
-
-.features-grid::-webkit-scrollbar {
-    width: 6px;
-}
-
-.features-grid::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-}
-
-.features-grid::-webkit-scrollbar-thumb {
-    background: rgba(0, 255, 135, 0.3);
-    border-radius: 3px;
-}
-
-.features-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 255, 135, 0.5);
-}
-
-.feature-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-    min-height: 60px;
-}
-
-.feature-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.feature-item .oi {
-    color: #00ff87;
-    font-size: 1rem;
-    flex-shrink: 0;
-    margin-top: 0.125rem;
-}
-
-.feature-item span:last-child {
-    color: #cccccc;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    word-wrap: break-word;
 }
 
 /* Enhanced Actions */
