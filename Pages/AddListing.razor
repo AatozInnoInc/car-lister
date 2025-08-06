@@ -137,12 +137,37 @@
                                     <h3>Detailed Specifications</h3>
                                     <div class="stats-count">@scrapedCar.Stats.Count specifications</div>
                                 </div>
-                                <div class="stats-grid">
-                                    @foreach (var stat in scrapedCar.Stats)
+                                
+                                @{
+                                    var groupedStats = scrapedCar.Stats
+                                        .GroupBy(stat => 
+                                        {
+                                            var header = stat["header"];
+                                            if (header.Contains("📋")) return "Category";
+                                            if (header.Contains("🔧")) return "Options";
+                                            if (header.Contains("  • ")) return "Sub-option";
+                                            return "Specification";
+                                        })
+                                        .ToDictionary(g => g.Key, g => g.ToList());
+                                }
+                                
+                                <div class="specs-container">
+                                    @foreach (var group in groupedStats)
                                     {
-                                        <div class="stat-item">
-                                            <span class="stat-header">@stat["header"]</span>
-                                            <span class="stat-value">@stat["value"]</span>
+                                        <div class="spec-group">
+                                            <div class="spec-group-header">
+                                                <h4>@group.Key</h4>
+                                                <span class="spec-count">@group.Value.Count</span>
+                                            </div>
+                                            <div class="spec-grid">
+                                                @foreach (var stat in group.Value)
+                                                {
+                                                    <div class="spec-item">
+                                                        <span class="spec-label">@stat["header"].Replace("📋", "").Replace("🔧", "").Replace("  • ", "").Trim()</span>
+                                                        <span class="spec-value">@stat["value"]</span>
+                                                    </div>
+                                                }
+                                            </div>
                                         </div>
                                     }
                                 </div>
