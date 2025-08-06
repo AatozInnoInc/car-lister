@@ -57,8 +57,11 @@ def test_new_url_format():
         print(f"\n📝 Description: {result.description[:150]}...")
         
         print(f"\n📊 Stats Information:")
-        for i, stat in enumerate(result.stats[:5]):
+        for i, stat in enumerate(result.stats[:10]):
             print(f"   {i+1}. {stat['header']}: {stat['value']}")
+        
+        if len(result.stats) > 10:
+            print(f"   ... and {len(result.stats) - 10} more stats")
         
         print(f"\n🔧 First 5 Features:")
         for i, feature in enumerate(result.features[:5]):
