@@ -63,6 +63,9 @@
 
 /* Scrape Form Styles */
 .scrape-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 1rem;
     padding: 2rem;
@@ -73,7 +76,9 @@
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .form-group label {
@@ -84,7 +89,6 @@
 }
 
 .form-control {
-    width: 100%;
     padding: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 0.5rem;
@@ -111,7 +115,6 @@
 }
 
 .example-urls {
-    margin-top: 1.5rem;
     padding: 1rem;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 0.5rem;

@@ -5,11 +5,8 @@
     <AuthorizeView>
         <Authorized>
             <link href="css/authlayout.css" rel="stylesheet" />
+            <NavMenu OnToggle="@HandleSidebarToggle" />
             <div class="page">
-                <div class="sidebar">
-                    <NavMenu />
-                </div>
-
                 <div class="main-content">
                     <main>
                         <article class="content px-4">
@@ -29,4 +26,11 @@
 @code {
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private bool isSidebarExpanded = false;
+
+    private void HandleSidebarToggle(bool expanded)
+    {
+        isSidebarExpanded = expanded;
+    }
 } 

@@ -2,9 +2,6 @@
     background-color: white;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     padding: 0.5rem 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
 }
 
 .container-fluid {
@@ -46,13 +43,14 @@
     border-radius: 6px;
     transition: background-color 0.2s;
     margin-left: auto;
+    display: block;
 }
 
 .navbar-toggler:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-.top-row {
+.top-row.navbar {
     height: 3.5rem;
     background-color: white;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -60,6 +58,11 @@
     align-items: center;
     padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
 }
 
 .nav-item {
@@ -136,11 +139,10 @@
 }
 
 .nav-scrollable {
-    height: calc(100vh - 3.5rem);
-    overflow-y: auto;
-    overflow-x: hidden;
     background: white;
-    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: none;
+    overflow-x: hidden;
 }
 
 .navbar-toggler-icon {
@@ -157,35 +159,58 @@
 @media (max-width: 640.98px) {
     .nav-scrollable {
         display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        z-index: 1000;
+        overflow-y: auto;
     }
 
     .nav-scrollable.show {
         display: block;
-        position: fixed;
-        top: 3.5rem;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 999;
         animation: slideIn 0.3s ease-out;
+    }
+
+    .navbar-toggler {
+        display: block;
     }
 
     @keyframes slideIn {
         from {
+            opacity: 0;
             transform: translateX(-100%);
         }
         to {
+            opacity: 1;
             transform: translateX(0);
         }
     }
 }
 
 @media (min-width: 641px) {
+    .navbar {
+        position: relative;
+    }
+    
     .nav-scrollable {
-        /* Never collapse on desktop */
-        transform: none !important;
-        visibility: visible !important;
-        height: calc(100vh - 3.5rem) !important;
-        width: 250px !important;
+        display: block;
+        position: fixed;
+        top: 3.5rem;
+        left: 0;
+        width: 250px;
+        height: calc(100vh - 3.5rem);
+        background: white;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        z-index: 1000;
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .navbar-toggler {
+        display: none;
     }
 } 

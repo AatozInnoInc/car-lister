@@ -1,44 +1,25 @@
 .page {
     position: relative;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     min-height: 100vh;
+    padding-top: 3.5rem;
+}
+
+@media (min-width: 641px) {
+    .page {
+        padding-left: 250px;
+    }
 }
 
 .main-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: calc(100vh - 3.5rem);
     background-color: #f8f9fa;
 }
 
 main {
     flex: 1;
-}
-
-.sidebar {
-    background-color: white;
-    width: 250px;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    border-right: 1px solid #eee;
-}
-
-@media (max-width: 640.98px) {
-    .page {
-        flex-direction: column;
-    }
-
-    .main-content {
-        min-height: calc(100vh - 3.5rem);
-    }
-
-    .sidebar {
-        width: 100%;
-        height: auto;
-        border-right: none;
-        z-index: 999;
-    }
 } 

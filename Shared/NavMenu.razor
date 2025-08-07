@@ -3,6 +3,11 @@
 @inject FirebaseService FirebaseService
 @inject AuthenticationStateProvider AuthStateProvider
 
+@code {
+    [Parameter]
+    public EventCallback<bool> OnToggle { get; set; }
+}
+
 <link href="css/navmenu.css" rel="stylesheet" />
 
 <div class="top-row navbar">
@@ -11,16 +16,16 @@
         <a class="navbar-brand" href="">
             Car Lister
         </a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+        <button title="Navigation menu" class="navbar-toggler" @onclick="async () => await ToggleNavMenu()">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
 </div>
 
-<div class="nav-scrollable @(isExpanded ? "show" : "")">
+<div class="nav-scrollable @(isExpanded ? "show" : "")" @onclick="CollapseNavMenu">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CollapseNavMenu">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="async () => await CollapseNavMenu()">
                 <span class="oi oi-home" aria-hidden="true"></span> Home
             </NavLink>
         </div>
@@ -29,7 +34,7 @@
             <Authorized>
 
                 <div class="nav-item px-3">
-                    <button class="nav-link logout-button" @onclick="async () => { await HandleLogout(); CollapseNavMenu(); }">
+                    <button class="nav-link logout-button" @onclick="async () => { await HandleLogout(); await CollapseNavMenu(); }">
                         <span class="oi oi-account-logout" aria-hidden="true"></span> Logout
                     </button>
                 </div>
@@ -41,14 +46,16 @@
 @code {
     private bool isExpanded = false;
 
-    private void ToggleNavMenu()
+    private async Task ToggleNavMenu()
     {
         isExpanded = !isExpanded;
+        await OnToggle.InvokeAsync(isExpanded);
     }
 
-    private void CollapseNavMenu()
+    private async Task CollapseNavMenu()
     {
         isExpanded = false;
+        await OnToggle.InvokeAsync(false);
     }
 
     private async Task HandleLogout()
