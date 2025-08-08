@@ -1,10 +1,8 @@
 # Car Lister Deployment Script
-# Deploys both Blazor PWA frontend and Python API backend to Firebase
+# Deploys Blazor PWA frontend to Firebase Hosting
 
 param(
-    [string]$Environment = "production",
-    [switch]$FrontendOnly,
-    [switch]$BackendOnly
+    [string]$Environment = "production"
 )
 
 Write-Host "🚀 Car Lister Deployment Script" -ForegroundColor Green
@@ -28,63 +26,28 @@ if (-not (Test-Command "firebase")) {
     exit 1
 }
 
-if (-not (Test-Command "python")) {
-    Write-Host "❌ Python not found. Please install Python 3.11+" -ForegroundColor Red
+Write-Host "✅ All prerequisites found" -ForegroundColor Green
+
+# Build frontend
+Write-Host "`n🏗️ Building Blazor PWA..." -ForegroundColor Blue
+
+# Clean and publish
+dotnet clean
+dotnet publish --configuration Release
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Frontend build failed" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✅ All prerequisites found" -ForegroundColor Green
+Write-Host "✅ Frontend build successful" -ForegroundColor Green
 
-# Build and deploy frontend
-if (-not $BackendOnly) {
-    Write-Host "`n🏗️ Building Blazor PWA..." -ForegroundColor Blue
-    
-    # Clean and build
-    dotnet clean
-    dotnet build --configuration Release
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Frontend build failed" -ForegroundColor Red
-        exit 1
-    }
-    
-    Write-Host "✅ Frontend build successful" -ForegroundColor Green
-}
 
-# Deploy backend
-if (-not $FrontendOnly) {
-    Write-Host "`n🐍 Setting up Python backend..." -ForegroundColor Blue
-    
-    # Check if backend directory exists
-    if (-not (Test-Path "backend")) {
-        Write-Host "❌ Backend directory not found" -ForegroundColor Red
-        exit 1
-    }
-    
-    # Install Python dependencies
-    Write-Host "Installing Python dependencies..." -ForegroundColor Yellow
-    Set-Location backend
-    python -m pip install -r requirements.txt
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Failed to install Python dependencies" -ForegroundColor Red
-        exit 1
-    }
-    
-    Set-Location ..
-    Write-Host "✅ Python dependencies installed" -ForegroundColor Green
-}
 
 # Deploy to Firebase
 Write-Host "`n🔥 Deploying to Firebase..." -ForegroundColor Blue
 
-if ($FrontendOnly) {
-    firebase deploy --only hosting
-} elseif ($BackendOnly) {
-    firebase deploy --only functions
-} else {
-    firebase deploy
-}
+firebase deploy --only hosting
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Firebase deployment failed" -ForegroundColor Red
@@ -96,6 +59,5 @@ Write-Host "`n✅ Deployment completed successfully!" -ForegroundColor Green
 # Get deployment info
 Write-Host "`n📊 Deployment Information:" -ForegroundColor Blue
 Write-Host "Frontend: https://car-lister-be093.web.app" -ForegroundColor Cyan
-Write-Host "API: https://us-central1-car-lister-be093.cloudfunctions.net/api" -ForegroundColor Cyan
 
 Write-Host "`n🎉 Your Car Lister PWA is now live!" -ForegroundColor Green 
