@@ -274,7 +274,25 @@ class CarGurusScraper:
             year = auto_entity_info.get('year', listing.get('year', 0))
             make = auto_entity_info.get('make', listing.get('makeName', 'Unknown'))
             model = auto_entity_info.get('model', listing.get('modelName', 'Unknown'))
+            
+            # Try to get trim from multiple sources
             trim = auto_entity_info.get('trim', '')
+            if not trim or trim.strip() == '':
+                # Try to extract from listingTitleOnly first (most complete)
+                listing_title = listing.get('listingTitleOnly', '')
+                if listing_title:
+                    # Extract the part after the model name
+                    model_name = listing.get('modelName', '')
+                    if model_name and model_name in listing_title:
+                        # Find the part after the model name
+                        parts = listing_title.split(model_name, 1)
+                        if len(parts) > 1:
+                            potential_trim = parts[1].strip()
+                            if potential_trim:
+                                trim = potential_trim
+            if not trim or trim.strip() == '':
+                # Fallback to trimName from listing
+                trim = listing.get('trimName', '')
             
             # Construct the full title: Year Make Model Trim
             if trim and trim.strip():
