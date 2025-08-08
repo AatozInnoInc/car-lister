@@ -83,7 +83,6 @@ h1:focus {
 }
 
 .nav-scrollable {
-    height: calc(100vh - 3.5rem);
     overflow-y: auto;
 }
 
@@ -205,10 +204,6 @@ code {
 
 /* Ensure content is always scrollable on mobile */
 @media (max-width: 640.98px) {
-    .nav-scrollable {
-        height: calc(100vh - 3.5rem);
-    }
-
     .content {
         height: 100%;
         -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
