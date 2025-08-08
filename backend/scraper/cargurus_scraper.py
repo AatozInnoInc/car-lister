@@ -70,8 +70,8 @@ class CarGurusScraper:
             car_data = self._extract_car_data_from_json(json_data, url)
             
             if car_data:
-                processing_time = time.time() - start_time
-                logger.info(f"Successfully scraped car in {processing_time:.2f}s: {car_data.make} {car_data.model} {car_data.year}")
+                processingTime = time.time() - start_time
+                logger.info(f"Successfully scraped car in {processingTime:.2f}s: {car_data.make} {car_data.model} {car_data.year}")
                 return car_data
             else:
                 logger.warning(f"Failed to extract car data from JSON for listing ID: {listing_id}")
@@ -278,9 +278,9 @@ class CarGurusScraper:
             
             # Construct the full title: Year Make Model Trim
             if trim and trim.strip():
-                full_title = f"{year} {make} {model} {trim}".strip()
+                fullTitle = f"{year} {make} {model} {trim}".strip()
             else:
-                full_title = f"{year} {make} {model}".strip()
+                fullTitle = f"{year} {make} {model}".strip()
             
             price = listing.get('price', 0.0)
             description = listing.get('description', 'No description available.')
@@ -299,7 +299,7 @@ class CarGurusScraper:
                 logger.warning(f"Insufficient car data extracted from JSON")
                 return None
             
-            logger.info(f"Extracted car title: {full_title}")
+            logger.info(f"Extracted car title: {fullTitle}")
             
             return ScrapedCar(
                 make=make,
@@ -310,8 +310,8 @@ class CarGurusScraper:
                 features=features,
                 stats=stats,
                 images=images,
-                original_url=url,
-                full_title=full_title  # Add the constructed title
+                originalUrl=url,
+                fullTitle=fullTitle  # Add the constructed title
             )
             
         except Exception as e:

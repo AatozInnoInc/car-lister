@@ -74,8 +74,8 @@ class CarGurusScraper:
             car_data = self._extract_car_data(soup, url)
             
             if car_data:
-                processing_time = time.time() - start_time
-                logger.info(f"Successfully scraped car in {processing_time:.2f}s: {car_data['make']} {car_data['model']} {car_data['year']}")
+                processingTime = time.time() - start_time
+                logger.info(f"Successfully scraped car in {processingTime:.2f}s: {car_data['make']} {car_data['model']} {car_data['year']}")
                 return car_data
             else:
                 logger.warning(f"Failed to extract car data from: {url}")
@@ -144,8 +144,8 @@ class CarGurusScraper:
                 "description": description,
                 "features": features,
                 "images": images,
-                "original_url": url,
-                "scraped_at": datetime.utcnow().isoformat()
+                "originalUrl": url,
+                "scrapedAt": datetime.utcnow().isoformat()
             }
             
         except Exception as e:

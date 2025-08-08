@@ -73,8 +73,8 @@ Scrapes car details from CarGurus.com
     "description": "This 2022 Toyota Camry...",
     "features": ["Bluetooth Connectivity", "Backup Camera"],
     "images": ["https://example.com/car1.jpg"],
-    "original_url": "https://www.cargurus.com/Cars/l-toyota-camry",
-    "scraped_at": "2024-01-01T12:00:00Z"
+    "originalUrl": "https://www.cargurus.com/Cars/l-toyota-camry",
+    "scrapedAt": "2024-01-01T12:00:00Z"
   },
   "error": null
 }

@@ -15,9 +15,9 @@ class ScrapedCar(BaseModel):
         features: List of car features
         stats: List of car statistics (header/value pairs)
         images: List of image URLs
-        original_url: Original CarGurus URL
-        full_title: Complete car title (Year Make Model Trim)
-        scraped_at: Timestamp when data was scraped
+        originalUrl: Original CarGurus URL
+        fullTitle: Complete car title (Year Make Model Trim)
+        scrapedAt: Timestamp when data was scraped
     """
     make: str = Field(..., description="Car manufacturer")
     model: str = Field(..., description="Car model")
@@ -27,9 +27,9 @@ class ScrapedCar(BaseModel):
     features: List[str] = Field(default_factory=list, description="List of car features")
     stats: List[dict] = Field(default_factory=list, description="List of car statistics (header/value pairs)")
     images: List[str] = Field(default_factory=list, description="List of image URLs")
-    original_url: str = Field(..., description="Original CarGurus URL")
-    full_title: str = Field(default="", description="Complete car title (Year Make Model Trim)")
-    scraped_at: datetime = Field(default_factory=datetime.utcnow, description="Scraping timestamp")
+    originalUrl: str = Field(..., description="Original CarGurus URL")
+    fullTitle: str = Field(default="", description="Complete car title (Year Make Model Trim)")
+    scrapedAt: datetime = Field(default_factory=datetime.utcnow, description="Scraping timestamp")
     
     class Config:
         schema_extra = {
@@ -42,9 +42,9 @@ class ScrapedCar(BaseModel):
                 "features": ["Bluetooth Connectivity", "Backup Camera", "Lane Departure Warning"],
                 "stats": [{"header": "Mileage", "value": "15,000 miles"}, {"header": "Transmission", "value": "Automatic"}],
                 "images": ["https://example.com/car1.jpg", "https://example.com/car2.jpg"],
-                "original_url": "https://www.cargurus.com/Cars/l-toyota-camry",
-                "full_title": "2022 Toyota Camry LE",
-                "scraped_at": "2024-01-01T12:00:00Z"
+                "originalUrl": "https://www.cargurus.com/Cars/l-toyota-camry",
+                "fullTitle": "2022 Toyota Camry LE",
+                "scrapedAt": "2024-01-01T12:00:00Z"
             }
         }
 
@@ -55,13 +55,13 @@ class ScrapingResult(BaseModel):
     Attributes:
         success: Whether scraping was successful
         car_data: Scraped car data if successful
-        error_message: Error message if failed
-        processing_time: Time taken to process the request
+        errorMessage: Error message if failed
+        processingTime: Time taken to process the request
     """
     success: bool = Field(..., description="Whether scraping was successful")
     car_data: Optional[ScrapedCar] = Field(None, description="Scraped car data")
-    error_message: Optional[str] = Field(None, description="Error message if failed")
-    processing_time: float = Field(..., description="Processing time in seconds")
+    errorMessage: Optional[str] = Field(None, description="Error message if failed")
+    processingTime: float = Field(..., description="Processing time in seconds")
     
     class Config:
         schema_extra = {
@@ -76,11 +76,11 @@ class ScrapingResult(BaseModel):
                     "features": ["Bluetooth Connectivity"],
                     "stats": [{"header": "Mileage", "value": "15,000 miles"}],
                     "images": ["https://example.com/car1.jpg"],
-                    "original_url": "https://www.cargurus.com/Cars/l-toyota-camry",
-                    "full_title": "2022 Toyota Camry LE",
-                    "scraped_at": "2024-01-01T12:00:00Z"
+                    "originalUrl": "https://www.cargurus.com/Cars/l-toyota-camry",
+                    "fullTitle": "2022 Toyota Camry LE",
+                    "scrapedAt": "2024-01-01T12:00:00Z"
                 },
-                "error_message": None,
-                "processing_time": 2.5
+                "errorMessage": None,
+                "processingTime": 2.5
             }
         } 

@@ -45,7 +45,7 @@ def test_new_url_format():
     
     if result:
         print("✅ SUCCESS! Car data extracted:")
-        print(f"   Full Title: {result.full_title}")
+        print(f"   Full Title: {result.fullTitle}")
         print(f"   Make: {result.make}")
         print(f"   Model: {result.model}")
         print(f"   Year: {result.year}")
