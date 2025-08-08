@@ -161,6 +161,14 @@
                     <span class="oi oi-plus"></span>
                     Save Listing
                 </button>
+                <button class="btn btn-download" @onclick="DownloadListing">
+                    <span class="oi oi-data-transfer-download"></span>
+                    Download Listing
+                </button>
+                <button class="btn btn-images" @onclick="DownloadImages" disabled="@(scrapedCar?.Images == null || !scrapedCar.Images.Any())">
+                    <span class="oi oi-image"></span>
+                    Download Images
+                </button>
                 <button class="btn btn-secondary" @onclick="ScrapeAgain">
                     <span class="oi oi-reload"></span>
                     Scrape Different Car
@@ -348,6 +356,235 @@
             errorMessage = $"Error saving listing: {ex.Message}";
             StateHasChanged();
         }
+    }
+
+    private async Task DownloadListing()
+    {
+        if (scrapedCar == null) return;
+
+        try
+        {
+            // Create a comprehensive HTML report
+            var htmlContent = GenerateListingReport(scrapedCar);
+            
+            // Convert to PDF or create a downloadable HTML file
+            var fileName = $"car-listing-{scrapedCar.Year}-{scrapedCar.Make}-{scrapedCar.Model}-{DateTime.Now:yyyyMMdd-HHmmss}.html";
+            
+            // Trigger download using JavaScript
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, htmlContent);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error downloading listing: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadImages()
+    {
+        if (scrapedCar?.Images == null || !scrapedCar.Images.Any()) return;
+
+        try
+        {
+            var fileName = $"car-images-{scrapedCar.Year}-{scrapedCar.Make}-{scrapedCar.Model}-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
+            
+            // Pass the image URLs to JavaScript for direct download
+            await JSRuntime.InvokeVoidAsync("downloadImages", scrapedCar.Images.ToArray(), fileName, scrapedCar.FullTitle);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error downloading images: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+
+
+    private string GenerateListingReport(ScrapedCar car)
+    {
+        var html = new System.Text.StringBuilder();
+        
+        html.AppendLine("<!DOCTYPE html>");
+        html.AppendLine("<html lang='en'>");
+        html.AppendLine("<head>");
+        html.AppendLine("    <meta charset='UTF-8'>");
+        html.AppendLine("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+        html.AppendLine($"    <title>Car Listing - {car.FullTitle}</title>");
+        html.AppendLine("    <style>");
+        html.AppendLine("        body {");
+        html.AppendLine("            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;");
+        html.AppendLine("            line-height: 1.6;");
+        html.AppendLine("            color: #333;");
+        html.AppendLine("            max-width: 1200px;");
+        html.AppendLine("            margin: 0 auto;");
+        html.AppendLine("            padding: 2rem;");
+        html.AppendLine("            background: #f8f9fa;");
+        html.AppendLine("        }");
+        html.AppendLine("        .header {");
+        html.AppendLine("            text-align: center;");
+        html.AppendLine("            margin-bottom: 3rem;");
+        html.AppendLine("            padding: 2rem;");
+        html.AppendLine("            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);");
+        html.AppendLine("            color: white;");
+        html.AppendLine("            border-radius: 1rem;");
+        html.AppendLine("        }");
+        html.AppendLine("        .car-title {");
+        html.AppendLine("            font-size: 2.5rem;");
+        html.AppendLine("            margin-bottom: 1rem;");
+        html.AppendLine("            background: linear-gradient(135deg, #00ff87, #60efff);");
+        html.AppendLine("            -webkit-background-clip: text;");
+        html.AppendLine("            -webkit-text-fill-color: transparent;");
+        html.AppendLine("            background-clip: text;");
+        html.AppendLine("        }");
+        html.AppendLine("        .price {");
+        html.AppendLine("            font-size: 2rem;");
+        html.AppendLine("            color: #00ff87;");
+        html.AppendLine("            font-weight: bold;");
+        html.AppendLine("        }");
+        html.AppendLine("        .image-gallery {");
+        html.AppendLine("            display: grid;");
+        html.AppendLine("            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));");
+        html.AppendLine("            gap: 1rem;");
+        html.AppendLine("            margin: 2rem 0;");
+        html.AppendLine("        }");
+        html.AppendLine("        .image-container {");
+        html.AppendLine("            text-align: center;");
+        html.AppendLine("        }");
+        html.AppendLine("        .car-image {");
+        html.AppendLine("            max-width: 100%;");
+        html.AppendLine("            height: auto;");
+        html.AppendLine("            border-radius: 0.5rem;");
+        html.AppendLine("            box-shadow: 0 4px 12px rgba(0,0,0,0.1);");
+        html.AppendLine("        }");
+        html.AppendLine("        .section {");
+        html.AppendLine("            background: white;");
+        html.AppendLine("            padding: 2rem;");
+        html.AppendLine("            margin: 2rem 0;");
+        html.AppendLine("            border-radius: 1rem;");
+        html.AppendLine("            box-shadow: 0 2px 8px rgba(0,0,0,0.1);");
+        html.AppendLine("        }");
+        html.AppendLine("        .section h2 {");
+        html.AppendLine("            color: #1a1a2e;");
+        html.AppendLine("            border-bottom: 2px solid #00ff87;");
+        html.AppendLine("            padding-bottom: 0.5rem;");
+        html.AppendLine("            margin-bottom: 1.5rem;");
+        html.AppendLine("        }");
+        html.AppendLine("        .specs-grid {");
+        html.AppendLine("            display: grid;");
+        html.AppendLine("            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));");
+        html.AppendLine("            gap: 1rem;");
+        html.AppendLine("        }");
+        html.AppendLine("        .spec-item {");
+        html.AppendLine("            background: #f8f9fa;");
+        html.AppendLine("            padding: 1rem;");
+        html.AppendLine("            border-radius: 0.5rem;");
+        html.AppendLine("            border-left: 4px solid #00ff87;");
+        html.AppendLine("        }");
+        html.AppendLine("        .spec-label {");
+        html.AppendLine("            font-weight: bold;");
+        html.AppendLine("            color: #1a1a2e;");
+        html.AppendLine("        }");
+        html.AppendLine("        .spec-value {");
+        html.AppendLine("            color: #666;");
+        html.AppendLine("            margin-top: 0.25rem;");
+        html.AppendLine("        }");
+        html.AppendLine("        .features {");
+        html.AppendLine("            display: flex;");
+        html.AppendLine("            flex-wrap: wrap;");
+        html.AppendLine("            gap: 0.5rem;");
+        html.AppendLine("        }");
+        html.AppendLine("        .feature-tag {");
+        html.AppendLine("            background: rgba(0, 255, 135, 0.1);");
+        html.AppendLine("            color: #00ff87;");
+        html.AppendLine("            padding: 0.25rem 0.75rem;");
+        html.AppendLine("            border-radius: 1rem;");
+        html.AppendLine("            font-size: 0.9rem;");
+        html.AppendLine("            border: 1px solid rgba(0, 255, 135, 0.3);");
+        html.AppendLine("        }");
+        html.AppendLine("        .footer {");
+        html.AppendLine("            text-align: center;");
+        html.AppendLine("            margin-top: 3rem;");
+        html.AppendLine("            padding: 2rem;");
+        html.AppendLine("            background: #1a1a2e;");
+        html.AppendLine("            color: white;");
+        html.AppendLine("            border-radius: 1rem;");
+        html.AppendLine("        }");
+        html.AppendLine("        @media print {");
+        html.AppendLine("            body { background: white; }");
+        html.AppendLine("            .header { background: #1a1a2e !important; }");
+        html.AppendLine("        }");
+        html.AppendLine("    </style>");
+        html.AppendLine("</head>");
+        html.AppendLine("<body>");
+        html.AppendLine("    <div class='header'>");
+        html.AppendLine($"        <h1 class='car-title'>{car.FullTitle}</h1>");
+        html.AppendLine($"        <div class='price'>${car.Price.ToString("N0")}</div>");
+        html.AppendLine($"        <p>Generated on {DateTime.Now:MMMM dd, yyyy 'at' HH:mm}</p>");
+        html.AppendLine("    </div>");
+
+        // Add images section
+        if (car.Images != null && car.Images.Any())
+        {
+            html.AppendLine("    <div class='section'>");
+            html.AppendLine("        <h2>Images</h2>");
+            html.AppendLine("        <div class='image-gallery'>");
+            foreach (var image in car.Images)
+            {
+                html.AppendLine("            <div class='image-container'>");
+                html.AppendLine($"                <img src='{image}' alt='{car.FullTitle}' class='car-image' />");
+                html.AppendLine("            </div>");
+            }
+            html.AppendLine("        </div>");
+            html.AppendLine("    </div>");
+        }
+
+        // Add overview section
+        if (!string.IsNullOrEmpty(car.Description))
+        {
+            html.AppendLine("    <div class='section'>");
+            html.AppendLine("        <h2>Overview</h2>");
+            var descriptionParts = car.Description.Split("[!@@Additional Info@@!]");
+            html.AppendLine($"        <p>{descriptionParts[0].Trim()}</p>");
+            
+            if (descriptionParts.Length > 1)
+            {
+                html.AppendLine("        <h3>Additional Features</h3>");
+                html.AppendLine("        <div class='features'>");
+                foreach (var feature in descriptionParts[1].Split(','))
+                {
+                    html.AppendLine($"            <span class='feature-tag'>{feature.Trim()}</span>");
+                }
+                html.AppendLine("        </div>");
+            }
+            html.AppendLine("    </div>");
+        }
+
+        // Add specifications section
+        if (car.Stats != null && car.Stats.Any())
+        {
+            html.AppendLine("    <div class='section'>");
+            html.AppendLine("        <h2>Detailed Specifications</h2>");
+            html.AppendLine("        <div class='specs-grid'>");
+            foreach (var stat in car.Stats)
+            {
+                html.AppendLine("            <div class='spec-item'>");
+                html.AppendLine($"                <div class='spec-label'>{stat["header"].Replace("📋", "").Replace("🔧", "").Replace("  • ", "").Trim()}</div>");
+                html.AppendLine($"                <div class='spec-value'>{stat["value"]}</div>");
+                html.AppendLine("            </div>");
+            }
+            html.AppendLine("        </div>");
+            html.AppendLine("    </div>");
+        }
+
+        html.AppendLine("    <div class='footer'>");
+        html.AppendLine($"        <p>Car Listing Report - {car.FullTitle}</p>");
+        html.AppendLine($"        <p>Original URL: {car.OriginalUrl}</p>");
+        html.AppendLine("        <p>Generated by Car Lister</p>");
+        html.AppendLine("    </div>");
+        html.AppendLine("</body>");
+        html.AppendLine("</html>");
+
+        return html.ToString();
     }
 
     public class ScrapedCar

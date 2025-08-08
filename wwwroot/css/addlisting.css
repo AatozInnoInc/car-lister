@@ -491,6 +491,38 @@
     transform: translateY(-2px);
 }
 
+.btn-download {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    font-weight: 600;
+}
+
+.btn-download:hover {
+    background: linear-gradient(135deg, #218838, #1ea085);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-images {
+    background: linear-gradient(135deg, #6f42c1, #e83e8c);
+    color: white;
+    font-weight: 600;
+}
+
+.btn-images:hover {
+    background: linear-gradient(135deg, #5a32a3, #d63384);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+}
+
+.btn-images:disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 /* Responsive Design */
 @media (min-width: 768px) {
     .btn-back {
