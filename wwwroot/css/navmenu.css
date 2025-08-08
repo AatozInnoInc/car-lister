@@ -141,12 +141,13 @@
 }
 
 .nav-scrollable {
+    height: 100%;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: none;
-    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .navbar-toggler-icon {
@@ -172,7 +173,6 @@
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         z-index: 1000;
-        overflow-y: auto;
         padding-top: 3.5rem;
     }
 
@@ -214,7 +214,6 @@
         box-shadow: 2px 0 8px rgba(0,0,0,0.3);
         z-index: 1000;
         border-right: 1px solid rgba(255, 255, 255, 0.1);
-        overflow-y: auto;
         overflow-x: hidden;
     }
 
