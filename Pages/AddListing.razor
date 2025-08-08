@@ -107,63 +107,64 @@
                             </div>
                         </div>
                     }
-                    
-                    @if (scrapedCar.Stats != null && scrapedCar.Stats.Any())
-                    {
-                        <div class="stats-section">
-                            <div class="section-header">
-                                <span class="oi oi-graph"></span>
-                                <h3>Detailed Specifications</h3>
-                                <div class="stats-count">@scrapedCar.Stats.Count specifications</div>
-                            </div>
-                            
-                            @{
-                                var groupedStats = scrapedCar.Stats
-                                    .GroupBy(stat => 
-                                    {
-                                        var header = stat["header"];
-                                        if (header.Contains("📋")) return "Category";
-                                        if (header.Contains("🔧")) return "Options";
-                                        if (header.Contains("  • ")) return "Sub-option";
-                                        return "Specification";
-                                    })
-                                    .ToDictionary(g => g.Key, g => g.ToList());
-                            }
-                            
-                            <div class="specs-container">
-                                @foreach (var group in groupedStats)
-                                {
-                                    <div class="spec-group">
-                                        <div class="spec-group-header">
-                                            <h4>@group.Key</h4>
-                                            <span class="spec-count">@group.Value.Count</span>
-                                        </div>
-                                        <div class="spec-grid">
-                                            @foreach (var stat in group.Value)
-                                            {
-                                                <div class="spec-item">
-                                                    <span class="spec-label">@stat["header"].Replace("📋", "").Replace("🔧", "").Replace("  • ", "").Trim()</span>
-                                                    <span class="spec-value">@stat["value"]</span>
-                                                </div>
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            </div>
+                </div>
+            </div>
+            @if (scrapedCar.Stats != null && scrapedCar.Stats.Any())
+            {
+                <div class="stats-container">
+                    <div class="stats-section">
+                        <div class="section-header">
+                            <span class="oi oi-graph"></span>
+                            <h3>Detailed Specifications</h3>
+                            <div class="stats-count">@scrapedCar.Stats.Count specifications</div>
                         </div>
-                    }
-                    
-                    <div class="actions">
-                        <button class="btn btn-primary" @onclick="SaveListing">
-                            <span class="oi oi-plus"></span>
-                            Save Listing
-                        </button>
-                        <button class="btn btn-secondary" @onclick="ScrapeAgain">
-                            <span class="oi oi-reload"></span>
-                            Scrape Different Car
-                        </button>
+                        
+                        @{
+                            var groupedStats = scrapedCar.Stats
+                                .GroupBy(stat => 
+                                {
+                                    var header = stat["header"];
+                                    if (header.Contains("📋")) return "Category";
+                                    if (header.Contains("🔧")) return "Options";
+                                    if (header.Contains("  • ")) return "Sub-option";
+                                    return "Specification";
+                                })
+                                .ToDictionary(g => g.Key, g => g.ToList());
+                        }
+                        
+                        <div class="specs-container">
+                            @foreach (var group in groupedStats)
+                            {
+                                <div class="spec-group">
+                                    <div class="spec-group-header">
+                                        <h4>@group.Key</h4>
+                                        <span class="spec-count">@group.Value.Count</span>
+                                    </div>
+                                    <div class="spec-grid">
+                                        @foreach (var stat in group.Value)
+                                        {
+                                            <div class="spec-item">
+                                                <span class="spec-label">@stat["header"].Replace("📋", "").Replace("🔧", "").Replace("  • ", "").Trim()</span>
+                                                <span class="spec-value">@stat["value"]</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
+            }
+            
+            <div class="actions">
+                <button class="btn btn-primary" @onclick="SaveListing">
+                    <span class="oi oi-plus"></span>
+                    Save Listing
+                </button>
+                <button class="btn btn-secondary" @onclick="ScrapeAgain">
+                    <span class="oi oi-reload"></span>
+                    Scrape Different Car
+                </button>
             </div>
         }
         else
@@ -296,34 +297,6 @@
         public bool Success { get; set; }
         public ScrapedCar? Data { get; set; }
         public string? Error { get; set; }
-    }
-
-
-    private async Task<ScrapedCar?> RealScrapeCarGurus(string url)
-    {
-        // This would require a backend service due to CORS restrictions
-        // The backend would:
-        // 1. Fetch the CarGurus page
-        // 2. Parse the HTML using a library like HtmlAgilityPack
-        // 3. Extract car details using CSS selectors
-        // 4. Return structured data
-        
-        try
-        {
-            using var httpClient = new HttpClient();
-            var response = await httpClient.GetStringAsync(url);
-            
-            // Parse HTML and extract car details
-            // This is where you'd implement the actual scraping logic
-            // For now, we'll return null to indicate it's not implemented
-            
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in real scraping: {ex.Message}");
-            return null;
-        }
     }
 
     private void ScrapeAgain()

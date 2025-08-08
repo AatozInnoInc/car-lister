@@ -494,6 +494,10 @@
 
 /* Responsive Design */
 @media (min-width: 768px) {
+    .btn-back {
+        display: none;
+    }
+
     .car-preview {
         flex-direction: row;
         gap: 2.5rem;
