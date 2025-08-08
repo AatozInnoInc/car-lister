@@ -167,6 +167,7 @@
         background: white;
         z-index: 1000;
         overflow-y: auto;
+        padding-top: 3.5rem;
     }
 
     .nav-scrollable.show {
