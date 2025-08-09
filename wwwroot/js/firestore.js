@@ -53,6 +53,29 @@ window.scrollToActiveThumbnail = function(activeIndex) {
     }
 };
 
+// Fullscreen thumbnail carousel functionality (reuses same logic)
+window.scrollToActiveFullscreenThumbnail = function(activeIndex) {
+    const thumbnailScroll = document.querySelector('.fullscreen-thumbnails');
+    const activeThumbnail = document.querySelector(`.fullscreen-thumbnail:nth-child(${activeIndex + 1})`);
+    
+    if (thumbnailScroll && activeThumbnail) {
+        const scrollContainer = thumbnailScroll;
+        const targetElement = activeThumbnail;
+        
+        // Calculate the scroll position to center the active thumbnail
+        const containerWidth = scrollContainer.offsetWidth;
+        const targetLeft = targetElement.offsetLeft;
+        const targetWidth = targetElement.offsetWidth;
+        const scrollLeft = targetLeft - (containerWidth / 2) + (targetWidth / 2);
+        
+        // Smooth scroll to the calculated position
+        scrollContainer.scrollTo({
+            left: Math.max(0, scrollLeft),
+            behavior: 'smooth'
+        });
+    }
+};
+
 // Fullscreen keyboard navigation
 window.setupFullscreenKeyboard = function(dotNetRef, closeMethod, prevMethod, nextMethod) {
     // Remove any existing listeners
