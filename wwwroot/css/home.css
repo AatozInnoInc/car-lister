@@ -382,6 +382,7 @@
 /* Responsive Design */
 @media (max-width: 640.98px) {
     .home-container {
+        margin: 1rem auto;
         padding: 1rem;
     }
 
