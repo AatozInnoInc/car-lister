@@ -27,4 +27,28 @@ window.firestore = {
         console.log('getAllCars called');
         return [];
     }
+};
+
+// Thumbnail carousel functionality
+window.scrollToActiveThumbnail = function(activeIndex) {
+    const thumbnailScroll = document.querySelector('.thumbnail-scroll');
+    const thumbnailContainer = document.querySelector('.thumbnail-container');
+    const activeThumbnail = document.querySelector(`.thumbnail-wrapper:nth-child(${activeIndex + 1})`);
+    
+    if (thumbnailScroll && thumbnailContainer && activeThumbnail) {
+        const scrollContainer = thumbnailScroll;
+        const targetElement = activeThumbnail;
+        
+        // Calculate the scroll position to center the active thumbnail
+        const containerWidth = scrollContainer.offsetWidth;
+        const targetLeft = targetElement.offsetLeft;
+        const targetWidth = targetElement.offsetWidth;
+        const scrollLeft = targetLeft - (containerWidth / 2) + (targetWidth / 2);
+        
+        // Smooth scroll to the calculated position
+        scrollContainer.scrollTo({
+            left: Math.max(0, scrollLeft),
+            behavior: 'smooth'
+        });
+    }
 }; 
