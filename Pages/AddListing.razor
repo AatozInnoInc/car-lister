@@ -1,6 +1,7 @@
 @page "/add-listing"
 @using Microsoft.AspNetCore.Authorization
 @using car_lister.Services
+@using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @attribute [Authorize]
@@ -34,7 +35,10 @@
                 {
                     <div class="image-gallery-container">
                         <div class="main-image-container">
-                            <img src="@scrapedCar.Images[currentImageIndex]" alt="@scrapedCar.Make @scrapedCar.Model" class="main-image" />
+                            <img src="@scrapedCar.Images[currentImageIndex]" alt="@scrapedCar.Make @scrapedCar.Model" class="main-image" @onclick="OpenFullScreen" />
+                            <div class="fullscreen-indicator" @onclick="OpenFullScreen">
+                                <span class="oi oi-fullscreen-enter"></span>
+                            </div>
                             @if (scrapedCar.Images.Count > 1)
                             {
                                 <div class="image-navigation">
@@ -211,12 +215,57 @@
     </div>
 </div>
 
+@if (isFullScreenOpen && scrapedCar?.Images != null)
+{
+    <div class="fullscreen-overlay" @onclick="async () => await CloseFullScreen()">
+        <div class="fullscreen-container" @onclick:stopPropagation="true">
+            <div class="fullscreen-header">
+                <button class="fullscreen-close" @onclick="async () => await CloseFullScreen()">
+                    <span class="oi oi-x"></span>
+                </button>
+                <div class="fullscreen-counter">
+                    @(fullScreenImageIndex + 1) of @scrapedCar.Images.Count
+                </div>
+            </div>
+            
+            <div class="fullscreen-image-container">
+                <img src="@scrapedCar.Images[fullScreenImageIndex]" alt="@scrapedCar.Make @scrapedCar.Model" class="fullscreen-image" />
+                
+                @if (scrapedCar.Images.Count > 1)
+                {
+                    <button class="fullscreen-nav-btn prev" @onclick="async () => await PreviousFullScreenImage()" disabled="@(fullScreenImageIndex == 0)">
+                        <span class="oi oi-chevron-left"></span>
+                    </button>
+                    <button class="fullscreen-nav-btn next" @onclick="async () => await NextFullScreenImage()" disabled="@(fullScreenImageIndex == scrapedCar.Images.Count - 1)">
+                        <span class="oi oi-chevron-right"></span>
+                    </button>
+                }
+            </div>
+            
+            @if (scrapedCar.Images.Count > 1)
+            {
+                <div class="fullscreen-thumbnails">
+                    @for (int i = 0; i < scrapedCar.Images.Count; i++)
+                    {
+                        var index = i;
+                        <div class="fullscreen-thumbnail @(index == fullScreenImageIndex ? "active" : "")" @onclick="() => SelectFullScreenImage(index)">
+                            <img src="@scrapedCar.Images[i]" alt="Car image @(i + 1)" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
 @code {
     private string cargurusUrl = "";
     private bool isLoading = false;
     private ScrapedCar? scrapedCar = null;
     private string errorMessage = "";
     private int currentImageIndex = 0;
+    private bool isFullScreenOpen = false;
+    private int fullScreenImageIndex = 0;
 
     private void GoBack()
     {
@@ -369,7 +418,71 @@
         {
             // Initialize any JavaScript functionality
             await JSRuntime.InvokeVoidAsync("console.log", "AddListing page loaded");
+            
+            // Add fullscreen event listeners
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.addEventListener('closeFullscreen', () => {
+                    window.dispatchEvent(new CustomEvent('blazorCloseFullscreen'));
+                });
+                window.addEventListener('previousFullscreenImage', () => {
+                    window.dispatchEvent(new CustomEvent('blazorPreviousFullscreenImage'));
+                });
+                window.addEventListener('nextFullscreenImage', () => {
+                    window.dispatchEvent(new CustomEvent('blazorNextFullscreenImage'));
+                });
+            ");
         }
+    }
+
+    private async Task OpenFullScreen()
+    {
+        fullScreenImageIndex = currentImageIndex;
+        isFullScreenOpen = true;
+        StateHasChanged();
+        
+        // Setup keyboard navigation
+        await JSRuntime.InvokeVoidAsync("setupFullscreenKeyboard", 
+            DotNetObjectReference.Create(this),
+            "CloseFullScreen",
+            "PreviousFullScreenImage", 
+            "NextFullScreenImage"
+        );
+    }
+
+    [JSInvokable]
+    public async Task CloseFullScreen()
+    {
+        isFullScreenOpen = false;
+        StateHasChanged();
+        
+        // Cleanup keyboard navigation
+        await JSRuntime.InvokeVoidAsync("cleanupFullscreenKeyboard");
+    }
+
+    [JSInvokable]
+    public async Task PreviousFullScreenImage()
+    {
+        if (fullScreenImageIndex > 0)
+        {
+            fullScreenImageIndex--;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task NextFullScreenImage()
+    {
+        if (scrapedCar?.Images != null && fullScreenImageIndex < scrapedCar.Images.Count - 1)
+        {
+            fullScreenImageIndex++;
+            StateHasChanged();
+        }
+    }
+
+    private void SelectFullScreenImage(int index)
+    {
+        fullScreenImageIndex = index;
+        StateHasChanged();
     }
 
     private async Task SaveListing()

@@ -51,4 +51,44 @@ window.scrollToActiveThumbnail = function(activeIndex) {
             behavior: 'smooth'
         });
     }
+};
+
+// Fullscreen keyboard navigation
+window.setupFullscreenKeyboard = function(dotNetRef, closeMethod, prevMethod, nextMethod) {
+    // Remove any existing listeners
+    if (window.fullscreenKeyHandler) {
+        document.removeEventListener('keydown', window.fullscreenKeyHandler);
+    }
+    
+    // Create new handler
+    window.fullscreenKeyHandler = function(e) {
+        const fullscreenOverlay = document.querySelector('.fullscreen-overlay');
+        if (!fullscreenOverlay) return;
+        
+        switch(e.key) {
+            case 'Escape':
+                // Close fullscreen
+                dotNetRef.invokeMethodAsync(closeMethod);
+                break;
+            case 'ArrowLeft':
+                // Previous image
+                dotNetRef.invokeMethodAsync(prevMethod);
+                break;
+            case 'ArrowRight':
+                // Next image
+                dotNetRef.invokeMethodAsync(nextMethod);
+                break;
+        }
+    };
+    
+    // Add the event listener
+    document.addEventListener('keydown', window.fullscreenKeyHandler);
+};
+
+// Cleanup function
+window.cleanupFullscreenKeyboard = function() {
+    if (window.fullscreenKeyHandler) {
+        document.removeEventListener('keydown', window.fullscreenKeyHandler);
+        window.fullscreenKeyHandler = null;
+    }
 }; 
