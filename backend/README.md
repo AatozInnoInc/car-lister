@@ -41,10 +41,14 @@ backend/
    ```bash
    curl -X POST "http://localhost:8000/api/scrape" \
         -H "Content-Type: application/json" \
-        -d '{"url": "https://www.cargurus.com/Cars/l-toyota-camry"}'
+        -d '{"url": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"}'
    ```
 
 ### Render Deployment
+
+The API is automatically deployed to Render.com when changes are pushed to the main branch.
+
+**Production URL:** `https://car-lister-api.onrender.com`
 
 1. **Deploy to Render:**
    ```bash
@@ -57,7 +61,18 @@ backend/
 2. **Monitor deployment:**
    - Check the Render dashboard for build logs
    - Verify the service starts successfully
-   - Test the health endpoint: `https://your-app.onrender.com/api/health`
+   - Test the health endpoint: `https://car-lister-api.onrender.com/api/health`
+
+3. **Test production API:**
+   ```bash
+   # Health check
+   curl "https://car-lister-api.onrender.com/api/health"
+   
+   # Test scraping
+   curl -X POST "https://car-lister-api.onrender.com/api/scrape" \
+        -H "Content-Type: application/json" \
+        -d '{"url": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"}'
+   ```
 
 ### Firebase Deployment
 
@@ -71,13 +86,17 @@ backend/
 
 ## 📋 API Endpoints
 
-### POST `/api/scrape`
-Scrapes car details from CarGurus.com
+The Car Lister API provides comprehensive car data scraping capabilities with the following endpoints:
+
+### Core Endpoints
+
+#### POST `/api/scrape`
+Scrapes individual car details from CarGurus.com
 
 **Request:**
 ```json
 {
-  "url": "https://www.cargurus.com/Cars/l-toyota-camry"
+  "url": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"
 }
 ```
 
@@ -93,15 +112,67 @@ Scrapes car details from CarGurus.com
     "description": "This 2022 Toyota Camry...",
     "features": ["Bluetooth Connectivity", "Backup Camera"],
     "images": ["https://example.com/car1.jpg"],
-    "originalUrl": "https://www.cargurus.com/Cars/l-toyota-camry",
+    "originalUrl": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789",
     "scrapedAt": "2024-01-01T12:00:00Z"
   },
   "error": null
 }
 ```
 
-### GET `/api/health`
+#### POST `/api/inventory/search`
+Search for cars by location and criteria
+
+**Request:**
+```json
+{
+  "zip": "90210",
+  "distance": 50,
+  "pageNumber": 1,
+  "srpVariation": "DEALER_INVENTORY",
+  "newUsed": "USED"
+}
+```
+
+#### POST `/api/dealer/inventory`
+Scrape inventory from specific dealers
+
+**Request:**
+```json
+{
+  "entityId": "317131",
+  "pageNumber": 1
+}
+```
+
+### Utility Endpoints
+
+#### GET `/api/health`
 Health check endpoint for monitoring
+
+#### GET `/api/cors-test`
+Test CORS functionality
+
+#### GET `/`
+Basic health check
+
+## 📚 Complete Documentation
+
+For comprehensive API documentation including:
+- Full OpenAPI 3.1.0 specification
+- Request/response schemas with examples
+- Error handling patterns
+- Code examples in multiple languages
+- Google Apps Script integration
+
+See: [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md)
+
+### OpenAPI Specification
+
+The complete OpenAPI specification is available at: [`openapi.yaml`](openapi.yaml)
+
+### Google Apps Script Integration
+
+For Google Apps Script integration examples, see: [`google-apps-script-example.js`](google-apps-script-example.js)
 
 ## 🛠️ Design Patterns
 
@@ -166,4 +237,12 @@ The API includes comprehensive logging:
 1. Follow PEP 8 style guidelines
 2. Add tests for new features
 3. Update documentation
-4. Use type hints throughout 
+4. Use type hints throughout
+
+## 📚 Additional Documentation
+
+This backend includes comprehensive documentation:
+
+- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Complete API documentation with examples
+- **[openapi.yaml](openapi.yaml)** - OpenAPI 3.1.0 specification
+- **[google-apps-script-example.js](google-apps-script-example.js)** - Google Apps Script integration examples 

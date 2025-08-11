@@ -87,8 +87,15 @@ python main.py
 ```
 
 ### 5. Deploy to Production
+
+#### Backend Deployment (Render.com)
+The backend API is automatically deployed to Render.com when changes are pushed to the main branch.
+
+**Production API URL:** `https://car-lister-api.onrender.com`
+
+#### Frontend Deployment (Firebase)
 ```bash
-# Deploy everything
+# Deploy frontend to Firebase
 ./deploy.ps1
 
 # Or deploy specific parts
@@ -141,45 +148,82 @@ black .
 
 ### API Testing
 ```bash
-# Test scraping endpoint
+# Test scraping endpoint (Production)
+curl -X POST "https://car-lister-api.onrender.com/api/scrape" \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"}'
+
+# Health check (Production)
+curl "https://car-lister-api.onrender.com/api/health"
+
+# Local development testing
 curl -X POST "http://localhost:8000/api/scrape" \
      -H "Content-Type: application/json" \
-     -d '{"url": "https://www.cargurus.com/Cars/l-toyota-camry"}'
-
-# Health check
-curl "http://localhost:8000/api/health"
+     -d '{"url": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"}'
 ```
 
 ## 📊 API Documentation
 
-### POST `/api/scrape`
-Scrapes car details from CarGurus.com
+The Car Lister API provides comprehensive car data scraping capabilities with multiple endpoints for different use cases.
 
-**Request:**
-```json
-{
-  "url": "https://www.cargurus.com/Cars/l-toyota-camry"
-}
+### Available Endpoints
+
+- **POST `/api/scrape`** - Scrape individual car details from CarGurus.com
+- **POST `/api/inventory/search`** - Search for cars by location and criteria
+- **POST `/api/dealer/inventory`** - Scrape inventory from specific dealers
+- **GET `/api/health`** - Health check for monitoring
+- **GET `/api/cors-test`** - Test CORS functionality
+
+### Quick API Examples
+
+**Scrape Individual Car:**
+```bash
+curl -X POST "https://car-lister-api.onrender.com/api/scrape" \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"}'
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "make": "Toyota",
-    "model": "Camry",
-    "year": 2022,
-    "price": 28500.0,
-    "description": "This 2022 Toyota Camry...",
-    "features": ["Bluetooth Connectivity", "Backup Camera"],
-    "images": ["https://example.com/car1.jpg"],
-    "originalUrl": "https://www.cargurus.com/Cars/l-toyota-camry",
-    "scrapedAt": "2024-01-01T12:00:00Z"
-  },
-  "error": null
-}
+**Search Inventory:**
+```bash
+curl -X POST "https://car-lister-api.onrender.com/api/inventory/search" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "zip": "90210",
+       "distance": 50,
+       "pageNumber": 1,
+       "srpVariation": "DEALER_INVENTORY",
+       "newUsed": "USED"
+     }'
 ```
+
+**Scrape Dealer Inventory:**
+```bash
+curl -X POST "https://car-lister-api.onrender.com/api/dealer/inventory" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "entityId": "317131",
+       "pageNumber": 1
+     }'
+```
+
+### Complete API Documentation
+
+For detailed API documentation including:
+- Full OpenAPI 3.1.0 specification
+- Request/response schemas
+- Error handling
+- Code examples in multiple languages
+- Google Apps Script integration
+
+See: [`backend/API_DOCUMENTATION.md`](backend/API_DOCUMENTATION.md)
+
+### OpenAPI Specification
+
+The complete OpenAPI specification is available at: [`backend/openapi.yaml`](backend/openapi.yaml)
+
+### Google Apps Script Integration
+
+For Google Apps Script integration examples, see: [`backend/google-apps-script-example.js`](backend/google-apps-script-example.js)
 
 ## 🏗️ Design Patterns
 
@@ -226,10 +270,21 @@ pytest tests/
 
 ### Integration Tests
 ```bash
-# Test full scraping workflow
-curl -X POST "https://your-api-url.com/api/scrape" \
+# Test full scraping workflow (Production)
+curl -X POST "https://car-lister-api.onrender.com/api/scrape" \
      -H "Content-Type: application/json" \
-     -d '{"url": "https://www.cargurus.com/Cars/l-toyota-camry"}'
+     -d '{"url": "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"}'
+
+# Test inventory search
+curl -X POST "https://car-lister-api.onrender.com/api/inventory/search" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "zip": "90210",
+       "distance": 50,
+       "pageNumber": 1,
+       "srpVariation": "DEALER_INVENTORY",
+       "newUsed": "USED"
+     }'
 ```
 
 ## 📦 Deployment
