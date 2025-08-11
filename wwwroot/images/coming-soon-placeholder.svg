@@ -1,0 +1,72 @@
+<svg width="382" height="200" viewBox="0 0 382 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff87;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#60efff;stop-opacity:0.7" />
+      <stop offset="100%" style="stop-color:#00ff87;stop-opacity:0.5" />
+    </linearGradient>
+    
+    <linearGradient id="wheelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff87;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#60efff;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="382" height="200" fill="url(#bgGradient)"/>
+  
+  <!-- Card background -->
+  <rect x="15" y="15" width="352" height="170" rx="15" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  
+  <!-- Simple Animated Car -->
+  <g>
+    <!-- Car body -->
+    <rect x="0" y="85" width="40" height="12" rx="6" fill="url(#carGradient)" opacity="0.9">
+      <animate attributeName="opacity" values="0.9;1;0.9" dur="3s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Car top -->
+    <rect x="8" y="77" width="24" height="8" rx="4" fill="url(#carGradient)" opacity="0.7"/>
+    
+                                                                               <!-- Wheels -->
+        <g>
+          <circle cx="8" cy="97" r="4" fill="url(#wheelGradient)" opacity="0.8"/>
+          <circle cx="32" cy="97" r="4" fill="url(#wheelGradient)" opacity="0.8"/>
+        </g>
+    
+    <!-- Headlight -->
+    <rect x="2" y="87" width="3" height="2" fill="#00ff87" opacity="0.9">
+      <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Taillight -->
+    <rect x="35" y="87" width="3" height="2" fill="#ff6b6b" opacity="0.7">
+      <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    </rect>
+    
+    <!-- Movement animation -->
+    <animateTransform attributeName="transform" type="translate" 
+                      values="0,0; 342,0; 0,0" 
+                      dur="4s" repeatCount="indefinite"/>
+  </g>
+  
+  <!-- Road line -->
+  <line x1="0" y1="105" x2="382" y2="105" stroke="url(#carGradient)" stroke-width="2" opacity="0.3" stroke-dasharray="10,10">
+    <animate attributeName="stroke-dashoffset" values="0;-20" dur="2s" repeatCount="indefinite"/>
+  </line>
+  
+  <!-- "Coming Soon" text -->
+  <text x="191" y="150" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="600" fill="url(#carGradient)">
+    Coming Soon
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="191" y="165" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" fill="rgba(160,160,160,0.8)">
+    Image will be available shortly
+  </text>
+</svg>

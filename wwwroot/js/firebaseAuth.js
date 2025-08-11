@@ -80,6 +80,18 @@ window.downloadFile = function(fileName, content) {
     }
 };
 
+// Focus element for keyboard navigation
+window.focusElement = function(elementId) {
+    try {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.focus();
+        }
+    } catch (error) {
+        console.error("Error focusing element:", error);
+    }
+};
+
 // Download images directly
 window.downloadImages = async function(imageUrls, fileName, carTitle) {
     try {

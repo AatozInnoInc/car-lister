@@ -1,0 +1,423 @@
+@page "/inventory"
+@using Microsoft.AspNetCore.Authorization
+@using car_lister.Services
+@using Microsoft.JSInterop
+@using System.Net.Http
+@using System.Text.Json
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+@implements IDisposable
+
+<PageTitle>Inventory Search - Car Lister</PageTitle>
+<link href="css/inventory.css" rel="stylesheet" />
+
+<div id="inventory-container" class="inventory-container" @onkeydown="HandleKeyDown" tabindex="0">
+    <div class="header">
+        <button class="btn-back" @onclick="GoBack">
+            <span class="oi oi-arrow-left"></span>
+            Back
+        </button>
+        <h1>Dealer Inventory</h1>
+        <p class="subtitle">Select a dealer to view their inventory</p>
+    </div>
+
+    <div class="search-section">
+        <div class="search-form">
+            <div class="form-group">
+                <label>Dealer</label>
+                <select @bind="selectedDealerIndex" class="dealer-select" @bind:after="OnDealerChanged">
+                    @for (int i = 0; i < availableDealers.Count; i++)
+                    {
+                        var dealer = availableDealers[i];
+                        <option value="@i">@dealer.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Inventory Type</label>
+                <input type="text" value="All Vehicles (New & Used)" readonly class="dealer-display" />
+            </div>
+            <button class="btn-search" @onclick="SearchInventory" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-small"></span>
+                }
+                else
+                {
+                    <span class="oi oi-refresh"></span>
+                }
+                Load Inventory
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading dealer inventory...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-state">
+            <span class="oi oi-warning"></span>
+            <p>@errorMessage</p>
+            <button class="btn-retry" @onclick="SearchInventory">Try Again</button>
+        </div>
+    }
+    else if (searchResults != null && searchResults.Cars.Any())
+    {
+        <div class="results-section">
+            <div class="results-header">
+                <h2>Found @searchResults.Cars.Count cars</h2>
+                <div class="pagination-info">
+                    Page @searchResults.CurrentPage of @searchResults.TotalPages
+                </div>
+            </div>
+
+            <div class="cars-grid">
+                @foreach (var car in searchResults.Cars)
+                {
+                    <div class="car-card" @onclick="() => ViewCarDetails(car)">
+                        <div class="car-image">
+                            @if (car.images != null && car.images.Any())
+                            {
+                                <img src="@car.images[0]" alt="@car.fullTitle" />
+                            }
+                            else
+                            {
+                                <div class="no-image">
+                                    <img src="images/coming-soon-placeholder.svg" alt="Coming Soon" />
+                                </div>
+                            }
+                        </div>
+                        <div class="car-info">
+                            <h3 class="car-title">@car.fullTitle</h3>
+                            <div class="car-price">$@car.price.ToString("N0")</div>
+                            <div class="car-location">@selectedDealer?.Name</div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (searchResults.TotalPages > 1)
+            {
+                <div class="pagination">
+                    <button class="btn-pagination" @onclick="PreviousPage" disabled="@(searchResults.CurrentPage <= 1)">
+                        <span class="oi oi-chevron-left"></span>
+                        Previous
+                    </button>
+                    <div class="page-info">
+                        Page @searchResults.CurrentPage of @searchResults.TotalPages
+                    </div>
+                    <button class="btn-pagination" @onclick="NextPage" disabled="@(searchResults.CurrentPage >= searchResults.TotalPages)">
+                        Next
+                        <span class="oi oi-chevron-right"></span>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+    else if (hasSearched)
+    {
+        <div class="no-results">
+            <span class="oi oi-search"></span>
+            <h3>No cars found</h3>
+            <p>Try adjusting your search criteria or expanding your search area.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<DealerInfo> availableDealers = new()
+    {
+        new DealerInfo 
+        { 
+            Name = "Asheboro Chrysler Dodge Jeep Ram", 
+            EntityId = "317131", 
+            Url = "https://www.cargurus.com/Cars/m-Asheboro-Chrysler-Dodge-Jeep-Ram-sp317131" 
+        },
+        new DealerInfo 
+        { 
+            Name = "Flow Honda of Winston Salem", 
+            EntityId = "59155", 
+            Url = "https://www.cargurus.com/Cars/m-Flow-Honda-of-Winston-Salem-sp59155" 
+        }
+    };
+
+    private int selectedDealerIndex = 0;
+    private DealerInfo? selectedDealer => availableDealers.Count > selectedDealerIndex ? availableDealers[selectedDealerIndex] : null;
+    
+    private bool isLoading = false;
+    private string errorMessage = "";
+    private InventorySearchResult? searchResults = null;
+    private bool hasSearched = false;
+    private bool shouldScrollToTop = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Focus the container to enable keyboard navigation
+            await JSRuntime.InvokeVoidAsync("focusElement", "inventory-container");
+        }
+        
+        // Scroll to results section if requested after render
+        if (shouldScrollToTop)
+        {
+            shouldScrollToTop = false;
+            await JSRuntime.InvokeVoidAsync("scrollToResults");
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void OnDealerChanged()
+    {
+        // Reset search results when dealer changes
+        searchResults = null;
+        hasSearched = false;
+        errorMessage = "";
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (searchResults != null && searchResults.TotalPages > 1)
+        {
+            switch (e.Key)
+            {
+                case "ArrowLeft":
+                    if (searchResults.CurrentPage > 1)
+                    {
+                        await PreviousPage();
+                    }
+                    break;
+                case "ArrowRight":
+                    if (searchResults.CurrentPage < searchResults.TotalPages)
+                    {
+                        await NextPage();
+                    }
+                    break;
+            }
+        }
+    }
+
+    private async Task SearchInventory()
+    {
+        if (selectedDealer == null)
+        {
+            errorMessage = "Please select a dealer";
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+            hasSearched = true;
+            StateHasChanged();
+
+            // Create HttpClient for backend API
+            using var httpClient = new HttpClient();
+            
+            // Use local backend for development, deployed backend for production
+            var baseUrl = NavigationManager.BaseUri.Contains("localhost") 
+                ? "http://localhost:8000" 
+                : "https://car-lister-api.onrender.com";
+            
+            httpClient.BaseAddress = new Uri(baseUrl);
+            
+            // Add headers for CORS
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            // Use the new dealer inventory endpoint with dynamic dealer info
+            var request = new
+            {
+                dealerEntityId = selectedDealer.EntityId,
+                dealerName = selectedDealer.Name,
+                dealerUrl = selectedDealer.Url,
+                pageNumber = 1
+            };
+
+            var response = await httpClient.PostAsJsonAsync("/api/dealer/inventory", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonString = await response.Content.ReadAsStringAsync();
+                searchResults = JsonSerializer.Deserialize<InventorySearchResult>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                
+                if (searchResults != null && !searchResults.Success)
+                {
+                    errorMessage = searchResults.ErrorMessage ?? "Search failed. Please try again.";
+                }
+            }
+            else
+            {
+                errorMessage = $"Search failed with status code: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error searching inventory: {ex.Message}";
+            Console.WriteLine($"Error in SearchInventory: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            
+            // Set flag to scroll to top after render
+            if (searchResults != null && searchResults.Success)
+            {
+                shouldScrollToTop = true;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (searchResults != null && searchResults.CurrentPage > 1)
+        {
+            await SearchPage(searchResults.CurrentPage - 1);
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (searchResults != null && searchResults.CurrentPage < searchResults.TotalPages)
+        {
+            await SearchPage(searchResults.CurrentPage + 1);
+        }
+    }
+
+    private async Task SearchPage(int pageNumber)
+    {
+        if (selectedDealer == null)
+        {
+            errorMessage = "Please select a dealer";
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Create HttpClient for backend API
+            using var httpClient = new HttpClient();
+            
+            // Use local backend for development, deployed backend for production
+            var baseUrl = NavigationManager.BaseUri.Contains("localhost") 
+                ? "http://localhost:8000" 
+                : "https://car-lister-api.onrender.com";
+            
+            httpClient.BaseAddress = new Uri(baseUrl);
+            
+            // Add headers for CORS
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            // Use the new dealer inventory endpoint with dynamic dealer info
+            var request = new
+            {
+                dealerEntityId = selectedDealer.EntityId,
+                dealerName = selectedDealer.Name,
+                dealerUrl = selectedDealer.Url,
+                pageNumber = pageNumber
+            };
+
+            var response = await httpClient.PostAsJsonAsync("/api/dealer/inventory", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonString = await response.Content.ReadAsStringAsync();
+                searchResults = JsonSerializer.Deserialize<InventorySearchResult>(jsonString, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                
+                if (searchResults != null && !searchResults.Success)
+                {
+                    errorMessage = searchResults.ErrorMessage ?? "Search failed. Please try again.";
+                }
+            }
+            else
+            {
+                errorMessage = $"Search failed with status code: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error searching inventory: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            
+            // Set flag to scroll to top after render
+            if (searchResults != null && searchResults.Success)
+            {
+                shouldScrollToTop = true;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private void ViewCarDetails(ScrapedCar car)
+    {
+        // Navigate to car details page or open in new tab
+        var url = car.originalUrl;
+        if (!string.IsNullOrEmpty(url))
+        {
+            JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        }
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+
+    public class DealerInfo
+    {
+        public string Name { get; set; } = "";
+        public string EntityId { get; set; } = "";
+        public string Url { get; set; } = "";
+    }
+
+    public class InventorySearchResult
+    {
+        public bool Success { get; set; }
+        public List<ScrapedCar> Cars { get; set; } = new();
+        public int TotalResults { get; set; }
+        public int CurrentPage { get; set; }
+        public int TotalPages { get; set; }
+        public string? ErrorMessage { get; set; }
+        public double ProcessingTime { get; set; }
+    }
+
+    public class ScrapedCar
+    {
+        public string make { get; set; } = "";
+        public string model { get; set; } = "";
+        public int year { get; set; }
+        public double price { get; set; }
+        public string description { get; set; } = "";
+        public List<string> features { get; set; } = new();
+        public List<object> stats { get; set; } = new();
+        public List<string> images { get; set; } = new();
+        public string originalUrl { get; set; } = "";
+        public string fullTitle { get; set; } = "";
+        public DateTime scrapedAt { get; set; }
+    }
+} 

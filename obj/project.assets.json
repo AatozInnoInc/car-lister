@@ -1895,7 +1895,7 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\aatoz_\\.nuget\\packages\\": {},
+    "C:\\Users\\aatoz\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
@@ -1904,14 +1904,14 @@
       "projectUniqueName": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\car-lister\\car-lister.csproj",
       "projectName": "car-lister",
       "projectPath": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\car-lister\\car-lister.csproj",
-      "packagesPath": "C:\\Users\\aatoz_\\.nuget\\packages\\",
+      "packagesPath": "C:\\Users\\aatoz\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\car-lister\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\aatoz_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\aatoz\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -1921,7 +1921,6 @@
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "C:\\Program Files\\dotnet\\library-packs": {},
-        "C:\\Users\\aatoz_\\source\\Bios Repos\\LocalNugetPackages": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {

@@ -7,5 +7,8 @@ requests==2.28.2
 beautifulsoup4==4.11.2
 html5lib==1.1
 
+# Data validation and serialization
+pydantic==1.10.12
+
 # Environment and configuration
 python-dotenv==0.21.1 
