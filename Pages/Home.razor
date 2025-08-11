@@ -33,7 +33,7 @@
                         <span class="oi oi-search action-icon"></span>
                         <h3>Browse Cars</h3>
                         <p>Find your perfect ride from thousands of listings</p>
-                        <button class="btn btn-secondary">Browse Now</button>
+                        <button class="btn btn-secondary" @onclick="NavigateToInventory">Browse Now</button>
                     </div>
                     <div class="action-card">
                         <span class="oi oi-heart action-icon"></span>
@@ -113,5 +113,10 @@
     private void NavigateToAddListing()
     {
         NavigationManager.NavigateTo("/add-listing");
+    }
+
+    private void NavigateToInventory()
+    {
+        NavigationManager.NavigateTo("/inventory");
     }
 }
