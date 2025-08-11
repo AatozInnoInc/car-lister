@@ -82,8 +82,11 @@
     font-size: 0.9rem;
 }
 
+/* Common input styles */
 .form-group input,
-.form-group select {
+.form-group select,
+.dropdown-trigger,
+.search-input {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 0.75rem;
@@ -92,15 +95,23 @@
     font-size: 1rem;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.search-input:focus {
     outline: none;
     border-color: #00ff87;
     box-shadow: 0 0 0 3px rgba(0, 255, 135, 0.1);
 }
 
+.form-group input::placeholder,
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Dealer display styling */
 .dealer-display {
     background: rgba(0, 255, 135, 0.1) !important;
     border-color: rgba(0, 255, 135, 0.3) !important;
@@ -121,14 +132,6 @@
 }
 
 .dropdown-trigger {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    color: white;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -185,26 +188,8 @@
 }
 
 .search-input {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.5rem;
     padding: 0.75rem 1rem 0.75rem 2.5rem;
-    color: white;
     font-size: 0.9rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    box-sizing: border-box;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: #00ff87;
-    box-shadow: 0 0 0 2px rgba(0, 255, 135, 0.1);
-}
-
-.search-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
 }
 
 .search-icon {
@@ -288,21 +273,17 @@
     background: rgba(255, 255, 255, 0.5);
 }
 
-.form-group input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-}
-
 .form-group select option {
     background: #1a1a2e;
     color: white;
 }
 
-.btn-search {
-    background: linear-gradient(120deg, #00ff87 0%, #60efff 100%);
+/* Button styles */
+.btn-search,
+.btn-retry {
     border: none;
     border-radius: 0.75rem;
     padding: 0.75rem 2rem;
-    color: #1a1a2e;
     font-weight: bold;
     font-size: 1rem;
     cursor: pointer;
@@ -314,6 +295,11 @@
     min-height: 3rem;
 }
 
+.btn-search {
+    background: linear-gradient(120deg, #00ff87 0%, #60efff 100%);
+    color: #1a1a2e;
+}
+
 .btn-search:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0, 255, 135, 0.3);
@@ -322,6 +308,16 @@
 .btn-search:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.btn-retry {
+    background: linear-gradient(120deg, #ff3b30 0%, #ff6b6b 100%);
+    color: white;
+}
+
+.btn-retry:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(255, 59, 48, 0.3);
 }
 
 .spinner-small {
@@ -377,22 +373,6 @@
 .error-state p {
     color: #ff6b6b;
     margin-bottom: 1.5rem;
-}
-
-.btn-retry {
-    background: linear-gradient(120deg, #ff3b30 0%, #ff6b6b 100%);
-    border: none;
-    border-radius: 0.75rem;
-    padding: 0.75rem 2rem;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-retry:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(255, 59, 48, 0.3);
 }
 
 /* Results Section */
@@ -451,14 +431,16 @@
     overflow: hidden;
 }
 
-.car-image img {
+.car-image img,
+.no-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
 }
 
-.car-card:hover .car-image img {
+.car-card:hover .car-image img,
+.car-card:hover .no-image img {
     transform: scale(1.05);
 }
 
@@ -471,17 +453,6 @@
     justify-content: center;
     border-radius: 0.5rem;
     overflow: hidden;
-}
-
-.no-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.car-card:hover .no-image img {
-    transform: scale(1.02);
 }
 
 .car-info {

@@ -198,14 +198,10 @@
     {
         if (firstRender)
         {
-            // Focus the container to enable keyboard navigation
             await JSRuntime.InvokeVoidAsync("focusElement", "inventory-container");
-            
-            // Add click outside listener for dropdown
             await JSRuntime.InvokeVoidAsync("addClickOutsideListener", "searchable-dropdown", DotNetObjectReference.Create(this));
         }
         
-        // Scroll to results section if requested after render
         if (shouldScrollToTop)
         {
             shouldScrollToTop = false;
@@ -213,14 +209,10 @@
         }
     }
 
-    private void GoBack()
-    {
-        NavigationManager.NavigateTo("/");
-    }
+    private void GoBack() => NavigationManager.NavigateTo("/");
 
     private void OnDealerChanged()
     {
-        // Reset search results when dealer changes
         searchResults = null;
         hasSearched = false;
         errorMessage = "";
@@ -229,105 +221,25 @@
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        if (searchResults != null && searchResults.TotalPages > 1)
+        if (searchResults?.TotalPages > 1)
         {
             switch (e.Key)
             {
-                case "ArrowLeft":
-                    if (searchResults.CurrentPage > 1)
-                    {
-                        await PreviousPage();
-                    }
+                case "ArrowLeft" when searchResults.CurrentPage > 1:
+                    await PreviousPage();
                     break;
-                case "ArrowRight":
-                    if (searchResults.CurrentPage < searchResults.TotalPages)
-                    {
-                        await NextPage();
-                    }
+                case "ArrowRight" when searchResults.CurrentPage < searchResults.TotalPages:
+                    await NextPage();
                     break;
             }
         }
     }
 
-    private async Task SearchInventory()
-    {
-        if (selectedDealer == null)
-        {
-            errorMessage = "Please select a dealer";
-            return;
-        }
-
-        try
-        {
-            isLoading = true;
-            errorMessage = "";
-            hasSearched = true;
-            StateHasChanged();
-
-            // Create HttpClient for backend API
-            using var httpClient = new HttpClient();
-            
-            // Use local backend for development, deployed backend for production
-            var baseUrl = NavigationManager.BaseUri.Contains("localhost") 
-                ? "http://localhost:8000" 
-                : "https://car-lister-api.onrender.com";
-            
-            httpClient.BaseAddress = new Uri(baseUrl);
-            
-            // Add headers for CORS
-            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-
-            // Use the new dealer inventory endpoint with dynamic dealer info
-            var request = new
-            {
-                dealerEntityId = selectedDealer.EntityId,
-                dealerName = selectedDealer.Name,
-                dealerUrl = selectedDealer.Url,
-                pageNumber = 1
-            };
-
-            var response = await httpClient.PostAsJsonAsync("/api/dealer/inventory", request);
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var jsonString = await response.Content.ReadAsStringAsync();
-                searchResults = JsonSerializer.Deserialize<InventorySearchResult>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-                
-                if (searchResults != null && !searchResults.Success)
-                {
-                    errorMessage = searchResults.ErrorMessage ?? "Search failed. Please try again.";
-                }
-            }
-            else
-            {
-                errorMessage = $"Search failed with status code: {response.StatusCode}";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error searching inventory: {ex.Message}";
-            Console.WriteLine($"Error in SearchInventory: {ex.Message}");
-        }
-        finally
-        {
-            isLoading = false;
-            
-            // Set flag to scroll to top after render
-            if (searchResults != null && searchResults.Success)
-            {
-                shouldScrollToTop = true;
-            }
-            
-            StateHasChanged();
-        }
-    }
+    private async Task SearchInventory() => await SearchPage(1);
 
     private async Task PreviousPage()
     {
-        if (searchResults != null && searchResults.CurrentPage > 1)
+        if (searchResults?.CurrentPage > 1)
         {
             await SearchPage(searchResults.CurrentPage - 1);
         }
@@ -335,7 +247,7 @@
 
     private async Task NextPage()
     {
-        if (searchResults != null && searchResults.CurrentPage < searchResults.TotalPages)
+        if (searchResults?.CurrentPage < searchResults.TotalPages)
         {
             await SearchPage(searchResults.CurrentPage + 1);
         }
@@ -352,22 +264,18 @@
         try
         {
             isLoading = true;
+            errorMessage = "";
+            hasSearched = true;
             StateHasChanged();
 
-            // Create HttpClient for backend API
             using var httpClient = new HttpClient();
-            
-            // Use local backend for development, deployed backend for production
             var baseUrl = NavigationManager.BaseUri.Contains("localhost") 
                 ? "http://localhost:8000" 
                 : "https://car-lister-api.onrender.com";
             
             httpClient.BaseAddress = new Uri(baseUrl);
-            
-            // Add headers for CORS
             httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
-            // Use the new dealer inventory endpoint with dynamic dealer info
             var request = new
             {
                 dealerEntityId = selectedDealer.EntityId,
@@ -399,28 +307,21 @@
         catch (Exception ex)
         {
             errorMessage = $"Error searching inventory: {ex.Message}";
+            Console.WriteLine($"Error in SearchPage: {ex.Message}");
         }
         finally
         {
             isLoading = false;
-            
-            // Set flag to scroll to top after render
-            if (searchResults != null && searchResults.Success)
-            {
-                shouldScrollToTop = true;
-            }
-            
+            shouldScrollToTop = searchResults?.Success == true;
             StateHasChanged();
         }
     }
 
     private async Task ViewCarDetails(ScrapedCar car)
     {
-        // Navigate to car details page or open in new tab
-        var url = car.originalUrl;
-        if (!string.IsNullOrEmpty(url))
+        if (!string.IsNullOrEmpty(car.originalUrl))
         {
-            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+            await JSRuntime.InvokeVoidAsync("open", car.originalUrl, "_blank");
         }
     }
 
@@ -429,10 +330,8 @@
         isDropdownOpen = !isDropdownOpen;
         if (isDropdownOpen)
         {
-            // Reset highlighted index when opening
             highlightedIndex = -1;
-            // Focus the search input when dropdown opens
-            await Task.Delay(100); // Small delay to ensure DOM is updated
+            await Task.Delay(100);
             await JSRuntime.InvokeVoidAsync("focusElement", "search-input");
         }
     }
@@ -444,12 +343,10 @@
             case "Enter":
                 if (highlightedIndex >= 0 && highlightedIndex < filteredDealers.Count)
                 {
-                    // Select the highlighted option
                     SelectDealer(availableDealers.IndexOf(filteredDealers[highlightedIndex]));
                 }
                 else if (filteredDealers.Any())
                 {
-                    // Select the first option if nothing is highlighted
                     SelectDealer(availableDealers.IndexOf(filteredDealers[0]));
                 }
                 else
@@ -462,9 +359,7 @@
                 if (filteredDealers.Any())
                 {
                     highlightedIndex = Math.Min(highlightedIndex + 1, filteredDealers.Count - 1);
-                    StateHasChanged();
-                    await Task.Delay(10); // Small delay to ensure DOM is updated
-                    await JSRuntime.InvokeVoidAsync("scrollToHighlightedOption", "dropdown-options", highlightedIndex);
+                    await ScrollToHighlighted();
                 }
                 break;
                 
@@ -472,9 +367,7 @@
                 if (filteredDealers.Any())
                 {
                     highlightedIndex = Math.Max(highlightedIndex - 1, 0);
-                    StateHasChanged();
-                    await Task.Delay(10); // Small delay to ensure DOM is updated
-                    await JSRuntime.InvokeVoidAsync("scrollToHighlightedOption", "dropdown-options", highlightedIndex);
+                    await ScrollToHighlighted();
                 }
                 break;
                 
@@ -486,24 +379,23 @@
         }
     }
 
-    private List<DealerInfo> filteredDealers
+    private async Task ScrollToHighlighted()
     {
-        get
-        {
-            if (string.IsNullOrEmpty(searchTerm))
-            {
-                return availableDealers;
-            }
-            return availableDealers.Where(d => d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
+        StateHasChanged();
+        await Task.Delay(10);
+        await JSRuntime.InvokeVoidAsync("scrollToHighlightedOption", "dropdown-options", highlightedIndex);
     }
+
+    private List<DealerInfo> filteredDealers => string.IsNullOrEmpty(searchTerm) 
+        ? availableDealers 
+        : availableDealers.Where(d => d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
 
     private void SelectDealer(int index)
     {
         selectedDealerIndex = index;
-        searchTerm = ""; // Clear search term after selection
+        searchTerm = "";
         isDropdownOpen = false;
-        highlightedIndex = -1; // Reset highlighted index
+        highlightedIndex = -1;
         OnDealerChanged();
         StateHasChanged();
     }
@@ -520,10 +412,7 @@
         }
     }
 
-    public void Dispose()
-    {
-        // Cleanup if needed
-    }
+    public void Dispose() { }
 
     public class DealerInfo
     {

@@ -29,51 +29,32 @@ window.firestore = {
     }
 };
 
-// Thumbnail carousel functionality
-window.scrollToActiveThumbnail = function(activeIndex) {
-    const thumbnailScroll = document.querySelector('.thumbnail-scroll');
-    const thumbnailContainer = document.querySelector('.thumbnail-container');
-    const activeThumbnail = document.querySelector(`.thumbnail-wrapper:nth-child(${activeIndex + 1})`);
+// Generic scroll to element utility (replaces both thumbnail functions)
+window.scrollToElement = function(containerSelector, elementSelector, activeIndex) {
+    const container = document.querySelector(containerSelector);
+    const element = document.querySelector(`${elementSelector}:nth-child(${activeIndex + 1})`);
     
-    if (thumbnailScroll && thumbnailContainer && activeThumbnail) {
-        const scrollContainer = thumbnailScroll;
-        const targetElement = activeThumbnail;
-        
-        // Calculate the scroll position to center the active thumbnail
-        const containerWidth = scrollContainer.offsetWidth;
-        const targetLeft = targetElement.offsetLeft;
-        const targetWidth = targetElement.offsetWidth;
+    if (container && element) {
+        const containerWidth = container.offsetWidth;
+        const targetLeft = element.offsetLeft;
+        const targetWidth = element.offsetWidth;
         const scrollLeft = targetLeft - (containerWidth / 2) + (targetWidth / 2);
         
-        // Smooth scroll to the calculated position
-        scrollContainer.scrollTo({
+        container.scrollTo({
             left: Math.max(0, scrollLeft),
             behavior: 'smooth'
         });
     }
 };
 
-// Fullscreen thumbnail carousel functionality (reuses same logic)
+// Thumbnail carousel functionality (now uses generic function)
+window.scrollToActiveThumbnail = function(activeIndex) {
+    window.scrollToElement('.thumbnail-scroll', '.thumbnail-wrapper', activeIndex);
+};
+
+// Fullscreen thumbnail carousel functionality (now uses generic function)
 window.scrollToActiveFullscreenThumbnail = function(activeIndex) {
-    const thumbnailScroll = document.querySelector('.fullscreen-thumbnails');
-    const activeThumbnail = document.querySelector(`.fullscreen-thumbnail:nth-child(${activeIndex + 1})`);
-    
-    if (thumbnailScroll && activeThumbnail) {
-        const scrollContainer = thumbnailScroll;
-        const targetElement = activeThumbnail;
-        
-        // Calculate the scroll position to center the active thumbnail
-        const containerWidth = scrollContainer.offsetWidth;
-        const targetLeft = targetElement.offsetLeft;
-        const targetWidth = targetElement.offsetWidth;
-        const scrollLeft = targetLeft - (containerWidth / 2) + (targetWidth / 2);
-        
-        // Smooth scroll to the calculated position
-        scrollContainer.scrollTo({
-            left: Math.max(0, scrollLeft),
-            behavior: 'smooth'
-        });
-    }
+    window.scrollToElement('.fullscreen-thumbnails', '.fullscreen-thumbnail', activeIndex);
 };
 
 // Click outside listener for dropdowns
@@ -119,17 +100,10 @@ window.scrollToHighlightedOption = function(containerId, highlightedIndex) {
     
     const options = container.querySelectorAll('.dropdown-option');
     if (highlightedIndex >= 0 && highlightedIndex < options.length) {
-        // Get the height of a single dropdown option
         const optionHeight = options[0].offsetHeight;
-        
-        // Calculate current scroll position and container height
         const containerScrollTop = container.scrollTop;
         const containerHeight = container.clientHeight;
-        
-        // Calculate the target scroll position
         const targetScrollTop = highlightedIndex * optionHeight;
-        
-        // Calculate if the option is outside the visible area
         const optionBottom = targetScrollTop + optionHeight;
         const containerBottom = containerScrollTop + containerHeight;
         
@@ -154,21 +128,17 @@ window.setupFullscreenKeyboard = function(dotNetRef, closeMethod, prevMethod, ne
         
         switch(e.key) {
             case 'Escape':
-                // Close fullscreen
                 dotNetRef.invokeMethodAsync(closeMethod);
                 break;
             case 'ArrowLeft':
-                // Previous image
                 dotNetRef.invokeMethodAsync(prevMethod);
                 break;
             case 'ArrowRight':
-                // Next image
                 dotNetRef.invokeMethodAsync(nextMethod);
                 break;
         }
     };
     
-    // Add the event listener
     document.addEventListener('keydown', window.fullscreenKeyHandler);
 };
 
