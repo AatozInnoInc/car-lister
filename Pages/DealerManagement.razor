@@ -22,72 +22,74 @@
         <p class="subtitle">Manage dealers in the database</p>
     </div>
 
-    <div class="actions-section">
-        <button class="btn-add" @onclick="ShowAddDealerForm">
-            <span class="oi oi-plus"></span>
-            Add New Dealer
-        </button>
-        <button class="btn-refresh" @onclick="LoadDealers">
-            <span class="oi oi-refresh"></span>
-            Refresh
-        </button>
-    </div>
+    <div class="content">
+        <div class="actions-section">
+            <button class="btn-add" @onclick="ShowAddDealerForm">
+                <span class="oi oi-plus"></span>
+                Add New Dealer
+            </button>
+            <button class="btn-refresh" @onclick="LoadDealers">
+                <span class="oi oi-refresh"></span>
+                Refresh
+            </button>
+        </div>
 
-    @if (isLoading)
-    {
-        <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Loading dealers...</p>
-        </div>
-    }
-    else if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="error-state">
-            <span class="oi oi-warning"></span>
-            <p>@errorMessage</p>
-            <button class="btn-retry" @onclick="LoadDealers">Try Again</button>
-        </div>
-    }
-    else if (dealers.Any())
-    {
-        <div class="dealers-section">
-            <h2>@dealers.Count Dealers</h2>
-            <div class="dealers-grid">
-                @foreach (var dealer in dealers)
-                {
-                    <div class="dealer-card">
-                        <div class="dealer-info">
-                            <h3 class="dealer-name">@dealer.Name</h3>
-                            <div class="dealer-details">
-                                <p><strong>Entity ID:</strong> @dealer.EntityId</p>
-                                <p><strong>URL:</strong> <a href="@dealer.Url" target="_blank">@dealer.Url</a></p>
-                                <p><strong>Created:</strong> @dealer.CreatedAt.ToString("MMM dd, yyyy")</p>
-                                <p><strong>Updated:</strong> @dealer.UpdatedAt.ToString("MMM dd, yyyy")</p>
+        @if (isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading dealers...</p>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-state">
+                <span class="oi oi-warning"></span>
+                <p>@errorMessage</p>
+                <button class="btn-retry" @onclick="LoadDealers">Try Again</button>
+            </div>
+        }
+        else if (dealers.Any())
+        {
+            <div class="dealers-section">
+                <h2>@dealers.Count Dealers</h2>
+                <div class="dealers-grid">
+                    @foreach (var dealer in dealers)
+                    {
+                        <div class="dealer-card">
+                            <div class="dealer-info">
+                                <h3 class="dealer-name">@dealer.Name</h3>
+                                <div class="dealer-details">
+                                    <p><strong>Entity ID:</strong> @dealer.EntityId</p>
+                                    <p><strong>URL:</strong> <a href="@dealer.Url" target="_blank">@dealer.Url</a></p>
+                                    <p><strong>Created:</strong> @dealer.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                    <p><strong>Updated:</strong> @dealer.UpdatedAt.ToString("MMM dd, yyyy")</p>
+                                </div>
+                            </div>
+                            <div class="dealer-actions">
+                                <button class="btn-edit" @onclick="() => EditDealer(dealer)">
+                                    <span class="oi oi-pencil"></span>
+                                    Edit
+                                </button>
+                                <button class="btn-delete" @onclick="() => DeleteDealer(dealer)">
+                                    <span class="oi oi-trash"></span>
+                                    Delete
+                                </button>
                             </div>
                         </div>
-                        <div class="dealer-actions">
-                            <button class="btn-edit" @onclick="() => EditDealer(dealer)">
-                                <span class="oi oi-pencil"></span>
-                                Edit
-                            </button>
-                            <button class="btn-delete" @onclick="() => DeleteDealer(dealer)">
-                                <span class="oi oi-trash"></span>
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
-        </div>
-    }
-    else
-    {
-        <div class="no-dealers">
-            <span class="oi oi-store"></span>
-            <h3>No dealers found</h3>
-            <p>Add your first dealer to get started.</p>
-        </div>
-    }
+        }
+        else
+        {
+            <div class="no-dealers">
+                <span class="oi oi-store"></span>
+                <h3>No dealers found</h3>
+                <p>Add your first dealer to get started.</p>
+            </div>
+        }
+    </div>
 </div>
 
 @if (showAddForm)
