@@ -61,6 +61,8 @@
     margin-bottom: 3rem;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 9998;
 }
 
 .search-form {
@@ -129,6 +131,7 @@
 .searchable-dropdown {
     position: relative;
     width: 100%;
+    z-index: 9999;
 }
 
 .dropdown-trigger {
@@ -164,7 +167,7 @@
     border-radius: 0.75rem;
     margin-top: 0.5rem;
     backdrop-filter: blur(20px);
-    z-index: 1000;
+    z-index: 9999;
     max-height: 300px;
     overflow: hidden;
     animation: dropdownSlide 0.2s ease-out;
@@ -378,6 +381,8 @@
 /* Results Section */
 .results-section {
     animation: fadeIn 0.5s ease-in-out;
+    position: relative;
+    z-index: 1;
 }
 
 .results-header {
@@ -596,7 +601,7 @@
         right: 1rem;
         transform: translateY(-50%);
         max-height: 70vh;
-        z-index: 1001;
+        z-index: 9999;
     }
     
     .dropdown-options {
