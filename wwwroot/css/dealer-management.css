@@ -1,100 +1,120 @@
 .dealer-management-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2rem;
+    color: white;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    overflow-y: auto;
 }
 
+/* Header Section */
 .header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 30px;
-    gap: 20px;
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
 }
 
 .btn-back {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    color: #495057;
-    text-decoration: none;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    gap: 0.5rem;
 }
 
 .btn-back:hover {
-    background: #e9ecef;
-    border-color: #adb5bd;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%) scale(1.05);
 }
 
 .header h1 {
-    margin: 0;
-    color: #212529;
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(120deg, #00ff87 0%, #60efff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .subtitle {
+    font-size: 1.2rem;
+    color: #a0a0a0;
     margin: 0;
-    color: #6c757d;
-    font-size: 16px;
 }
 
+/* Actions Section */
 .actions-section {
     display: flex;
-    gap: 12px;
-    margin-bottom: 30px;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    justify-content: center;
 }
 
 .btn-add, .btn-refresh {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: 2rem;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
 }
 
 .btn-add {
-    background: #007bff;
-    color: white;
+    background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
+    color: #1a1a2e;
+    box-shadow: 0 4px 15px rgba(0, 255, 135, 0.3);
 }
 
 .btn-add:hover {
-    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 135, 0.4);
 }
 
 .btn-refresh {
-    background: #6c757d;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
 }
 
 .btn-refresh:hover {
-    background: #545b62;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
+/* Loading, Error, and Empty States */
 .loading-state, .error-state, .no-dealers {
     text-align: center;
-    padding: 60px 20px;
+    padding: 4rem 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 1.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .loading-state .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #007bff;
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid #00ff87;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
+    margin: 0 auto 1.5rem;
 }
 
 @keyframes spin {
@@ -102,127 +122,184 @@
     100% { transform: rotate(360deg); }
 }
 
+.loading-state p, .error-state p, .no-dealers p {
+    color: #a0a0a0;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
 .error-state {
-    color: #dc3545;
+    color: #ff6b6b;
 }
 
 .error-state .oi {
-    font-size: 48px;
-    margin-bottom: 20px;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
     display: block;
+    color: #ff6b6b;
 }
 
 .btn-retry {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background: #dc3545;
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 2rem;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.3s ease;
+    font-weight: 600;
 }
 
 .btn-retry:hover {
-    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
 }
 
 .no-dealers {
-    color: #6c757d;
+    color: #a0a0a0;
 }
 
 .no-dealers .oi {
-    font-size: 48px;
-    margin-bottom: 20px;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
     display: block;
+    color: #60efff;
 }
 
+.no-dealers h3 {
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Dealers Section */
 .dealers-section h2 {
-    margin-bottom: 20px;
-    color: #212529;
-    font-size: 24px;
+    margin-bottom: 2rem;
+    color: #60efff;
+    font-size: 2rem;
     font-weight: 600;
+    text-align: center;
 }
 
 .dealers-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 20px;
+    gap: 2rem;
 }
 
 .dealer-card {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: box-shadow 0.2s ease;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.dealer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #00ff87 0%, #60efff 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .dealer-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 255, 135, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dealer-card:hover::before {
+    opacity: 1;
 }
 
 .dealer-name {
-    margin: 0 0 15px 0;
-    color: #212529;
-    font-size: 18px;
+    margin: 0 0 1.5rem 0;
+    color: white;
+    font-size: 1.5rem;
     font-weight: 600;
+    background: linear-gradient(120deg, #00ff87 0%, #60efff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .dealer-details p {
-    margin: 8px 0;
-    color: #495057;
-    font-size: 14px;
+    margin: 0.75rem 0;
+    color: #a0a0a0;
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dealer-details strong {
+    color: #e0e0e0;
+    font-weight: 600;
 }
 
 .dealer-details a {
-    color: #007bff;
+    color: #60efff;
     text-decoration: none;
+    transition: color 0.3s ease;
+    word-break: break-all;
 }
 
 .dealer-details a:hover {
+    color: #00ff87;
     text-decoration: underline;
 }
 
 .dealer-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #dee2e6;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-edit, .btn-delete {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 4px;
-    font-size: 13px;
+    border-radius: 2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     flex: 1;
     justify-content: center;
+    backdrop-filter: blur(10px);
 }
 
 .btn-edit {
-    background: #28a745;
-    color: white;
+    background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
+    color: #1a1a2e;
 }
 
 .btn-edit:hover {
-    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 255, 135, 0.4);
 }
 
 .btn-delete {
-    background: #dc3545;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
     color: white;
 }
 
 .btn-delete:hover {
-    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
 }
 
 /* Modal Styles */
@@ -232,134 +309,162 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(10px);
 }
 
 .modal-content {
-    background: white;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #dee2e6;
+    padding: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-header h2 {
     margin: 0;
-    color: #212529;
-    font-size: 20px;
+    color: white;
+    font-size: 1.5rem;
     font-weight: 600;
+    background: linear-gradient(120deg, #00ff87 0%, #60efff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .btn-close {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #6c757d;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #a0a0a0;
     cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
-    transition: background 0.2s ease;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-close:hover {
-    background: #f8f9fa;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: scale(1.1);
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 2rem;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
-    color: #495057;
-    font-weight: 500;
-    font-size: 14px;
+    margin-bottom: 0.5rem;
+    color: #e0e0e0;
+    font-weight: 600;
+    font-size: 0.95rem;
 }
 
 .form-input {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: border-color 0.2s ease;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
     box-sizing: border-box;
 }
 
 .form-input:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    border-color: #00ff87;
+    box-shadow: 0 0 0 3px rgba(0, 255, 135, 0.1);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.form-input::placeholder {
+    color: #a0a0a0;
 }
 
 .modal-footer {
     display: flex;
-    gap: 12px;
-    padding: 20px;
-    border-top: 1px solid #dee2e6;
+    gap: 1rem;
+    padding: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     justify-content: flex-end;
 }
 
 .btn-cancel, .btn-save {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: 2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
 }
 
 .btn-cancel {
-    background: #6c757d;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
 }
 
 .btn-cancel:hover {
-    background: #545b62;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .btn-save {
-    background: #007bff;
-    color: white;
+    background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
+    color: #1a1a2e;
 }
 
 .btn-save:hover:not(:disabled) {
-    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 255, 135, 0.4);
 }
 
 .btn-save:disabled {
-    background: #6c757d;
+    background: rgba(255, 255, 255, 0.1);
+    color: #a0a0a0;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .spinner-small {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #ffffff;
-    border-top: 2px solid transparent;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid #00ff87;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -367,21 +472,33 @@
 /* Responsive Design */
 @media (max-width: 768px) {
     .dealer-management-container {
-        padding: 15px;
+        padding: 1rem;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
     }
     
     .header {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .btn-back {
+        position: static;
+        transform: none;
+        margin-bottom: 1rem;
     }
     
     .actions-section {
         flex-direction: column;
+        align-items: center;
     }
     
     .dealers-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
     
     .dealer-actions {
@@ -390,6 +507,30 @@
     
     .modal-content {
         width: 95%;
-        margin: 20px;
+        margin: 1rem;
+    }
+    
+    .modal-header, .modal-body, .modal-footer {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .dealer-card {
+        padding: 1.5rem;
+    }
+    
+    .dealer-name {
+        font-size: 1.25rem;
+    }
+    
+    .dealer-details p {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
     }
 }
