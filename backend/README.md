@@ -27,17 +27,37 @@ backend/
    pip install -r requirements.txt
    ```
 
-2. **Run the development server:**
+2. **Test dependencies (recommended):**
+   ```bash
+   python test_dependencies.py
+   ```
+
+3. **Run the development server:**
    ```bash
    python main.py
    ```
 
-3. **Test the API:**
+4. **Test the API:**
    ```bash
    curl -X POST "http://localhost:8000/api/scrape" \
         -H "Content-Type: application/json" \
         -d '{"url": "https://www.cargurus.com/Cars/l-toyota-camry"}'
    ```
+
+### Render Deployment
+
+1. **Deploy to Render:**
+   ```bash
+   # Push to your Git repository
+   git add .
+   git commit -m "Update dependencies for Render deployment"
+   git push
+   ```
+
+2. **Monitor deployment:**
+   - Check the Render dashboard for build logs
+   - Verify the service starts successfully
+   - Test the health endpoint: `https://your-app.onrender.com/api/health`
 
 ### Firebase Deployment
 

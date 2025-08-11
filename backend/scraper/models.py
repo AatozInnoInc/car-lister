@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -29,10 +29,10 @@ class ScrapedCar(BaseModel):
     images: List[str] = Field(default_factory=list, description="List of image URLs")
     originalUrl: str = Field(..., description="Original CarGurus URL")
     fullTitle: str = Field(default="", description="Complete car title (Year Make Model Trim)")
-    scrapedAt: datetime = Field(default_factory=datetime.utcnow, description="Scraping timestamp")
+    scrapedAt: datetime = Field(default_factory=datetime.now, description="Scraping timestamp")
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "make": "Toyota",
                 "model": "Camry",
@@ -47,6 +47,7 @@ class ScrapedCar(BaseModel):
                 "scrapedAt": "2024-01-01T12:00:00Z"
             }
         }
+    )
 
 class InventorySearchRequest(BaseModel):
     """
@@ -65,8 +66,8 @@ class InventorySearchRequest(BaseModel):
     pageNumber: int = Field(default=1, description="Page number for pagination", ge=1)
     newUsed: int = Field(default=1, description="Type of cars to search (1=New, 2=Used, 3=Both)")
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "zip": "27401",
                 "distance": 100,
@@ -75,6 +76,7 @@ class InventorySearchRequest(BaseModel):
                 "newUsed": 1
             }
         }
+    )
 
 class DealerInventoryRequest(BaseModel):
     """
@@ -91,8 +93,8 @@ class DealerInventoryRequest(BaseModel):
     dealerUrl: str = Field(..., description="Full CarGurus dealer URL")
     pageNumber: int = Field(default=1, description="Page number for pagination", ge=1)
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "dealerEntityId": "317131",
                 "dealerName": "Asheboro Chrysler Dodge Jeep Ram",
@@ -100,6 +102,7 @@ class DealerInventoryRequest(BaseModel):
                 "pageNumber": 1
             }
         }
+    )
 
 class InventorySearchResult(BaseModel):
     """
@@ -128,8 +131,8 @@ class InventorySearchResult(BaseModel):
     errorMessage: Optional[str] = Field(None, description="Error message if failed")
     processingTime: float = Field(..., description="Processing time in seconds")
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "success": True,
                 "cars": [
@@ -157,6 +160,7 @@ class InventorySearchResult(BaseModel):
                 "processingTime": 2.5
             }
         }
+    )
 
 class ScrapingResult(BaseModel):
     """
@@ -173,8 +177,8 @@ class ScrapingResult(BaseModel):
     errorMessage: Optional[str] = Field(None, description="Error message if failed")
     processingTime: float = Field(..., description="Processing time in seconds")
     
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "success": True,
                 "car_data": {
@@ -193,4 +197,5 @@ class ScrapingResult(BaseModel):
                 "errorMessage": None,
                 "processingTime": 2.5
             }
-        } 
+        }
+    ) 
