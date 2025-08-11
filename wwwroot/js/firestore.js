@@ -76,6 +76,70 @@ window.scrollToActiveFullscreenThumbnail = function(activeIndex) {
     }
 };
 
+// Click outside listener for dropdowns
+window.addClickOutsideListener = function(elementId, dotNetRef) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const clickHandler = function(event) {
+        if (!element.contains(event.target)) {
+            dotNetRef.invokeMethodAsync('OnClickOutside');
+        }
+    };
+    
+    // Remove existing listener if any
+    if (window.clickOutsideHandler) {
+        document.removeEventListener('click', window.clickOutsideHandler);
+    }
+    
+    window.clickOutsideHandler = clickHandler;
+    document.addEventListener('click', clickHandler);
+};
+
+// Focus element utility
+window.focusElement = function(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.focus();
+    }
+};
+
+// Scroll to results utility
+window.scrollToResults = function() {
+    const resultsSection = document.querySelector('.results-section');
+    if (resultsSection) {
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
+
+// Scroll to highlighted option in dropdown
+window.scrollToHighlightedOption = function(containerId, highlightedIndex) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const options = container.querySelectorAll('.dropdown-option');
+    if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+        // Get the height of a single dropdown option
+        const optionHeight = options[0].offsetHeight;
+        
+        // Calculate current scroll position and container height
+        const containerScrollTop = container.scrollTop;
+        const containerHeight = container.clientHeight;
+        
+        // Calculate the target scroll position
+        const targetScrollTop = highlightedIndex * optionHeight;
+        
+        // Calculate if the option is outside the visible area
+        const optionBottom = targetScrollTop + optionHeight;
+        const containerBottom = containerScrollTop + containerHeight;
+        
+        // Only scroll if the option is outside the visible area
+        if (targetScrollTop < containerScrollTop || optionBottom > containerBottom) {
+            container.scrollTop = targetScrollTop;
+        }
+    }
+};
+
 // Fullscreen keyboard navigation
 window.setupFullscreenKeyboard = function(dotNetRef, closeMethod, prevMethod, nextMethod) {
     // Remove any existing listeners

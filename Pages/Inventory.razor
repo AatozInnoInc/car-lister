@@ -11,6 +11,7 @@
 
 <PageTitle>Inventory Search - Car Lister</PageTitle>
 <link href="css/inventory.css" rel="stylesheet" />
+<script src="js/firestore.js"></script>
 
 <div id="inventory-container" class="inventory-container" @onkeydown="HandleKeyDown" tabindex="0">
     <div class="header">
@@ -26,13 +27,47 @@
         <div class="search-form">
             <div class="form-group">
                 <label>Dealer</label>
-                <select @bind="selectedDealerIndex" class="dealer-select" @bind:after="OnDealerChanged">
-                    @for (int i = 0; i < availableDealers.Count; i++)
+                <div class="searchable-dropdown @(isDropdownOpen ? "open" : "")" id="searchable-dropdown">
+                    <div class="dropdown-trigger" @onclick="ToggleDropdown">
+                        <span class="selected-text">@(selectedDealer?.Name ?? "Select a dealer")</span>
+                        <span class="oi @(isDropdownOpen ? "oi-chevron-top" : "oi-chevron-bottom")"></span>
+                    </div>
+                    @if (isDropdownOpen)
                     {
-                        var dealer = availableDealers[i];
-                        <option value="@i">@dealer.Name</option>
+                        <div class="dropdown-content">
+                            <div class="search-input-container">
+                                <input 
+                                    type="text" 
+                                    @bind="searchTerm" 
+                                    @bind:event="oninput"
+                                    @onkeydown="HandleSearchKeyDown"
+                                    placeholder="Search dealers..."
+                                    class="search-input"
+                                    id="search-input"
+                                />
+                                <span class="oi oi-magnifying-glass search-icon"></span>
+                            </div>
+                            <div class="dropdown-options" id="dropdown-options">
+                                @for (int i = 0; i < filteredDealers.Count; i++)
+                                {
+                                    var dealer = filteredDealers[i];
+                                    var isSelected = availableDealers.IndexOf(dealer) == selectedDealerIndex;
+                                    var isHighlighted = i == highlightedIndex;
+                                    <div 
+                                        class="dropdown-option @(isSelected ? "selected" : "") @(isHighlighted ? "highlighted" : "")"
+                                        @onclick="() => SelectDealer(availableDealers.IndexOf(dealer))"
+                                    >
+                                        @dealer.Name
+                                    </div>
+                                }
+                                @if (!filteredDealers.Any())
+                                {
+                                    <div class="no-results-option">No dealers found</div>
+                                }
+                            </div>
+                        </div>
                     }
-                </select>
+                </div>
             </div>
             <div class="form-group">
                 <label>Inventory Type</label>
@@ -155,6 +190,9 @@
     private InventorySearchResult? searchResults = null;
     private bool hasSearched = false;
     private bool shouldScrollToTop = false;
+    private bool isDropdownOpen = false;
+    private string searchTerm = "";
+    private int highlightedIndex = -1;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -162,6 +200,9 @@
         {
             // Focus the container to enable keyboard navigation
             await JSRuntime.InvokeVoidAsync("focusElement", "inventory-container");
+            
+            // Add click outside listener for dropdown
+            await JSRuntime.InvokeVoidAsync("addClickOutsideListener", "searchable-dropdown", DotNetObjectReference.Create(this));
         }
         
         // Scroll to results section if requested after render
@@ -373,13 +414,109 @@
         }
     }
 
-    private void ViewCarDetails(ScrapedCar car)
+    private async Task ViewCarDetails(ScrapedCar car)
     {
         // Navigate to car details page or open in new tab
         var url = car.originalUrl;
         if (!string.IsNullOrEmpty(url))
         {
-            JSRuntime.InvokeVoidAsync("open", url, "_blank");
+            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        }
+    }
+
+    private async Task ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+        if (isDropdownOpen)
+        {
+            // Reset highlighted index when opening
+            highlightedIndex = -1;
+            // Focus the search input when dropdown opens
+            await Task.Delay(100); // Small delay to ensure DOM is updated
+            await JSRuntime.InvokeVoidAsync("focusElement", "search-input");
+        }
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Enter":
+                if (highlightedIndex >= 0 && highlightedIndex < filteredDealers.Count)
+                {
+                    // Select the highlighted option
+                    SelectDealer(availableDealers.IndexOf(filteredDealers[highlightedIndex]));
+                }
+                else if (filteredDealers.Any())
+                {
+                    // Select the first option if nothing is highlighted
+                    SelectDealer(availableDealers.IndexOf(filteredDealers[0]));
+                }
+                else
+                {
+                    isDropdownOpen = false;
+                }
+                break;
+                
+            case "ArrowDown":
+                if (filteredDealers.Any())
+                {
+                    highlightedIndex = Math.Min(highlightedIndex + 1, filteredDealers.Count - 1);
+                    StateHasChanged();
+                    await Task.Delay(10); // Small delay to ensure DOM is updated
+                    await JSRuntime.InvokeVoidAsync("scrollToHighlightedOption", "dropdown-options", highlightedIndex);
+                }
+                break;
+                
+            case "ArrowUp":
+                if (filteredDealers.Any())
+                {
+                    highlightedIndex = Math.Max(highlightedIndex - 1, 0);
+                    StateHasChanged();
+                    await Task.Delay(10); // Small delay to ensure DOM is updated
+                    await JSRuntime.InvokeVoidAsync("scrollToHighlightedOption", "dropdown-options", highlightedIndex);
+                }
+                break;
+                
+            case "Escape":
+                isDropdownOpen = false;
+                highlightedIndex = -1;
+                StateHasChanged();
+                break;
+        }
+    }
+
+    private List<DealerInfo> filteredDealers
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                return availableDealers;
+            }
+            return availableDealers.Where(d => d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+    }
+
+    private void SelectDealer(int index)
+    {
+        selectedDealerIndex = index;
+        searchTerm = ""; // Clear search term after selection
+        isDropdownOpen = false;
+        highlightedIndex = -1; // Reset highlighted index
+        OnDealerChanged();
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnClickOutside()
+    {
+        if (isDropdownOpen)
+        {
+            isDropdownOpen = false;
+            searchTerm = "";
+            highlightedIndex = -1;
+            StateHasChanged();
         }
     }
 
