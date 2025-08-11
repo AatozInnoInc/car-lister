@@ -1,0 +1,640 @@
+openapi: 3.0.3
+info:
+  title: Car Lister API
+  description: |
+    Backend API for Car Lister PWA - CarGurus scraping service
+    
+    This API provides endpoints for scraping car details from CarGurus.com, searching inventory, and retrieving dealer-specific inventory.
+    
+    ## Authentication
+    This API does not require authentication for basic usage.
+    
+    ## Rate Limiting
+    Please be respectful of CarGurus.com servers. The API includes built-in delays between requests.
+    
+    ## CORS
+    The API supports CORS for web applications. In development, all origins are allowed. In production, specific origins are configured.
+    
+    ## Base URL
+    - Development: `http://localhost:8000`
+    - Production: `https://car-lister-api.onrender.com`
+  version: 1.0.0
+  contact:
+    name: Car Lister API Support
+    url: https://car-lister.web.app
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://car-lister-api.onrender.com
+    description: Production server
+  - url: http://localhost:8000
+    description: Development server
+
+paths:
+  /:
+    get:
+      summary: Health Check
+      description: Basic health check endpoint to verify the API is running
+      operationId: root
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is running successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Car Lister API is running"
+                  version:
+                    type: string
+                    example: "1.0.0"
+              example:
+                message: "Car Lister API is running"
+                version: "1.0.0"
+
+  /api/cors-test:
+    get:
+      summary: CORS Test
+      description: Test endpoint to verify CORS is working correctly
+      operationId: corsTest
+      tags:
+        - Health
+      responses:
+        '200':
+          description: CORS test successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "CORS is working!"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+              example:
+                message: "CORS is working!"
+                timestamp: "2024-01-01T00:00:00Z"
+
+  /api/health:
+    get:
+      summary: Detailed Health Check
+      description: Detailed health check for monitoring and system status
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Detailed health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "car-lister-api"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+              example:
+                status: "healthy"
+                service: "car-lister-api"
+                version: "1.0.0"
+                timestamp: "2024-01-01T00:00:00Z"
+
+  /api/scrape:
+    post:
+      summary: Scrape Car Details
+      description: |
+        Scrape detailed car information from a CarGurus.com URL.
+        
+        This endpoint extracts comprehensive car data including:
+        - Basic information (make, model, year, price)
+        - Detailed specifications and features
+        - High-quality images
+        - Vehicle statistics
+        - Original listing URL
+        
+        **Note**: Only CarGurus.com URLs are supported.
+      operationId: scrapeCar
+      tags:
+        - Scraping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScrapeRequest'
+            example:
+              url: "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789&entitySelectingHelper.selectedEntity=m6#listing=123456789/NONE/DEFAULT"
+      responses:
+        '200':
+          description: Car details scraped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScrapeResponse'
+              example:
+                success: true
+                data:
+                  make: "Toyota"
+                  model: "Camry"
+                  year: 2022
+                  price: 25000.0
+                  description: "Clean, well-maintained Toyota Camry with low mileage. One owner, no accidents."
+                  features:
+                    - "Bluetooth Connectivity"
+                    - "Backup Camera"
+                    - "Lane Departure Warning"
+                    - "Adaptive Cruise Control"
+                  stats:
+                    - header: "Mileage"
+                      value: "15,234 miles"
+                    - header: "Transmission"
+                      value: "Automatic"
+                    - header: "Drivetrain"
+                      value: "FWD"
+                    - header: "Fuel Type"
+                      value: "Gasoline"
+                  images:
+                    - "https://images.cargurus.com/listing/123456789/1024x768.jpg"
+                    - "https://images.cargurus.com/listing/123456789/interior.jpg"
+                  originalUrl: "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"
+                  fullTitle: "2022 Toyota Camry LE"
+                  scrapedAt: "2024-01-01T12:00:00Z"
+                error: null
+        '400':
+          description: Invalid CarGurus URL provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScrapeResponse'
+              example:
+                success: false
+                data: null
+                error: "Invalid CarGurus URL"
+        '500':
+          description: Internal server error during scraping
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScrapeResponse'
+              example:
+                success: false
+                data: null
+                error: "Internal server error: Failed to extract car details from the provided URL"
+
+  /api/inventory/search:
+    post:
+      summary: Search Car Inventory
+      description: |
+        Search for cars in CarGurus inventory based on location and search parameters.
+        
+        This endpoint searches CarGurus.com for available vehicles matching your criteria.
+        Results include basic car information suitable for inventory browsing.
+        
+        **Note**: This endpoint returns a subset of car data compared to individual scraping.
+      operationId: searchInventory
+      tags:
+        - Inventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventorySearchRequest'
+            example:
+              zip: "90210"
+              distance: 50
+              pageNumber: 1
+              srpVariation: "DEALER_INVENTORY"
+              newUsed: "USED"
+      responses:
+        '200':
+          description: Inventory search completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySearchResult'
+              example:
+                success: true
+                cars:
+                  - make: "Honda"
+                    model: "Civic"
+                    year: 2021
+                    price: 22000.0
+                    description: "2021 Honda Civic"
+                    features:
+                      - "Bluetooth"
+                      - "Backup Camera"
+                    stats:
+                      - header: "Mileage"
+                        value: "18,500 miles"
+                    images:
+                      - "https://images.cargurus.com/listing/987654321/1024x768.jpg"
+                    originalUrl: "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=987654321"
+                    fullTitle: "2021 Honda Civic EX"
+                    scrapedAt: "2024-01-01T12:00:00Z"
+                  - make: "Toyota"
+                    model: "Corolla"
+                    year: 2020
+                    price: 19500.0
+                    description: "2020 Toyota Corolla"
+                    features:
+                      - "Apple CarPlay"
+                      - "Safety Sense"
+                    stats:
+                      - header: "Mileage"
+                        value: "22,100 miles"
+                    images:
+                      - "https://images.cargurus.com/listing/987654322/1024x768.jpg"
+                    originalUrl: "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=987654322"
+                    fullTitle: "2020 Toyota Corolla LE"
+                    scrapedAt: "2024-01-01T12:00:00Z"
+                totalResults: 45
+                currentPage: 1
+                totalPages: 3
+                processingTime: 2.34
+                errorMessage: null
+        '400':
+          description: Invalid search parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySearchResult'
+              example:
+                success: false
+                cars: []
+                totalResults: 0
+                currentPage: 1
+                totalPages: 0
+                processingTime: 0.5
+                errorMessage: "Invalid ZIP code"
+        '500':
+          description: Internal server error during search
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySearchResult'
+              example:
+                success: false
+                cars: []
+                totalResults: 0
+                currentPage: 1
+                totalPages: 0
+                processingTime: 1.2
+                errorMessage: "Internal server error: Failed to search inventory after multiple attempts"
+
+  /api/dealer/inventory:
+    post:
+      summary: Scrape Dealer Inventory
+      description: |
+        Scrape inventory from a specific dealer using their CarGurus dealer page.
+        
+        This endpoint extracts all available vehicles from a specific dealer's inventory.
+        It uses CarGurus' AJAX pagination system to efficiently retrieve dealer-specific data.
+        
+        **Note**: Requires the dealer's entity ID, name, and CarGurus URL.
+      operationId: scrapeDealerInventory
+      tags:
+        - Dealer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealerInventoryRequest'
+            example:
+              dealerEntityId: "317131"
+              dealerName: "ABC Motors"
+              dealerUrl: "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?entitySelectingHelper.selectedEntity=sp317131"
+              pageNumber: 1
+      responses:
+        '200':
+          description: Dealer inventory scraped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySearchResult'
+              example:
+                success: true
+                cars:
+                  - make: "Ford"
+                    model: "F-150"
+                    year: 2023
+                    price: 45000.0
+                    description: "2023 Ford F-150 XLT"
+                    features:
+                      - "4x4"
+                      - "Towing Package"
+                      - "Sync 4"
+                    stats:
+                      - header: "Mileage"
+                        value: "8,500 miles"
+                      - header: "Transmission"
+                        value: "10-Speed Automatic"
+                    images:
+                      - "https://images.cargurus.com/listing/111222333/1024x768.jpg"
+                    originalUrl: "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=111222333&entitySelectingHelper.selectedEntity=sp317131"
+                    fullTitle: "2023 Ford F-150 XLT"
+                    scrapedAt: "2024-01-01T12:00:00Z"
+                totalResults: 163
+                currentPage: 1
+                totalPages: 8
+                hasNextPage: true
+                processingTime: 3.45
+                message: "Successfully scraped 23 cars from dealer page 1 (Total: 163)"
+                errorMessage: null
+        '400':
+          description: Invalid dealer parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySearchResult'
+              example:
+                success: false
+                cars: []
+                totalResults: 0
+                currentPage: 1
+                totalPages: 0
+                hasNextPage: false
+                processingTime: 0.2
+                message: null
+                errorMessage: "Dealer entity ID is required"
+        '500':
+          description: Internal server error during dealer scraping
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySearchResult'
+              example:
+                success: false
+                cars: []
+                totalResults: 0
+                currentPage: 1
+                totalPages: 0
+                hasNextPage: false
+                processingTime: 1.8
+                message: null
+                errorMessage: "Internal server error: Failed to get initial dealer page"
+
+components:
+  schemas:
+    ScrapeRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: The CarGurus.com URL to scrape
+          example: "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789&entitySelectingHelper.selectedEntity=m6#listing=123456789/NONE/DEFAULT"
+          pattern: "^https://www\\.cargurus\\.com.*$"
+
+    ScrapeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the scraping operation was successful
+          example: true
+        data:
+          $ref: '#/components/schemas/ScrapedCar'
+          description: The scraped car data (null if unsuccessful)
+        error:
+          type: string
+          description: Error message if scraping failed (null if successful)
+          example: "Invalid CarGurus URL"
+
+    InventorySearchRequest:
+      type: object
+      required:
+        - zip
+        - distance
+        - pageNumber
+        - srpVariation
+        - newUsed
+      properties:
+        zip:
+          type: string
+          description: 5-digit ZIP code for the search location
+          example: "90210"
+          pattern: "^[0-9]{5}$"
+        distance:
+          type: integer
+          description: Search radius in miles
+          minimum: 1
+          maximum: 500
+          example: 50
+        pageNumber:
+          type: integer
+          description: Page number for pagination (1-based)
+          minimum: 1
+          example: 1
+        srpVariation:
+          type: string
+          description: Search result page variation type
+          enum: ["DEALER_INVENTORY", "DEFAULT"]
+          example: "DEALER_INVENTORY"
+        newUsed:
+          type: string
+          description: Vehicle condition filter
+          enum: ["NEW", "USED", "ALL"]
+          example: "USED"
+
+    DealerInventoryRequest:
+      type: object
+      required:
+        - dealerEntityId
+        - dealerName
+        - dealerUrl
+        - pageNumber
+      properties:
+        dealerEntityId:
+          type: string
+          description: The dealer's entity ID from CarGurus
+          example: "317131"
+        dealerName:
+          type: string
+          description: The dealer's business name
+          example: "ABC Motors"
+        dealerUrl:
+          type: string
+          format: uri
+          description: The full CarGurus dealer page URL
+          example: "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?entitySelectingHelper.selectedEntity=sp317131"
+          pattern: "^https://www\\.cargurus\\.com.*$"
+        pageNumber:
+          type: integer
+          description: Page number for pagination (1-based)
+          minimum: 1
+          example: 1
+
+    InventorySearchResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the operation was successful
+          example: true
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScrapedCar'
+          description: List of cars found in the search
+        totalResults:
+          type: integer
+          description: Total number of cars available (may be estimated)
+          example: 45
+        currentPage:
+          type: integer
+          description: Current page number
+          example: 1
+        totalPages:
+          type: integer
+          description: Total number of pages available
+          example: 3
+        hasNextPage:
+          type: boolean
+          description: Whether there are more pages available (dealer inventory only)
+          example: true
+        processingTime:
+          type: number
+          format: float
+          description: Time taken to process the request in seconds
+          example: 2.34
+        message:
+          type: string
+          description: Additional information about the operation (dealer inventory only)
+          example: "Successfully scraped 23 cars from dealer page 1 (Total: 163)"
+        errorMessage:
+          type: string
+          description: Error message if the operation failed
+          example: "No cars found for the specified search criteria"
+
+    ScrapedCar:
+      type: object
+      required:
+        - make
+        - model
+        - year
+        - price
+        - description
+        - features
+        - stats
+        - images
+        - originalUrl
+        - fullTitle
+      properties:
+        make:
+          type: string
+          description: Vehicle make (manufacturer)
+          example: "Toyota"
+        model:
+          type: string
+          description: Vehicle model
+          example: "Camry"
+        year:
+          type: integer
+          description: Vehicle model year
+          minimum: 1900
+          maximum: 2030
+          example: 2022
+        price:
+          type: number
+          format: float
+          description: Vehicle price in USD
+          minimum: 0
+          example: 25000.0
+        description:
+          type: string
+          description: Vehicle description from the listing
+          example: "Clean, well-maintained Toyota Camry with low mileage. One owner, no accidents."
+        features:
+          type: array
+          items:
+            type: string
+          description: List of vehicle features and options
+          example:
+            - "Bluetooth Connectivity"
+            - "Backup Camera"
+            - "Lane Departure Warning"
+            - "Adaptive Cruise Control"
+        stats:
+          type: array
+          items:
+            $ref: '#/components/schemas/CarStat'
+          description: Vehicle specifications and statistics
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: URLs to vehicle images
+          example:
+            - "https://images.cargurus.com/listing/123456789/1024x768.jpg"
+            - "https://images.cargurus.com/listing/123456789/interior.jpg"
+        originalUrl:
+          type: string
+          format: uri
+          description: Original CarGurus listing URL
+          example: "https://www.cargurus.com/Cars/inventorylisting/vdp.action?listingId=123456789"
+        fullTitle:
+          type: string
+          description: Complete vehicle title including year, make, model, and trim
+          example: "2022 Toyota Camry LE"
+        scrapedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the car was scraped
+          example: "2024-01-01T12:00:00Z"
+
+    CarStat:
+      type: object
+      required:
+        - header
+        - value
+      properties:
+        header:
+          type: string
+          description: The name or label of the statistic
+          example: "Mileage"
+        value:
+          type: string
+          description: The value of the statistic
+          example: "15,234 miles"
+
+  securitySchemes:
+    # No authentication required for this API
+    {}
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: Scraping
+    description: Individual car scraping operations
+  - name: Inventory
+    description: Inventory search operations
+  - name: Dealer
+    description: Dealer-specific inventory operations
+
+externalDocs:
+  description: Car Lister PWA
+  url: https://car-lister.web.app
