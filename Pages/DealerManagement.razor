@@ -1,0 +1,297 @@
+@page "/dealer-management"
+@using Microsoft.AspNetCore.Authorization
+@using car_lister.Services
+@using car_lister.Models
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject DealerService DealerService
+@attribute [Authorize]
+
+<PageTitle>Dealer Management - Car Lister</PageTitle>
+<link href="css/dealer-management.css" rel="stylesheet" />
+<script src="js/firestore.js"></script>
+
+<div class="dealer-management-container">
+    <div class="header">
+        <button class="btn-back" @onclick="GoBack">
+            <span class="oi oi-arrow-left"></span>
+            Back
+        </button>
+        <h1>Dealer Management</h1>
+        <p class="subtitle">Manage dealers in the database</p>
+    </div>
+
+    <div class="actions-section">
+        <button class="btn-add" @onclick="ShowAddDealerForm">
+            <span class="oi oi-plus"></span>
+            Add New Dealer
+        </button>
+        <button class="btn-refresh" @onclick="LoadDealers">
+            <span class="oi oi-refresh"></span>
+            Refresh
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading dealers...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-state">
+            <span class="oi oi-warning"></span>
+            <p>@errorMessage</p>
+            <button class="btn-retry" @onclick="LoadDealers">Try Again</button>
+        </div>
+    }
+    else if (dealers.Any())
+    {
+        <div class="dealers-section">
+            <h2>@dealers.Count Dealers</h2>
+            <div class="dealers-grid">
+                @foreach (var dealer in dealers)
+                {
+                    <div class="dealer-card">
+                        <div class="dealer-info">
+                            <h3 class="dealer-name">@dealer.Name</h3>
+                            <div class="dealer-details">
+                                <p><strong>Entity ID:</strong> @dealer.EntityId</p>
+                                <p><strong>URL:</strong> <a href="@dealer.Url" target="_blank">@dealer.Url</a></p>
+                                <p><strong>Created:</strong> @dealer.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                <p><strong>Updated:</strong> @dealer.UpdatedAt.ToString("MMM dd, yyyy")</p>
+                            </div>
+                        </div>
+                        <div class="dealer-actions">
+                            <button class="btn-edit" @onclick="() => EditDealer(dealer)">
+                                <span class="oi oi-pencil"></span>
+                                Edit
+                            </button>
+                            <button class="btn-delete" @onclick="() => DeleteDealer(dealer)">
+                                <span class="oi oi-trash"></span>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="no-dealers">
+            <span class="oi oi-store"></span>
+            <h3>No dealers found</h3>
+            <p>Add your first dealer to get started.</p>
+        </div>
+    }
+</div>
+
+@if (showAddForm)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@(editingDealer == null ? "Add New Dealer" : "Edit Dealer")</h2>
+                <button class="btn-close" @onclick="CloseModal">
+                    <span class="oi oi-x"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="dealer-name">Dealer Name *</label>
+                    <input 
+                        id="dealer-name"
+                        type="text" 
+                        @bind="newDealer.Name" 
+                        placeholder="Enter dealer name"
+                        class="form-input"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="dealer-entity-id">Entity ID *</label>
+                    <input 
+                        id="dealer-entity-id"
+                        type="text" 
+                        @bind="newDealer.EntityId" 
+                        placeholder="Enter entity ID"
+                        class="form-input"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="dealer-url">URL *</label>
+                    <input 
+                        id="dealer-url"
+                        type="url" 
+                        @bind="newDealer.Url" 
+                        placeholder="Enter dealer URL"
+                        class="form-input"
+                    />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" @onclick="CloseModal">Cancel</button>
+                <button class="btn-save" @onclick="SaveDealer" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-small"></span>
+                    }
+                    else
+                    {
+                        <span class="oi oi-check"></span>
+                    }
+                    @(editingDealer == null ? "Add Dealer" : "Update Dealer")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Dealer> dealers = new();
+    private bool isLoading = false;
+    private string errorMessage = "";
+    private bool showAddForm = false;
+    private bool isSaving = false;
+    private Dealer? editingDealer = null;
+    private Dealer newDealer = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDealers();
+    }
+
+    private async Task LoadDealers()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+            StateHasChanged();
+
+            dealers = await DealerService.GetAllDealersAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading dealers: {ex.Message}";
+            Console.WriteLine($"Error in LoadDealers: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/");
+
+    private void ShowAddDealerForm()
+    {
+        editingDealer = null;
+        newDealer = new Dealer();
+        showAddForm = true;
+        StateHasChanged();
+    }
+
+    private void EditDealer(Dealer dealer)
+    {
+        editingDealer = dealer;
+        newDealer = new Dealer
+        {
+            Id = dealer.Id,
+            Name = dealer.Name,
+            EntityId = dealer.EntityId,
+            Url = dealer.Url
+        };
+        showAddForm = true;
+        StateHasChanged();
+    }
+
+    private async Task DeleteDealer(Dealer dealer)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete '{dealer.Name}'?"))
+        {
+            return;
+        }
+
+        try
+        {
+            var success = await DealerService.DeleteDealerAsync(dealer.Id);
+            if (success)
+            {
+                await LoadDealers();
+            }
+            else
+            {
+                errorMessage = "Failed to delete dealer";
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting dealer: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveDealer()
+    {
+        if (string.IsNullOrWhiteSpace(newDealer.Name) || 
+            string.IsNullOrWhiteSpace(newDealer.EntityId) || 
+            string.IsNullOrWhiteSpace(newDealer.Url))
+        {
+            errorMessage = "Please fill in all required fields";
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            bool success;
+            if (editingDealer == null)
+            {
+                success = await DealerService.AddDealerAsync(newDealer);
+            }
+            else
+            {
+                success = await DealerService.UpdateDealerAsync(newDealer);
+            }
+
+            if (success)
+            {
+                await LoadDealers();
+                CloseModal();
+            }
+            else
+            {
+                errorMessage = $"Failed to {(editingDealer == null ? "add" : "update")} dealer";
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving dealer: {ex.Message}";
+            StateHasChanged();
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseModal()
+    {
+        showAddForm = false;
+        editingDealer = null;
+        newDealer = new Dealer();
+        errorMessage = "";
+        StateHasChanged();
+    }
+}

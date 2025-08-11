@@ -26,6 +26,15 @@ service cloud.firestore {
                    request.auth.uid == resource.data.userId;
     }
     
+    // Rules for the dealers collection
+    match /dealers/{dealerId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+      
+      // Allow create, update, delete for all authenticated users (admin functionality)
+      allow create, update, delete: if request.auth != null;
+    }
+    
     // Function to validate car data structure
     function validCar(car) {
       return car.size() >= 5 &&                    // Must have at least 5 fields

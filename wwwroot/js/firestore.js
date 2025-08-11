@@ -2,7 +2,78 @@
 // This file will be expanded as we implement car listing functionality
 
 window.firestore = {
-    // Placeholder functions for car listing functionality
+    // Dealer functions
+    getAllDealers: async function() {
+        try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('dealers').get();
+            const dealers = [];
+            snapshot.forEach(doc => {
+                dealers.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            return JSON.stringify(dealers);
+        } catch (error) {
+            console.error('Error getting dealers:', error);
+            return '[]';
+        }
+    },
+
+    getDealerById: async function(id) {
+        try {
+            const db = firebase.firestore();
+            const doc = await db.collection('dealers').doc(id).get();
+            if (doc.exists) {
+                return JSON.stringify({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            }
+            return null;
+        } catch (error) {
+            console.error('Error getting dealer by id:', error);
+            return null;
+        }
+    },
+
+    addDealer: async function(dealerJson) {
+        try {
+            const dealer = JSON.parse(dealerJson);
+            const db = firebase.firestore();
+            const docRef = await db.collection('dealers').add(dealer);
+            return true;
+        } catch (error) {
+            console.error('Error adding dealer:', error);
+            return false;
+        }
+    },
+
+    updateDealer: async function(dealerJson) {
+        try {
+            const dealer = JSON.parse(dealerJson);
+            const db = firebase.firestore();
+            await db.collection('dealers').doc(dealer.id).update(dealer);
+            return true;
+        } catch (error) {
+            console.error('Error updating dealer:', error);
+            return false;
+        }
+    },
+
+    deleteDealer: async function(id) {
+        try {
+            const db = firebase.firestore();
+            await db.collection('dealers').doc(id).delete();
+            return true;
+        } catch (error) {
+            console.error('Error deleting dealer:', error);
+            return false;
+        }
+    },
+
+    // Car listing functions (placeholder for future use)
     getUserCars: async function(userId) {
         console.log('getUserCars called for user:', userId);
         return [];

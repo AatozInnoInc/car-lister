@@ -1,11 +1,13 @@
 @page "/inventory"
 @using Microsoft.AspNetCore.Authorization
 @using car_lister.Services
+@using car_lister.Models
 @using Microsoft.JSInterop
 @using System.Net.Http
 @using System.Text.Json
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject DealerService DealerService
 @attribute [Authorize]
 @implements IDisposable
 
@@ -166,24 +168,9 @@
 </div>
 
 @code {
-    private List<DealerInfo> availableDealers = new()
-    {
-        new DealerInfo 
-        { 
-            Name = "Asheboro Chrysler Dodge Jeep Ram", 
-            EntityId = "317131", 
-            Url = "https://www.cargurus.com/Cars/m-Asheboro-Chrysler-Dodge-Jeep-Ram-sp317131" 
-        },
-        new DealerInfo 
-        { 
-            Name = "Flow Honda of Winston Salem", 
-            EntityId = "59155", 
-            Url = "https://www.cargurus.com/Cars/m-Flow-Honda-of-Winston-Salem-sp59155" 
-        }
-    };
-
+    private List<Dealer> availableDealers = new();
     private int selectedDealerIndex = 0;
-    private DealerInfo? selectedDealer => availableDealers.Count > selectedDealerIndex ? availableDealers[selectedDealerIndex] : null;
+    private Dealer? selectedDealer => availableDealers.Count > selectedDealerIndex ? availableDealers[selectedDealerIndex] : null;
     
     private bool isLoading = false;
     private string errorMessage = "";
@@ -193,6 +180,11 @@
     private bool isDropdownOpen = false;
     private string searchTerm = "";
     private int highlightedIndex = -1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDealers();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -206,6 +198,29 @@
         {
             shouldScrollToTop = false;
             await JSRuntime.InvokeVoidAsync("scrollToResults");
+        }
+    }
+
+    private async Task LoadDealers()
+    {
+        try
+        {
+            availableDealers = await DealerService.GetAllDealersAsync();
+            
+            // Initialize with default dealers if none exist
+            if (!availableDealers.Any())
+            {
+                await DealerService.InitializeDefaultDealersAsync();
+                availableDealers = await DealerService.GetAllDealersAsync();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dealers: {ex.Message}");
+            // Fallback to empty list
+            availableDealers = new List<Dealer>();
         }
     }
 
@@ -386,7 +401,7 @@
         await JSRuntime.InvokeVoidAsync("scrollToHighlightedOption", "dropdown-options", highlightedIndex);
     }
 
-    private List<DealerInfo> filteredDealers => string.IsNullOrEmpty(searchTerm) 
+    private List<Dealer> filteredDealers => string.IsNullOrEmpty(searchTerm) 
         ? availableDealers 
         : availableDealers.Where(d => d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
 
@@ -413,13 +428,6 @@
     }
 
     public void Dispose() { }
-
-    public class DealerInfo
-    {
-        public string Name { get; set; } = "";
-        public string EntityId { get; set; } = "";
-        public string Url { get; set; } = "";
-    }
 
     public class InventorySearchResult
     {
