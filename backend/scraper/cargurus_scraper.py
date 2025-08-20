@@ -266,7 +266,7 @@ class CarGurusScraper:
                 processingTime=time.time() - start_time
             )
 
-    def scrape_dealer_page(self, dealer_entity_id: str, dealer_url: str, page_number: int = 1) -> InventorySearchResult:
+    def scrape_dealer_page(self, dealer_entity_id: str, dealer_url: str, page_number: int = 1, inventory_type: str = "ALL") -> InventorySearchResult:
         """
         Scrape dealer inventory using the AJAX pagination approach.
         This uses the searchPage.action endpoint that CarGurus uses for pagination.
@@ -275,6 +275,7 @@ class CarGurusScraper:
             dealer_entity_id: The dealer's entity ID (e.g., "317131")
             dealer_url: The full CarGurus dealer URL
             page_number: Page number to scrape (default: 1)
+            inventory_type: Type of inventory to search (ALL, NEW, USED)
             
         Returns:
             InventorySearchResult with list of cars and pagination info
@@ -283,7 +284,7 @@ class CarGurusScraper:
         
         try:
             logger.info(f"=== STARTING DEALER PAGE SCRAPE (AJAX METHOD) ===")
-            logger.info(f"Dealer Entity ID: {dealer_entity_id}, Dealer URL: {dealer_url}, Page: {page_number}")
+            logger.info(f"Dealer Entity ID: {dealer_entity_id}, Dealer URL: {dealer_url}, Page: {page_number}, Inventory Type: {inventory_type}")
             
             # Use the provided dealer URL instead of hard-coding
             logger.info(f"Getting initial dealer page: {dealer_url}")
@@ -305,7 +306,7 @@ class CarGurusScraper:
                 )
             
             # Extract search parameters from the initial page
-            search_params = self._extract_search_params_from_dealer_page(response.text, dealer_entity_id)
+            search_params = self._extract_search_params_from_dealer_page(response.text, dealer_entity_id, inventory_type)
             
             if not search_params:
                 logger.error("Failed to extract search parameters from dealer page")
@@ -321,7 +322,7 @@ class CarGurusScraper:
                 )
             
             # Now make the AJAX request to get the specific page
-            ajax_url = "https://www.cargurus.com/Cars/searchPage.action"
+            ajax_url = "https://www.cargurus.com/Cars/searchPreflight.action"
             
             # Update headers for AJAX request
             self.session.headers.update({
@@ -373,8 +374,8 @@ class CarGurusScraper:
                 processing_time = time.time() - start_time
                 logger.info(f"Successfully found {len(cars)} cars from AJAX response in {processing_time:.2f}s")
                 
-                # Get the total number of cars from the dealer page
-                total_cars = self._extract_total_cars_from_dealer_page(response.text, dealer_entity_id)
+                # Get the total number of cars from the AJAX response (filtered total)
+                total_cars = self._extract_total_cars_from_ajax_response(ajax_response.text)
                 
                 if total_cars > 0:
                     # Use the actual total cars for accurate pagination
@@ -1329,10 +1330,15 @@ class CarGurusScraper:
             
         return cars 
 
-    def _extract_search_params_from_dealer_page(self, html_content: str, dealer_entity_id: str) -> Optional[dict]:
+    def _extract_search_params_from_dealer_page(self, html_content: str, dealer_entity_id: str, inventory_type: str = "ALL") -> Optional[dict]:
         """
         Extract search parameters from the dealer page HTML.
         These parameters are needed for the AJAX pagination requests.
+        
+        Args:
+            html_content: HTML content of the dealer page
+            dealer_entity_id: Dealer entity ID
+            inventory_type: Type of inventory to search (ALL, NEW, USED)
         """
         try:
             # Look for search parameters in the HTML
@@ -1348,6 +1354,16 @@ class CarGurusScraper:
             page_receipt_match = re.search(page_receipt_pattern, html_content)
             page_receipt = page_receipt_match.group(1) if page_receipt_match else None
             
+            # Map inventory type to CarGurus newUsed parameter (single value format)
+            new_used_mapping = {
+                "ALL": "",  # All types: New Certified, New, Used
+                "NEW": 1,        # New only
+                "USED": 2,       # Used only
+                "NEW_CERTIFIED": 8  # New Certified only
+            }
+            new_used_value = new_used_mapping.get(inventory_type.upper(), "")
+            print(f"New Used Value: {new_used_value}")
+            
             # Build the search parameters based on the Node.js fetch example
             search_params = {
                 'searchId': search_id or 'f946015c-5531-4f6d-9c51-c34defd5256a',  # Fallback
@@ -1357,6 +1373,7 @@ class CarGurusScraper:
                 'sortDir': 'ASC',
                 'sortType': 'BEST_MATCH',
                 'srpVariation': 'DEALER_INVENTORY',
+                'newUsed': new_used_value,  # Add the newUsed parameter for inventory filtering
                 'isDeliveryEnabled': 'true',
                 'nonShippableBaseline': '0',
                 'filtersModified': 'true'
@@ -1776,4 +1793,46 @@ class CarGurusScraper:
             
         except Exception as e:
             logger.error(f"Error extracting total cars from dealer page: {e}")
+            return 0
+
+    def _extract_total_cars_from_ajax_response(self, ajax_response_text: str) -> int:
+        """
+        Extract the total number of cars from the AJAX response JSON.
+        
+        Args:
+            ajax_response_text: JSON response text from the AJAX request
+            
+        Returns:
+            Total number of cars as integer, or 0 if not found
+        """
+        try:
+            # Try to parse the AJAX response as JSON
+            json_data = json.loads(ajax_response_text)
+            
+            # Look for totalListings in the JSON response
+            # Based on the curl response, it should be at the root level
+            total_listings = json_data.get('totalListings', 0)
+            
+            if total_listings > 0:
+                logger.info(f"Extracted total cars from AJAX response: {total_listings}")
+                return total_listings
+            
+            # Fallback: try to find it in other common locations
+            if 'srpTrackingData' in json_data:
+                srp_data = json_data['srpTrackingData']
+                if 'defaultSRPListingCount' in srp_data:
+                    count_data = srp_data['defaultSRPListingCount']
+                    total_listings = count_data.get('totalListings', 0)
+                    if total_listings > 0:
+                        logger.info(f"Extracted total cars from srpTrackingData: {total_listings}")
+                        return total_listings
+            
+            logger.warning("Could not extract total cars from AJAX response")
+            return 0
+            
+        except json.JSONDecodeError:
+            logger.warning("AJAX response is not valid JSON, cannot extract total cars")
+            return 0
+        except Exception as e:
+            logger.error(f"Error extracting total cars from AJAX response: {e}")
             return 0 

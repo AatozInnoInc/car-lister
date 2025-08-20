@@ -194,9 +194,21 @@ Scrape inventory from a specific dealer.
   "dealerEntityId": "317131",
   "dealerName": "ABC Motors",
   "dealerUrl": "https://www.cargurus.com/Cars/inventorylisting/viewDetailsFilterViewInventoryListing.action?entitySelectingHelper.selectedEntity=sp317131",
-  "pageNumber": 1
+  "pageNumber": 1,
+  "inventoryType": "ALL"
 }
 ```
+
+**Parameters:**
+- `dealerEntityId` (required): The dealer's entity ID from CarGurus
+- `dealerName` (required): Human-readable dealer name
+- `dealerUrl` (required): Full CarGurus dealer URL
+- `pageNumber` (optional): Page number for pagination (default: 1)
+- `inventoryType` (optional): Type of inventory to search
+  - `"ALL"`: All vehicles (New, Used & Certified) - default
+  - `"NEW"`: New vehicles only
+  - `"USED"`: Used vehicles only
+  - `"NEW_CERTIFIED"`: New Certified vehicles only
 
 **Response:**
 ```json
