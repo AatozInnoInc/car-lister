@@ -201,10 +201,19 @@ curl -X POST "https://car-lister-api.onrender.com/api/inventory/search" \
 curl -X POST "https://car-lister-api.onrender.com/api/dealer/inventory" \
      -H "Content-Type: application/json" \
      -d '{
-       "entityId": "317131",
-       "pageNumber": 1
+       "dealerEntityId": "317131",
+       "dealerName": "ABC Motors",
+       "dealerUrl": "https://www.cargurus.com/Cars/m-ABC-Motors-sp317131",
+       "pageNumber": 1,
+       "inventoryType": "ALL"
      }'
 ```
+
+**Inventory Type Options:**
+- `"ALL"`: All vehicles (New, Used & Certified) - default
+- `"NEW"`: New vehicles only  
+- `"USED"`: Used vehicles only
+- `"NEW_CERTIFIED"`: New Certified vehicles only
 
 ### Complete API Documentation
 
