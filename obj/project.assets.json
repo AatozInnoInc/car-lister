@@ -1901,11 +1901,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\car-lister\\car-lister.csproj",
+      "projectUniqueName": "M:\\Documents\\Source\\.NET\\car-lister\\car-lister.csproj",
       "projectName": "car-lister",
-      "projectPath": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\car-lister\\car-lister.csproj",
+      "projectPath": "M:\\Documents\\Source\\.NET\\car-lister\\car-lister.csproj",
       "packagesPath": "C:\\Users\\aatoz_\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\aatoz_\\source\\repos\\AatozInnoInc\\car-lister\\obj\\",
+      "outputPath": "M:\\Documents\\Source\\.NET\\car-lister\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
