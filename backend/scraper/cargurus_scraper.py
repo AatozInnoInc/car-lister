@@ -1469,7 +1469,8 @@ class CarGurusScraper:
                     # Check if this is a car listing tile
                     if tile.get('type') == 'LISTING_USED_STANDARD' or tile.get('type') == 'LISTING_NEW_STANDARD':
                         car_data = tile.get('data', {})
-                        car = self._extract_car_from_ajax_tile_data(car_data, dealer_entity_id)
+                        tile_type = tile.get('type', '')  # Pass the tile type!
+                        car = self._extract_car_from_ajax_tile_data(car_data, dealer_entity_id, tile_type)
                         if car:
                             cars.append(car)
                             logger.info(f"Successfully extracted car {i+1}: {car.make} {car.model} {car.year}")
@@ -1491,7 +1492,7 @@ class CarGurusScraper:
             logger.error(f"Error extracting cars from AJAX JSON: {e}")
             return []
 
-    def _extract_car_from_ajax_tile_data(self, car_data: dict, dealer_entity_id: str = "") -> Optional[ScrapedCar]:
+    def _extract_car_from_ajax_tile_data(self, car_data: dict, dealer_entity_id: str = "", tile_type: str = "") -> Optional[ScrapedCar]:
         """
         Extract car data from a single tile in the AJAX JSON response.
         """
@@ -1515,6 +1516,12 @@ class CarGurusScraper:
             
             # Extract stats
             stats = []
+
+            # Add condition based on tile type (CRITICAL FIX!)
+            if tile_type == 'LISTING_NEW_STANDARD':
+                stats.append({"header": "Condition", "value": "New"})
+            elif tile_type == 'LISTING_USED_STANDARD':
+                stats.append({"header": "Condition", "value": "Used"})
             mileage = car_data.get('mileageString', '')
             if mileage:
                 stats.append({"header": "Mileage", "value": mileage})
