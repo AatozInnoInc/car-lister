@@ -87,11 +87,13 @@ class DealerInventoryRequest(BaseModel):
         dealerName: Human-readable dealer name
         dealerUrl: Full CarGurus dealer URL
         pageNumber: Page number for pagination
+        inventoryType: Type of inventory to search (ALL, NEW, USED, NEW_CERTIFIED)
     """
     dealerEntityId: str = Field(..., description="Dealer entity ID for dealer-specific searches")
     dealerName: str = Field(..., description="Human-readable dealer name")
     dealerUrl: str = Field(..., description="Full CarGurus dealer URL")
     pageNumber: int = Field(default=1, description="Page number for pagination", ge=1)
+    inventoryType: str = Field(default="ALL", description="Type of inventory to search (ALL, NEW, USED, NEW_CERTIFIED)")
     
     model_config = ConfigDict(
         json_schema_extra={
@@ -99,7 +101,8 @@ class DealerInventoryRequest(BaseModel):
                 "dealerEntityId": "317131",
                 "dealerName": "Asheboro Chrysler Dodge Jeep Ram",
                 "dealerUrl": "https://www.cargurus.com/Cars/m-Asheboro-Chrysler-Dodge-Jeep-Ram-sp317131",
-                "pageNumber": 1
+                "pageNumber": 1,
+                "inventoryType": "ALL"
             }
         }
     )

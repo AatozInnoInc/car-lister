@@ -194,7 +194,7 @@ async def scrape_dealer_inventory(request: DealerInventoryRequest):
             raise HTTPException(status_code=400, detail="Page number must be at least 1")
         
         # Scrape the dealer inventory using the new AJAX method
-        result = scraper.scrape_dealer_page(request.dealerEntityId, request.dealerUrl, request.pageNumber)
+        result = scraper.scrape_dealer_page(request.dealerEntityId, request.dealerUrl, request.pageNumber, request.inventoryType)
         
         if result.success:
             logger.info(f"Successfully found {len(result.cars)} cars from dealer {request.dealerName}")
