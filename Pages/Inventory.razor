@@ -73,7 +73,12 @@
             </div>
             <div class="form-group">
                 <label>Inventory Type</label>
-                <input type="text" value="All Vehicles (New & Used)" readonly class="dealer-display" />
+                <select @bind="selectedInventoryType" class="form-control">
+                    <option value="ALL">All (New, Used & Certified)</option>
+                    <option value="NEW">New Only</option>
+                    <option value="USED">Used Only</option>
+                    <option value="NEW_CERTIFIED">New Certified Only</option>
+                </select>
             </div>
             <button class="btn-search" @onclick="SearchInventory" disabled="@isLoading">
                 @if (isLoading)
@@ -171,6 +176,7 @@
     private List<Dealer> availableDealers = new();
     private int selectedDealerIndex = 0;
     private Dealer? selectedDealer => availableDealers.Count > selectedDealerIndex ? availableDealers[selectedDealerIndex] : null;
+    private string selectedInventoryType = "ALL";
     
     private bool isLoading = false;
     private string errorMessage = "";
@@ -296,7 +302,8 @@
                 dealerEntityId = selectedDealer.EntityId,
                 dealerName = selectedDealer.Name,
                 dealerUrl = selectedDealer.Url,
-                pageNumber = pageNumber
+                pageNumber = pageNumber,
+                inventoryType = selectedInventoryType
             };
 
             var response = await httpClient.PostAsJsonAsync("/api/dealer/inventory", request);
