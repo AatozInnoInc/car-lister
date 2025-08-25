@@ -45,9 +45,16 @@
 
 	<script>
 		// Your web app's Firebase configuration
-				const firebaseConfig = {
+		const currentHost = window.location.hostname;
+		const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+		
+		// For localhost, we need to use the firebaseapp.com domain for auth
+		// For production, we can use either domain
+		const authDomain = isLocalhost ? "car-lister-be093.firebaseapp.com" : "car-lister-be093.web.app";
+		
+		const firebaseConfig = {
 			apiKey: "AIzaSyDXflKHASqzAR05HCvgOLIa20_RkGgfooY",
-			authDomain: "car-lister-be093.firebaseapp.com",
+			authDomain: authDomain,
 			projectId: "car-lister-be093",
 			storageBucket: "car-lister-be093.firebasestorage.app",
 			messagingSenderId: "452093902586",
@@ -55,22 +62,56 @@
 		};
 
 		// Initialize Firebase
-		firebase.initializeApp(firebaseConfig);
-		// Initialize Firestore
-		const db = firebase.firestore();
+		try {
+			firebase.initializeApp(firebaseConfig);
+			// Initialize Firestore
+			const db = firebase.firestore();
 
-		// Add initialization check
-		window.firebaseInitialized = true;
+			// Add initialization check
+			window.firebaseInitialized = true;
+			
+			// Set up authentication state listener
+			firebase.auth().onAuthStateChanged(function(user) {
+				if (user) {
+					// Notify Blazor about authentication state change
+					if (window.Blazor && window.Blazor._internal && window.Blazor._internal.dotNetDispatcher) {
+						try {
+							window.Blazor._internal.dotNetDispatcher.invokeDotNetFromJS('car_lister', 'Services.FirebaseAuthenticationStateProvider', 'NotifyAuthenticationStateChanged', []);
+						} catch (error) {
+							// Blazor not ready yet
+						}
+					}
+				}
+			});
+		} catch (error) {
+			console.error('Firebase initialization error:', error);
+			window.firebaseInitialized = false;
+		}
 	</script>
 	
-				<!-- Custom Firebase interface scripts -->
-		<script src="js/firebaseAuth.js"></script>
-		<script src="js/firestore.js"></script>
-		<script src="js/notifications.js"></script>
+	<!-- Custom Firebase interface scripts -->
+	<script src="js/firebaseAuth.js"></script>
+	<script src="js/firestore.js"></script>
+	<script src="js/notifications.js"></script>
 
 	<!-- Blazor script last -->
 	<script src="_framework/blazor.webassembly.js"></script>
-	<script>navigator.serviceWorker.register('service-worker.js');</script>
+	<script>
+		// Register service worker with error handling
+		if ('serviceWorker' in navigator) {
+			try {
+				navigator.serviceWorker.register('service-worker.js')
+					.then(function(registration) {
+						console.log('Service Worker registered successfully:', registration);
+					})
+					.catch(function(error) {
+						console.log('Service Worker registration failed:', error);
+					});
+			} catch (error) {
+				console.log('Service Worker registration error:', error);
+			}
+		}
+	</script>
 </body>
 
 </html>

@@ -3,6 +3,13 @@ using System.Threading.Tasks;
 
 namespace car_lister.Services;
 
+public class FirebaseUser
+{
+    public string Uid { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string PhotoURL { get; set; } = string.Empty;
+}
 
 public class FirebaseService
 {
@@ -26,6 +33,19 @@ public class FirebaseService
         }
     }
 
+    // Handle redirect result after authentication
+    public async Task<bool> HandleRedirectResult()
+    {
+        try
+        {
+            return await _jsRuntime.InvokeAsync<bool>("firebaseAuth.handleRedirectResult");
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task SignOut()
     {
         await _jsRuntime.InvokeVoidAsync("firebaseAuth.signOut");
@@ -34,6 +54,18 @@ public class FirebaseService
     public async Task<bool> IsUserAuthenticated()
     {
         return await _jsRuntime.InvokeAsync<bool>("firebaseAuth.isUserAuthenticated");
+    }
+
+    public async Task<FirebaseUser?> GetCurrentUser()
+    {
+        try
+        {
+            return await _jsRuntime.InvokeAsync<FirebaseUser>("firebaseAuth.getCurrentUser");
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     // Example: Sign in with email and password

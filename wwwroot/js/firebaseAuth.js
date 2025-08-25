@@ -9,10 +9,39 @@ window.firebaseAuth = {
         try {
             this.ensureInitialized();
             const provider = new firebase.auth.GoogleAuthProvider();
-            const result = await firebase.auth().signInWithPopup(provider);
-            return !!result.user;
+            
+            // Set the redirect URL explicitly for localhost
+            const currentHost = window.location.hostname;
+            const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+            
+            if (isLocalhost) {
+                // For localhost, we need to handle the redirect manually
+                try {
+                    const result = await firebase.auth().signInWithPopup(provider);
+                    return !!result.user;
+                } catch (popupError) {
+                    // Fallback to redirect if popup fails
+                    await firebase.auth().signInWithRedirect(provider);
+                    return true;
+                }
+            } else {
+                // Use redirect for production
+                await firebase.auth().signInWithRedirect(provider);
+                return true;
+            }
         } catch (error) {
             console.error("Error signing in with Google:", error);
+            return false;
+        }
+    },
+
+    handleRedirectResult: async function () {
+        try {
+            this.ensureInitialized();
+            const result = await firebase.auth().getRedirectResult();
+            return !!result.user;
+        } catch (error) {
+            console.error("Error handling redirect result:", error);
             return false;
         }
     },
@@ -57,6 +86,16 @@ window.firebaseAuth = {
             };
         } catch (error) {
             console.error("Error getting current user:", error);
+            return null;
+        }
+    },
+
+    onAuthStateChanged: function(callback) {
+        try {
+            this.ensureInitialized();
+            return firebase.auth().onAuthStateChanged(callback);
+        } catch (error) {
+            console.error("Error setting up auth state listener:", error);
             return null;
         }
     }
