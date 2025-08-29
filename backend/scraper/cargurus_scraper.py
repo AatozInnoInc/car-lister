@@ -927,6 +927,10 @@ class CarGurusScraper:
                 logger.warning("listingDetailStatsSectionDto is not a list")
                 return stats
             
+            # Track specific MPG values for easy access
+            city_mpg = None
+            highway_mpg = None
+            
             for category in stats_section:
                 if not isinstance(category, dict):
                     continue
@@ -948,11 +952,19 @@ class CarGurusScraper:
                         if isinstance(item, dict):
                             label = item.get('label', '')
                             display_value = item.get('displayValue', '')
+                            key = item.get('key', '')
+                            
                             if label and display_value:
                                 stats.append({
                                     'header': label,
                                     'value': display_value
                                 })
+                                
+                                # Track MPG values specifically
+                                if key == 'cityFuelEconomy':
+                                    city_mpg = display_value
+                                elif key == 'highwayFuelEconomy':
+                                    highway_mpg = display_value
                 
                 # Add options if they exist
                 if options_list and category_name and options_list is not None:
@@ -969,7 +981,20 @@ class CarGurusScraper:
                                 'value': "✓"
                             })
             
-            logger.info(f"Extracted {len(stats)} stats from listing")
+            # Add MPG values as separate stats for easy access in stage2 workflow
+            if city_mpg:
+                stats.append({
+                    'header': 'City MPG',
+                    'value': city_mpg
+                })
+            
+            if highway_mpg:
+                stats.append({
+                    'header': 'Highway MPG',
+                    'value': highway_mpg
+                })
+            
+            logger.info(f"Extracted {len(stats)} stats from listing (City MPG: {city_mpg}, Highway MPG: {highway_mpg})")
             
         except Exception as e:
             logger.warning(f"Error extracting stats: {str(e)}")
