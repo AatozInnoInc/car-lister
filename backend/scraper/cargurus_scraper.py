@@ -18,6 +18,13 @@ class CarGurusScraper:
     
     This scraper uses CarGurus' internal JSON API to extract complete car data
     including all images, specifications, and detailed information.
+    
+    Important Notes:
+    - Cars with no price field in the JSON data will have price=0.0
+    - These typically represent vehicles that show "No price listed" on CarGurus
+    - The scraper now includes ALL cars found, including those with no price
+    - Use filter_cars_with_price() to exclude cars with no price if needed
+    - Use get_scraping_summary() to get statistics about scraped data
     """
     
     def __init__(self):
@@ -573,13 +580,24 @@ class CarGurusScraper:
             
         Returns:
             ScrapedCar object if successful, None otherwise
+            
+        Note: Cars with no price field in the JSON data will have price=0.0.
+        These typically represent vehicles that show "No price listed" on CarGurus.
+        Such cars should be filtered out in the application logic.
         """
         try:
             # Extract basic information
             make = listing.get('makeName', listing.get('make', 'Unknown'))
             model = listing.get('modelName', listing.get('model', 'Unknown'))
             year = listing.get('year', 0)
+            
+            # Extract price - defaults to 0.0 if no price field exists
+            # This handles cars that show "No price listed" on CarGurus
             price = listing.get('price', 0.0)
+            
+            # Log if this car has no price (for debugging)
+            if price == 0.0 and 'price' not in listing:
+                logger.debug(f"Car with no price field: {year} {make} {model}")
             
             # Construct full title
             full_title = f"{year} {make} {model}".strip()
@@ -808,6 +826,10 @@ class CarGurusScraper:
             
         Returns:
             ScrapedCar object if successful, None otherwise
+            
+        Note: Cars with no price field in the JSON data will have price=0.0.
+        These typically represent vehicles that show "No price listed" on CarGurus.
+        Such cars should be filtered out in the application logic.
         """
         try:
             listing = json_data.get('listing', {})
@@ -845,7 +867,14 @@ class CarGurusScraper:
             else:
                 fullTitle = f"{year} {make} {model}".strip()
             
+            # Extract price - defaults to 0.0 if no price field exists
+            # This handles cars that show "No price listed" on CarGurus
             price = listing.get('price', 0.0)
+            
+            # Log if this car has no price (for debugging)
+            if price == 0.0 and 'price' not in listing:
+                logger.debug(f"Car with no price field: {fullTitle} (ID: {listing.get('id', 'unknown')})")
+            
             description = listing.get('description', 'No description available.')
             
             # Extract features from options and description
@@ -862,7 +891,11 @@ class CarGurusScraper:
                 logger.warning(f"Insufficient car data extracted from JSON")
                 return None
             
-            logger.info(f"Extracted car title: {fullTitle}")
+            # Log car extraction with price status
+            if price == 0.0:
+                logger.info(f"Extracted car (no price): {fullTitle}")
+            else:
+                logger.info(f"Extracted car: {fullTitle} - ${price:,}")
             
             return ScrapedCar(
                 make=make,
@@ -1491,20 +1524,46 @@ class CarGurusScraper:
             
             for i, tile in enumerate(tiles):
                 try:
-                    # Check if this is a car listing tile
-                    if tile.get('type') == 'LISTING_USED_STANDARD' or tile.get('type') == 'LISTING_NEW_STANDARD':
-                        car_data = tile.get('data', {})
-                        tile_type = tile.get('type', '')  # Pass the tile type!
+                    tile_type = tile.get('type', '')
+                    car_data = tile.get('data', {})
+                    
+                    # Log all tile types for debugging
+                    logger.debug(f"Tile {i+1}: type={tile_type}, has_data={bool(car_data)}")
+                    
+                    # Check if this is a car listing tile - be more inclusive
+                    is_car_tile = False
+                    
+                    # Process all LISTING_* tiles (including any we might have missed)
+                    if tile_type.startswith('LISTING_'):
+                        is_car_tile = True
+                        logger.debug(f"Processing {tile_type} tile {i+1}")
+                    # Also check if it's a MERCH tile that might contain car data
+                    elif tile_type == 'MERCH' and car_data and any(key in car_data for key in ['makeName', 'modelName', 'carYear', 'id']):
+                        is_car_tile = True
+                        logger.debug(f"Processing MERCH tile with car data {i+1}")
+                    # Check for any tile with car data
+                    elif car_data and any(key in car_data for key in ['makeName', 'modelName', 'carYear', 'id']):
+                        is_car_tile = True
+                        logger.debug(f"Processing tile {tile_type} with car data {i+1}")
+                    # For debugging: log what's in MERCH tiles
+                    elif tile_type == 'MERCH' and car_data:
+                        logger.debug(f"MERCH tile {i+1} data keys: {list(car_data.keys())}")
+                        # Only process MERCH tiles if they have actual car data (makeName, modelName, carYear)
+                        if any(key in car_data for key in ['makeName', 'modelName', 'carYear', 'id']):
+                            is_car_tile = True
+                            logger.debug(f"Processing MERCH tile with actual car data {i+1}")
+                        else:
+                            logger.debug(f"Skipping MERCH tile without car data {i+1}")
+                    
+                    if is_car_tile and car_data:
                         car = self._extract_car_from_ajax_tile_data(car_data, dealer_entity_id, tile_type)
                         if car:
                             cars.append(car)
-                            logger.info(f"Successfully extracted car {i+1}: {car.make} {car.model} {car.year}")
-                    elif tile.get('type') == 'MERCH':
-                        # Skip merchandise/advertisement tiles
-                        logger.debug(f"Skipping MERCH tile {i}")
-                        continue
+                            logger.info(f"Successfully extracted car {len(cars)}: {car.make} {car.model} {car.year}")
+                        else:
+                            logger.debug(f"Failed to extract car from {tile_type} tile {i+1}")
                     else:
-                        logger.debug(f"Unknown tile type: {tile.get('type')}")
+                        logger.debug(f"Skipping non-car tile {i+1}: {tile_type}")
                         
                 except Exception as e:
                     logger.warning(f"Error extracting car from tile {i}: {e}")
@@ -1520,13 +1579,24 @@ class CarGurusScraper:
     def _extract_car_from_ajax_tile_data(self, car_data: dict, dealer_entity_id: str = "", tile_type: str = "") -> Optional[ScrapedCar]:
         """
         Extract car data from a single tile in the AJAX JSON response.
+        
+        Note: Cars with no price field in the JSON data will have price=0.0.
+        These typically represent vehicles that show "No price listed" on CarGurus.
+        Such cars should be filtered out in the application logic.
         """
         try:
             # Extract basic car information
             make = car_data.get('makeName', '')
             model = car_data.get('modelName', '')
             year = car_data.get('carYear', 0)
+            
+            # Extract price - defaults to 0.0 if no price field exists
+            # This handles cars that show "No price listed" on CarGurus
             price = car_data.get('price', 0.0)
+            
+            # Log if this car has no price (for debugging)
+            if price == 0.0 and 'price' not in car_data:
+                logger.debug(f"Car with no price field: {year} {make} {model} (ID: {car_data.get('id', 'unknown')})")
             
             # Extract listing ID for URL construction
             listing_id = car_data.get('id', '')
@@ -1595,9 +1665,15 @@ class CarGurusScraper:
             # Validate that we have at least basic information
             if not make or not model or year == 0:
                 logger.warning(f"Insufficient car data in tile: make={make}, model={model}, year={year}")
+                # Log the full car_data for debugging
+                logger.debug(f"Full car data for failed tile: {car_data}")
                 return None
             
-            logger.info(f"Extracted car: {full_title} - ${price:,} - URL: {original_url}")
+            # Log car extraction with price status
+            if price == 0.0:
+                logger.info(f"Extracted car (no price): {full_title} - URL: {original_url}")
+            else:
+                logger.info(f"Extracted car: {full_title} - ${price:,} - URL: {original_url}")
             
             return ScrapedCar(
                 make=make,
@@ -1826,6 +1902,109 @@ class CarGurusScraper:
         except Exception as e:
             logger.error(f"Error extracting total cars from dealer page: {e}")
             return 0
+
+    def filter_cars_with_price(self, cars: List[ScrapedCar]) -> List[ScrapedCar]:
+        """
+        Filter out cars that have no price (price=0.0).
+        
+        Args:
+            cars: List of ScrapedCar objects
+            
+        Returns:
+            List of ScrapedCar objects with valid prices (> 0)
+            
+        Note: Cars with price=0.0 typically represent vehicles that show 
+        "No price listed" on CarGurus and should be filtered out for 
+        applications that require pricing information.
+        """
+        filtered_cars = [car for car in cars if car.price > 0.0]
+        removed_count = len(cars) - len(filtered_cars)
+        
+        if removed_count > 0:
+            logger.info(f"Filtered out {removed_count} cars with no price (price=0.0)")
+        
+        return filtered_cars
+
+    def get_cars_without_price(self, cars: List[ScrapedCar]) -> List[ScrapedCar]:
+        """
+        Get cars that have no price (price=0.0).
+        
+        Args:
+            cars: List of ScrapedCar objects
+            
+        Returns:
+            List of ScrapedCar objects with no price (price=0.0)
+            
+        Note: These cars typically represent vehicles that show 
+        "No price listed" on CarGurus.
+        """
+        no_price_cars = [car for car in cars if car.price == 0.0]
+        
+        if no_price_cars:
+            logger.info(f"Found {len(no_price_cars)} cars with no price (price=0.0)")
+        
+        return no_price_cars
+
+    def get_scraping_summary(self, cars: List[ScrapedCar]) -> dict:
+        """
+        Get summary statistics about scraped cars.
+        
+        Args:
+            cars: List of ScrapedCar objects
+            
+        Returns:
+            Dictionary with summary statistics including:
+            - total_cars: Total number of cars scraped
+            - cars_with_price: Number of cars with valid prices (> 0)
+            - cars_without_price: Number of cars with no price (price=0.0)
+            - cars_with_images: Number of cars with images
+            - cars_without_images: Number of cars without images
+            - price_range: Dictionary with min, max, and average prices
+            - success_rate: Percentage of cars with valid prices
+        """
+        if not cars:
+            return {
+                'total_cars': 0,
+                'cars_with_price': 0,
+                'cars_without_price': 0,
+                'cars_with_images': 0,
+                'cars_without_images': 0,
+                'price_range': {'min': 0, 'max': 0, 'average': 0},
+                'success_rate': 0.0
+            }
+        
+        total_cars = len(cars)
+        cars_with_price = [car for car in cars if car.price > 0.0]
+        cars_without_price = [car for car in cars if car.price == 0.0]
+        cars_with_images = [car for car in cars if car.images]
+        cars_without_images = [car for car in cars if not car.images]
+        
+        # Calculate price statistics
+        if cars_with_price:
+            prices = [car.price for car in cars_with_price]
+            price_range = {
+                'min': min(prices),
+                'max': max(prices),
+                'average': sum(prices) / len(prices)
+            }
+        else:
+            price_range = {'min': 0, 'max': 0, 'average': 0}
+        
+        success_rate = (len(cars_with_price) / total_cars) * 100 if total_cars > 0 else 0.0
+        
+        summary = {
+            'total_cars': total_cars,
+            'cars_with_price': len(cars_with_price),
+            'cars_without_price': len(cars_without_price),
+            'cars_with_images': len(cars_with_images),
+            'cars_without_images': len(cars_without_images),
+            'price_range': price_range,
+            'success_rate': success_rate
+        }
+        
+        logger.info(f"Scraping summary: {len(cars_with_price)}/{total_cars} cars with valid prices ({success_rate:.1f}% success rate)")
+        
+        return summary
 
     def _extract_total_cars_from_ajax_response(self, ajax_response_text: str) -> int:
         """
