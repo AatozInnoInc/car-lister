@@ -11,6 +11,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddScoped<FirebaseService>();
 builder.Services.AddScoped<DealerService>();
+builder.Services.AddScoped<ClientService>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthenticationStateProvider>();
 builder.Services.AddScoped<FirebaseAuthService>();
 builder.Services.AddAuthorizationCore();

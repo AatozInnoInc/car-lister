@@ -73,6 +73,168 @@ window.firestore = {
         }
     },
 
+    // Client functions
+    getAllClients: async function() {
+        try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('clients').get();
+            const clients = [];
+            snapshot.forEach(doc => {
+                clients.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            return JSON.stringify(clients);
+        } catch (error) {
+            console.error('Error getting clients:', error);
+            return '[]';
+        }
+    },
+
+    getClientById: async function(id) {
+        try {
+            const db = firebase.firestore();
+            const doc = await db.collection('clients').doc(id).get();
+            if (doc.exists) {
+                return JSON.stringify({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            }
+            return null;
+        } catch (error) {
+            console.error('Error getting client by id:', error);
+            return null;
+        }
+    },
+
+    addClient: async function(clientJson) {
+        try {
+            const client = JSON.parse(clientJson);
+            const db = firebase.firestore();
+            const docRef = await db.collection('clients').add(client);
+            return true;
+        } catch (error) {
+            console.error('Error adding client:', error);
+            return false;
+        }
+    },
+
+    updateClient: async function(clientJson) {
+        try {
+            const client = JSON.parse(clientJson);
+            const db = firebase.firestore();
+            await db.collection('clients').doc(client.id).update(client);
+            return true;
+        } catch (error) {
+            console.error('Error updating client:', error);
+            return false;
+        }
+    },
+
+    deleteClient: async function(id) {
+        try {
+            const db = firebase.firestore();
+            await db.collection('clients').doc(id).delete();
+            return true;
+        } catch (error) {
+            console.error('Error deleting client:', error);
+            return false;
+        }
+    },
+
+    // Car functions
+    getCarsByClientId: async function(clientId) {
+        try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('cars').where('clientId', '==', clientId).get();
+            const cars = [];
+            snapshot.forEach(doc => {
+                cars.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            return JSON.stringify(cars);
+        } catch (error) {
+            console.error('Error getting cars by client id:', error);
+            return '[]';
+        }
+    },
+
+    addCar: async function(carJson) {
+        try {
+            const car = JSON.parse(carJson);
+            const db = firebase.firestore();
+            const docRef = await db.collection('cars').add(car);
+            return true;
+        } catch (error) {
+            console.error('Error adding car:', error);
+            return false;
+        }
+    },
+
+    addCars: async function(carsJson) {
+        try {
+            const cars = JSON.parse(carsJson);
+            const db = firebase.firestore();
+            const batch = db.batch();
+            
+            cars.forEach(car => {
+                const docRef = db.collection('cars').doc();
+                batch.set(docRef, car);
+            });
+            
+            await batch.commit();
+            return true;
+        } catch (error) {
+            console.error('Error adding cars:', error);
+            return false;
+        }
+    },
+
+    updateCar: async function(carJson) {
+        try {
+            const car = JSON.parse(carJson);
+            const db = firebase.firestore();
+            await db.collection('cars').doc(car.id).update(car);
+            return true;
+        } catch (error) {
+            console.error('Error updating car:', error);
+            return false;
+        }
+    },
+
+    deleteCar: async function(id) {
+        try {
+            const db = firebase.firestore();
+            await db.collection('cars').doc(id).delete();
+            return true;
+        } catch (error) {
+            console.error('Error deleting car:', error);
+            return false;
+        }
+    },
+
+    deleteCarsByClientId: async function(clientId) {
+        try {
+            const db = firebase.firestore();
+            const snapshot = await db.collection('cars').where('clientId', '==', clientId).get();
+            const batch = db.batch();
+            
+            snapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            
+            await batch.commit();
+            return true;
+        } catch (error) {
+            console.error('Error deleting cars by client id:', error);
+            return false;
+        }
+    },
+
     // Car listing functions (placeholder for future use)
     getUserCars: async function(userId) {
         console.log('getUserCars called for user:', userId);
