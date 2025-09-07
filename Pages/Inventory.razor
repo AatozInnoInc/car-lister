@@ -3,11 +3,10 @@
 @using car_lister.Services
 @using car_lister.Models
 @using Microsoft.JSInterop
-@using System.Net.Http
-@using System.Text.Json
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject DealerService DealerService
+@inject InventoryService InventoryService
 @attribute [Authorize]
 @implements IDisposable
 
@@ -124,9 +123,9 @@
                 {
                     <div class="car-card" @onclick="() => ViewCarDetails(car)">
                         <div class="car-image">
-                            @if (car.images != null && car.images.Any())
+                            @if (car.Images != null && car.Images.Any())
                             {
-                                <img src="@car.images[0]" alt="@car.fullTitle" />
+                                <img src="@car.Images[0]" alt="@car.FullTitle" />
                             }
                             else
                             {
@@ -136,8 +135,8 @@
                             }
                         </div>
                         <div class="car-info">
-                            <h3 class="car-title">@car.fullTitle</h3>
-                            <div class="car-price">$@car.price.ToString("N0")</div>
+                            <h3 class="car-title">@car.FullTitle</h3>
+                            <div class="car-price">$@car.Price.ToString("N0")</div>
                             <div class="car-location">@selectedDealer?.Name</div>
                         </div>
                     </div>
@@ -260,7 +259,7 @@
 
     private async Task PreviousPage()
     {
-        if (searchResults?.CurrentPage > 1)
+        if (searchResults != null && searchResults.CurrentPage > 1)
         {
             await SearchPage(searchResults.CurrentPage - 1);
         }
@@ -268,7 +267,7 @@
 
     private async Task NextPage()
     {
-        if (searchResults?.CurrentPage < searchResults.TotalPages)
+        if (searchResults != null && searchResults.CurrentPage < searchResults.TotalPages)
         {
             await SearchPage(searchResults.CurrentPage + 1);
         }
@@ -289,41 +288,20 @@
             hasSearched = true;
             StateHasChanged();
 
-            using var httpClient = new HttpClient();
-            var baseUrl = NavigationManager.BaseUri.Contains("localhost") 
-                ? "http://localhost:8000" 
-                : "https://car-lister-api.onrender.com";
-            
-            httpClient.BaseAddress = new Uri(baseUrl);
-            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-
-            var request = new
+            var request = new InventorySearchRequest
             {
-                dealerEntityId = selectedDealer.EntityId,
-                dealerName = selectedDealer.Name,
-                dealerUrl = selectedDealer.Url,
-                pageNumber = pageNumber,
-                inventoryType = selectedInventoryType
+                DealerEntityId = selectedDealer.EntityId,
+                DealerName = selectedDealer.Name,
+                DealerUrl = selectedDealer.Url,
+                PageNumber = pageNumber,
+                InventoryType = selectedInventoryType
             };
 
-            var response = await httpClient.PostAsJsonAsync("/api/dealer/inventory", request);
+            searchResults = await InventoryService.SearchDealerInventoryAsync(request);
             
-            if (response.IsSuccessStatusCode)
+            if (searchResults != null && !searchResults.Success)
             {
-                var jsonString = await response.Content.ReadAsStringAsync();
-                searchResults = JsonSerializer.Deserialize<InventorySearchResult>(jsonString, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-                
-                if (searchResults != null && !searchResults.Success)
-                {
-                    errorMessage = searchResults.ErrorMessage ?? "Search failed. Please try again.";
-                }
-            }
-            else
-            {
-                errorMessage = $"Search failed with status code: {response.StatusCode}";
+                errorMessage = searchResults.ErrorMessage ?? "Search failed. Please try again.";
             }
         }
         catch (Exception ex)
@@ -341,9 +319,9 @@
 
     private async Task ViewCarDetails(ScrapedCar car)
     {
-        if (!string.IsNullOrEmpty(car.originalUrl))
+        if (!string.IsNullOrEmpty(car.OriginalUrl))
         {
-            await JSRuntime.InvokeVoidAsync("open", car.originalUrl, "_blank");
+            await JSRuntime.InvokeVoidAsync("open", car.OriginalUrl, "_blank");
         }
     }
 
@@ -436,29 +414,4 @@
 
     public void Dispose() { }
 
-    public class InventorySearchResult
-    {
-        public bool Success { get; set; }
-        public List<ScrapedCar> Cars { get; set; } = new();
-        public int TotalResults { get; set; }
-        public int CurrentPage { get; set; }
-        public int TotalPages { get; set; }
-        public string? ErrorMessage { get; set; }
-        public double ProcessingTime { get; set; }
-    }
-
-    public class ScrapedCar
-    {
-        public string make { get; set; } = "";
-        public string model { get; set; } = "";
-        public int year { get; set; }
-        public double price { get; set; }
-        public string description { get; set; } = "";
-        public List<string> features { get; set; } = new();
-        public List<object> stats { get; set; } = new();
-        public List<string> images { get; set; } = new();
-        public string originalUrl { get; set; } = "";
-        public string fullTitle { get; set; } = "";
-        public DateTime scrapedAt { get; set; }
-    }
 } 
