@@ -96,9 +96,9 @@ h1:focus {
 }
 
 .oi {
-    font-size: 1.1rem;
+    font-size: 1rem;
     vertical-align: text-top;
-    top: -2px;
+    top: -1px;
 }
 
 .nav-item {
