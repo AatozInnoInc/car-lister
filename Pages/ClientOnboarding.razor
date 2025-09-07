@@ -1,0 +1,1164 @@
+@page "/client-onboarding"
+
+@using Microsoft.AspNetCore.Authorization
+@using car_lister.Services
+@using car_lister.Models
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject ClientService ClientService
+@inject InventoryService InventoryService
+@attribute [Authorize]
+
+<PageTitle>Client Onboarding - Car Lister</PageTitle>
+<link href="css/client-onboarding.css" rel="stylesheet" />
+<link href="css/addlisting.css" rel="stylesheet" />
+<script src="js/firestore.js"></script>
+
+<div class="onboarding-container">
+    <div class="header">
+        <button class="btn-back" @onclick="GoBack">
+            <span class="oi oi-arrow-left"></span>
+            Back
+        </button>
+        <h1>Client Onboarding</h1>
+        <p class="subtitle">Set up a new client and import their inventory</p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: @(GetProgressPercentage())%"></div>
+        </div>
+        <div class="progress-steps">
+            <div class="step @(currentStep >= 1 ? "active" : "") @(currentStep > 1 ? "completed" : "")">
+                <div class="step-number">1</div>
+                <div class="step-label">Client Setup</div>
+            </div>
+            <div class="step @(currentStep >= 2 ? "active" : "") @(currentStep > 2 ? "completed" : "")">
+                <div class="step-number">2</div>
+                <div class="step-label">Import Inventory</div>
+            </div>
+            <div class="step @(currentStep >= 3 ? "active" : "") @(currentStep > 3 ? "completed" : "")">
+                <div class="step-number">3</div>
+                <div class="step-label">Additional Info</div>
+            </div>
+            <div class="step @(currentStep >= 4 ? "active" : "") @(currentStep > 4 ? "completed" : "")">
+                <div class="step-number">4</div>
+                <div class="step-label">Photo Selection</div>
+            </div>
+            <div class="step @(currentStep >= 5 ? "active" : "")">
+                <div class="step-number">5</div>
+                <div class="step-label">Complete</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        @if (isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>@loadingMessage</p>
+            </div>
+        }
+        else if (currentStep == 1)
+        {
+            <!-- Step 1: Client Setup -->
+            <div class="step-content client-setup">
+                <div class="step-header">
+                    <h2>Client Information</h2>
+                    <p>Enter the basic information for the new client</p>
+                </div>
+
+                <div class="form-container">
+                    <div class="form-group">
+                        <label for="client-name">Client Name *</label>
+                        <input 
+                            type="text" 
+                            id="client-name" 
+                            class="form-control" 
+                            placeholder="e.g., Josh Rogers" 
+                            @bind="newClient.Name" />
+                        <small class="form-text">Business name for TLP Export (appears in Campaign field)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dealer-url">Dealer URL *</label>
+                        <input 
+                            type="url" 
+                            id="dealer-url" 
+                            class="form-control @(dealerUrlError != "" ? "validation-error-input" : "")" 
+                            placeholder="https://www.greenford.com/" 
+                            @bind="newClient.DealerUrl" 
+                            @onblur="() => ClearDealerUrlError()" 
+                            @oninput="OnDealerUrlChanged" />
+                        <small class="form-text">Your dealer page URL (REQUIRED - Cars.com URL or dealer website)</small>
+                        @if (dealerUrlError != "")
+                        {
+                            <div class="validation-error">@dealerUrlError</div>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location *</label>
+                        <input 
+                            type="text" 
+                            id="location" 
+                            class="form-control" 
+                            placeholder="e.g., Greensboro, North Carolina" 
+                            @bind="newClient.Location" />
+                        <small class="form-text">Location for TLP Export listings (e.g., Atlanta, Georgia)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="data-source">Data Source *</label>
+                        <select id="data-source" class="form-control" @bind="newClient.DataSource" @bind:after="OnDataSourceChanged">
+                            <option value="">Select data source</option>
+                            <option value="CarGurus">CarGurus</option>
+                            <option value="Cars.com">Cars.com</option>
+                            <option value="MarketCheck">MarketCheck</option>
+                            <option value="CarsForSale">CarsForSale</option>
+                        </select>
+                        <small class="form-text">Select your inventory data source (Cars.com, MarketCheck, or CarGurus)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicle-filter">Vehicle Filter</label>
+                        <select id="vehicle-filter" class="form-control" @bind="newClient.VehicleFilter">
+                            <option value="Used Only">Used Only</option>
+                            <option value="New Only">New Only</option>
+                            <option value="Both">Both</option>
+                        </select>
+                        <small class="form-text">Vehicle types to scrape: "Used Only" (includes certified), "New Only", or "Both"</small>
+                    </div>
+
+                    @if (newClient.DataSource == "MarketCheck")
+                    {
+                        <div class="form-group">
+                            <label for="owned-inventory">Owned Inventory Only</label>
+                            <select id="owned-inventory" class="form-control" @bind="newClient.OwnedInventoryOnly">
+                                <option value="false">No</option>
+                                <option value="true">Yes</option>
+                            </select>
+                            <small class="form-text">MarketCheck only: Yes = vehicles owned at this specific dealer (owned=true). No = include group/shared inventory across the group (owned=false).</small>
+                        </div>
+                    }
+
+                    @if (newClient.DataSource == "CarGurus")
+                    {
+                        <div class="form-group">
+                            <label for="cargurus-entity-id">CarGurus Entity ID</label>
+                            <input 
+                                type="text" 
+                                id="cargurus-entity-id" 
+                                class="form-control" 
+                                value="@newClient.CarGurusEntityId" 
+                                readonly />
+                            <small class="form-text">Automatically extracted from CarGurus dealer URL</small>
+                        </div>
+                    }
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn btn-primary btn-large" @onclick="NextStep" disabled="@(!ValidateClient())">
+                        <span class="oi oi-arrow-right"></span>
+                        Continue to Import
+                    </button>
+                </div>
+            </div>
+        }
+        else if (currentStep == 2)
+        {
+            <!-- Step 2: Import Inventory -->
+            <div class="step-content import-inventory">
+                <div class="step-header">
+                    <h2>Import Inventory</h2>
+                    <p>Scrape and import all vehicles from the dealer's inventory</p>
+                </div>
+
+                @if (isImporting)
+                {
+                    <div class="import-progress">
+                        <div class="progress-indicator">
+                            <div class="spinner"></div>
+                            <p>@importStatus</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="import-summary">
+                        <div class="summary-card">
+                            <div class="summary-header">
+                                <span class="oi oi-briefcase"></span>
+                                <h3>Ready to Import</h3>
+                            </div>
+                            <div class="summary-details">
+                                <div class="detail-item">
+                                    <span class="label">Client:</span>
+                                    <span class="value">@newClient.Name</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Data Source:</span>
+                                    <span class="value">@newClient.DataSource</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Dealer URL:</span>
+                                    <span class="value">@newClient.DealerUrl</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Vehicle Filter:</span>
+                                    <span class="value">@newClient.VehicleFilter</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-actions import-actions">
+                            <button class="btn btn-primary btn-large" @onclick="ImportInventory">
+                                <span class="oi oi-data-transfer-download"></span>
+                                Start Import
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (currentStep == 3)
+        {
+            <!-- Step 3: Additional Info -->
+            <div class="step-content additional-info">
+                <div class="step-header">
+                    <h2>Additional Info</h2>
+                    <p>Fetching detailed information and photos for each vehicle</p>
+                </div>
+
+                @if (isFetchingAdditionalInfo)
+                {
+                    <div class="fetch-progress">
+                        <div class="progress-indicator">
+                            <div class="spinner"></div>
+                            <p>@additionalInfoStatus</p>
+                            <div class="progress-bar mt-3">
+                                <div class="progress-fill" style="width: @(GetAdditionalInfoProgressPercentage())%"></div>
+                            </div>
+                            <p class="mt-2">@currentCarIndex of @scrapedCars.Count cars processed</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="additional-info-summary">
+                        <div class="summary-card">
+                            <div class="summary-header">
+                                <span class="oi oi-info"></span>
+                                <h3>Ready to Fetch Additional Info</h3>
+                            </div>
+                            <div class="summary-details">
+                                <div class="detail-item">
+                                    <span class="label">Total Cars:</span>
+                                    <span class="value">@scrapedCars.Count</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Estimated Time:</span>
+                                    <span class="value">@(scrapedCars.Count * 2) seconds</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Note:</span>
+                                    <span class="value">This will fetch detailed photos and specifications for each car</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-actions additional-info-actions">
+                            <button class="btn btn-primary btn-large" @onclick="FetchAdditionalInfo">
+                                <span class="oi oi-data-transfer-download"></span>
+                                Fetch Additional Info
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (currentStep == 4)
+        {
+            <!-- Step 4: Photo Selection -->
+            <div class="step-content photo-selection">
+                <div class="step-header">
+                    <h2>Photo Selection</h2>
+                    <p>Select which photos to keep for each vehicle</p>
+                </div>
+
+                <div class="photo-selection-controls">
+                    <div class="search-filter">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            placeholder="Search by make, model, stock number..." 
+                            @bind="searchTerm" 
+                            @oninput="FilterCars" />
+                    </div>
+                </div>
+
+                @if (filteredCars.Count > 0)
+                {
+                    var currentCar = filteredCars[currentPhotoCarIndex];
+                    
+                    <div class="car-photo-section">
+                        <div class="car-header">
+                            <div class="car-info">
+                                <h3>
+                                    <a href="@currentCar.OriginalUrl" target="_blank" rel="noopener noreferrer" class="car-title-link">
+                                        @currentCar.FullTitle
+                                        <span class="oi oi-external-link" style="font-size: 0.8em; margin-left: 0.5rem; opacity: 0.7;"></span>
+                                    </a>
+                                </h3>
+                                <div class="car-meta">
+                                    <span class="stock-number">Stock: @currentCar.StockNumber</span>
+                                    <span class="price">$@currentCar.Price.ToString("N0")</span>
+                                    <span class="photo-count">@currentCar.Images.Count photos</span>
+                                </div>
+                            </div>
+                            <div class="step-actions photo-actions">
+                                <button class="btn btn-sm btn-secondary" @onclick="() => SelectAllPhotos(currentCar.Id)">
+                                    Select All
+                                </button>
+                                <button class="btn btn-sm btn-secondary" @onclick="() => ClearAllPhotos(currentCar.Id)">
+                                    Clear All
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="photo-grid">
+                            @for (int j = 0; j < currentCar.Images.Count; j++)
+                            {
+                                var photoUrl = currentCar.Images[j];
+                                var photoIndex = j;
+                                var isSelected = selectedPhotos.ContainsKey(currentCar.Id) && selectedPhotos[currentCar.Id].Contains(photoUrl);
+                                
+                                <div class="photo-item @(isSelected ? "selected" : "")" @onclick="async () => await OpenPhotoViewer(photoIndex)">
+                                    <img src="@photoUrl" alt="Car photo @(photoIndex + 1)" />
+                                    @if (isSelected)
+                                    {
+                                        <div class="photo-selected-badge">
+                                            <span class="oi oi-check"></span>
+                                        </div>
+                                    }
+                                    <div class="photo-hover-overlay">
+                                        <span class="oi oi-eye"></span>
+                                    </div>
+                                    <div class="photo-quick-select" @onclick:stopPropagation="true" @onclick="() => TogglePhotoSelection(currentCar.Id, photoUrl)">
+                                        @if (isSelected)
+                                        {
+                                            <span class="oi oi-check"></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="oi oi-plus"></span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="photo-summary">
+                            <span>@(selectedPhotos.ContainsKey(currentCar.Id) ? selectedPhotos[currentCar.Id].Count : 0) of @currentCar.Images.Count photos selected</span>
+                        </div>
+                    </div>
+
+                    <div class="car-navigation">
+                        <button class="btn btn-sm btn-secondary" @onclick="PreviousCar" disabled="@(currentPhotoCarIndex <= 0)">
+                            <span class="oi oi-chevron-left"></span>
+                            Previous
+                        </button>
+                        <span class="car-counter">@(currentPhotoCarIndex + 1) of @filteredCars.Count</span>
+                        <button class="btn btn-sm btn-secondary" @onclick="NextCar" disabled="@(currentPhotoCarIndex >= filteredCars.Count - 1)">
+                            Next
+                            <span class="oi oi-chevron-right"></span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="no-cars-message">
+                        <div class="empty-state">
+                            <span class="oi oi-search" style="font-size: 3rem; color: #a0a0a0;"></span>
+                            <h3>No cars found</h3>
+                            <p>Try adjusting your search terms or clear the search to see all cars.</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="step-actions">
+                    <button class="btn btn-primary btn-large" @onclick="HandlePhotoSelectionComplete">
+                        <span class="oi oi-check"></span>
+                        Continue
+                    </button>
+                </div>
+            </div>
+        }
+        else if (currentStep == 5)
+        {
+            <!-- Step 5: Completion -->
+            <div class="step-content completion">
+                <div class="step-header">
+                    <h2>Setup Complete!</h2>
+                    <p>Your new client has been successfully configured</p>
+                </div>
+
+                <div class="completion-summary">
+                    <div class="success-icon">
+                        <span class="oi oi-check-circle"></span>
+                    </div>
+                    
+                    <div class="summary-details">
+                        <h3>@newClient.Name</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="label">Location:</span>
+                                <span class="value">@newClient.Location</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Data Source:</span>
+                                <span class="value">@newClient.DataSource</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Vehicles Imported:</span>
+                                <span class="value">@scrapedCars.Count</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Setup Date:</span>
+                                <span class="value">@DateTime.Now.ToString("MMM dd, yyyy")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn btn-primary btn-large" @onclick="GoToDashboard">
+                        <span class="oi oi-home"></span>
+                        Go to Dashboard
+                    </button>
+                    <button class="btn btn-secondary btn-large" @onclick="AddAnotherClient">
+                        <span class="oi oi-plus"></span>
+                        Add Another Client
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (isPhotoViewerOpen && filteredCars.Count > 0)
+{
+    var currentCar = filteredCars[currentPhotoCarIndex];
+    <div class="fullscreen-overlay" @onclick="async () => await ClosePhotoViewer()">
+        <div class="fullscreen-container" @onclick:stopPropagation="true">
+            <div class="fullscreen-header">
+                <button class="fullscreen-close" @onclick="async () => await ClosePhotoViewer()">
+                    <span class="oi oi-x"></span>
+                </button>
+                <div class="fullscreen-counter">
+                    @(photoViewerIndex + 1) of @currentCar.Images.Count
+                </div>
+            </div>
+            
+            <div class="fullscreen-image-container">
+                <img src="@currentCar.Images[photoViewerIndex]" alt="@currentCar.FullTitle" class="fullscreen-image" />
+                
+                <!-- Photo Selection Button -->
+                <div class="fullscreen-selection-overlay">
+                    <button class="btn btn-primary btn-large" @onclick="() => TogglePhotoSelection(currentCar.Id, currentCar.Images[photoViewerIndex])">
+                        @if (selectedPhotos.ContainsKey(currentCar.Id) && selectedPhotos[currentCar.Id].Contains(currentCar.Images[photoViewerIndex]))
+                        {
+                            <span class="oi oi-check"></span>
+                            <span>Selected</span>
+                        }
+                        else
+                        {
+                            <span class="oi oi-plus"></span>
+                            <span>Select Photo</span>
+                        }
+                    </button>
+                </div>
+                
+                @if (currentCar.Images.Count > 1)
+                {
+                    <button class="fullscreen-nav-btn prev" @onclick="async () => await PreviousPhotoViewerImage()" disabled="@(photoViewerIndex == 0)">
+                        <span class="oi oi-chevron-left"></span>
+                    </button>
+                    <button class="fullscreen-nav-btn next" @onclick="async () => await NextPhotoViewerImage()" disabled="@(photoViewerIndex == currentCar.Images.Count - 1)">
+                        <span class="oi oi-chevron-right"></span>
+                    </button>
+                }
+            </div>
+            
+            @if (currentCar.Images.Count > 1)
+            {
+                <div class="fullscreen-thumbnails">
+                    @for (int i = 0; i < currentCar.Images.Count; i++)
+                    {
+                        var index = i;
+                        <div class="fullscreen-thumbnail @(index == photoViewerIndex ? "active" : "")" @onclick="async () => await SelectPhotoViewerImage(index)">
+                            <img src="@currentCar.Images[i]" alt="Car image @(i + 1)" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private Client newClient = new Client();
+    private List<ScrapedCar> scrapedCars = new List<ScrapedCar>();
+    private Dictionary<string, List<string>> selectedPhotos = new Dictionary<string, List<string>>();
+    private int currentStep = 1;
+    private bool isLoading = false;
+    private string loadingMessage = "";
+    private bool isImporting = false;
+    private string importStatus = "";
+    private bool isFetchingAdditionalInfo = false;
+    private string additionalInfoStatus = "";
+    private string searchTerm = "";
+    private List<ScrapedCar> filteredCars = new List<ScrapedCar>();
+    private int currentCarIndex = 0; // For additional info progress tracking
+    private int currentPhotoCarIndex = 0; // For photo selection car navigation
+    private bool isPhotoViewerOpen = false;
+    private int photoViewerIndex = 0;
+
+    // Validation properties
+    private string dealerUrlError = "";
+
+    private void GoBack()
+    {
+        if (currentStep > 1)
+        {
+            currentStep--;
+            StateHasChanged();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private void GoToDashboard()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void AddAnotherClient()
+    {
+        NavigationManager.NavigateTo("/client-onboarding");
+    }
+
+    private int GetProgressPercentage()
+    {
+        return (currentStep - 1) * 25; // 5 steps = 25% each
+    }
+
+    private void NextStep()
+    {
+        if (currentStep < 5)
+        {
+            currentStep++;
+            StateHasChanged();
+        }
+    }
+
+    private bool ValidateClient()
+    {
+        bool isValid = true;
+        dealerUrlError = "";
+
+        // Basic required field validation
+        if (string.IsNullOrWhiteSpace(newClient.Name) ||
+            string.IsNullOrWhiteSpace(newClient.DealerUrl) ||
+            string.IsNullOrWhiteSpace(newClient.Location) ||
+            string.IsNullOrWhiteSpace(newClient.DataSource))
+        {
+            isValid = false;
+        }
+
+        // URL validation
+        if (!string.IsNullOrWhiteSpace(newClient.DealerUrl) && !IsValidUrl(newClient.DealerUrl))
+        {
+            isValid = false;
+            dealerUrlError = "Please enter a valid URL (e.g., https://www.example.com)";
+        }
+
+        // CarGurus Entity ID validation - now auto-populated from URL
+        if (newClient.DataSource == "CarGurus")
+        {
+            // Auto-populate the entity ID if not already set
+            if (string.IsNullOrWhiteSpace(newClient.CarGurusEntityId))
+            {
+                AutoPopulateCarGurusEntityId();
+            }
+            
+            // Check if we were able to extract a valid entity ID
+            if (string.IsNullOrWhiteSpace(newClient.CarGurusEntityId))
+            {
+                isValid = false;
+                dealerUrlError = "Unable to extract CarGurus Entity ID from URL. Please ensure the URL contains 'sp' followed by numbers (e.g., sp413483).";
+            }
+        }
+
+        return isValid;
+    }
+
+    private bool IsValidUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return false;
+
+        // Add protocol if missing
+        string urlToTest = url.Trim();
+        if (!urlToTest.StartsWith("http://") && !urlToTest.StartsWith("https://"))
+        {
+            urlToTest = "https://" + urlToTest;
+        }
+
+        // Try to create URI
+        if (!Uri.TryCreate(urlToTest, UriKind.Absolute, out Uri? result) || 
+            (result.Scheme != Uri.UriSchemeHttp && result.Scheme != Uri.UriSchemeHttps))
+        {
+            return false;
+        }
+
+        // Validate domain structure (must have at least one dot and valid characters)
+        string host = result.Host.ToLower();
+        if (string.IsNullOrWhiteSpace(host) || host.Length < 3)
+            return false;
+
+        // Must contain at least one dot (for domain structure)
+        if (!host.Contains('.'))
+            return false;
+
+        // Check for valid domain characters (letters, numbers, hyphens, dots)
+        if (!host.All(c => char.IsLetterOrDigit(c) || c == '.' || c == '-'))
+            return false;
+
+        // Must not start or end with dot or hyphen
+        if (host.StartsWith('.') || host.EndsWith('.') || host.StartsWith('-') || host.EndsWith('-'))
+            return false;
+
+        // Must not have consecutive dots or hyphens
+        if (host.Contains("..") || host.Contains("--"))
+            return false;
+
+        return true;
+    }
+
+
+    private string ExtractCarGurusEntityIdFromUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || newClient.DataSource != "CarGurus")
+        {
+            return "";
+        }
+
+        try
+        {
+            // Parse the URL
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+            {
+                return "";
+            }
+
+            // Check if it's a CarGurus URL
+            if (!uri.Host.ToLower().Contains("cargurus.com"))
+            {
+                return "";
+            }
+
+            // Look for patterns like sp413483 in the URL path
+            // Example: https://www.cargurus.com/Cars/m-Thompson-Cadillac-sp413483
+            string path = uri.AbsolutePath;
+            
+            // Use regex to find sp followed by digits
+            var match = System.Text.RegularExpressions.Regex.Match(path, @"sp(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                return match.Groups[1].Value; // Return just the digits
+            }
+
+            return "";
+        }
+        catch (Exception)
+        {
+            return "";
+        }
+    }
+
+    private async Task ImportInventory()
+    {
+        isImporting = true;
+        importStatus = "Connecting to data source...";
+        StateHasChanged();
+
+        try
+        {
+            // Validate that we have the required information
+            if (string.IsNullOrEmpty(newClient.DealerUrl))
+            {
+                importStatus = "Error: Dealer URL is required";
+                return;
+            }
+
+            // Extract dealer entity ID from CarGurus URL or use the provided one
+            string dealerEntityId = newClient.CarGurusEntityId ?? "";
+            if (string.IsNullOrEmpty(dealerEntityId) && newClient.DataSource == "CarGurus")
+            {
+                importStatus = "Error: CarGurus Entity ID is required for CarGurus data source";
+                return;
+            }
+
+            importStatus = "Scraping inventory data...";
+            StateHasChanged();
+
+            // Call the real API to get inventory data
+            var searchResult = await InventoryService.SearchDealerInventoryAsync(
+                dealerEntityId: dealerEntityId,
+                dealerName: newClient.Name,
+                dealerUrl: newClient.DealerUrl,
+                pageNumber: 1,
+                inventoryType: GetInventoryTypeForDataSource(newClient.DataSource, newClient.VehicleFilter)
+            );
+
+            if (!searchResult.Success)
+            {
+                importStatus = $"Error: {searchResult.ErrorMessage}";
+                return;
+            }
+
+            if (!searchResult.Cars.Any())
+            {
+                importStatus = "No vehicles found for this dealer";
+                return;
+            }
+
+            importStatus = "Processing vehicle information...";
+            StateHasChanged();
+
+            // Convert the scraped cars to our internal format
+            scrapedCars = ConvertScrapedCarsToInternalFormat(searchResult.Cars);
+
+            importStatus = "Importing photos...";
+            StateHasChanged();
+
+            // Initialize photo selection and carousel
+            InitializePhotoSelection();
+            InitializeCarousel();
+            
+            importStatus = $"Successfully imported {scrapedCars.Count} vehicles";
+            StateHasChanged();
+            
+            await Task.Delay(250); // Brief pause to show success message
+            NextStep();
+        }
+        catch (Exception ex)
+        {
+            importStatus = $"Error: {ex.Message}";
+            Console.WriteLine($"Error in ImportInventory: {ex.Message}");
+        }
+        finally
+        {
+            isImporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchAdditionalInfo()
+    {
+        isFetchingAdditionalInfo = true;
+        additionalInfoStatus = "Starting to fetch detailed information...";
+        currentCarIndex = 0;
+        StateHasChanged();
+
+        try
+        {
+            var baseUrl = NavigationManager.BaseUri.Contains("localhost")
+                ? "http://localhost:8000"
+                : "https://car-lister-api.onrender.com";
+
+            for (int i = 0; i < scrapedCars.Count; i++)
+            {
+                var car = scrapedCars[i];
+                currentCarIndex = i + 1;
+                additionalInfoStatus = $"Fetching details for {car.FullTitle}...";
+                StateHasChanged();
+
+                try
+                {
+                    // Call the /api/scrape endpoint for detailed car information
+                    using var httpClient = new HttpClient();
+                    var request = new { url = car.OriginalUrl };
+
+                    var response = await httpClient.PostAsJsonAsync($"{baseUrl}/api/scrape", request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = await response.Content.ReadFromJsonAsync<ScrapeApiResponse>();
+                        if (result?.Success == true && result.Data != null)
+                        {
+                            // Update the car with detailed information
+                            var detailedCar = result.Data;
+
+                            // Merge the detailed information with the existing car
+                            car.Images = detailedCar.Images; // This will have all the images
+                            car.Features = detailedCar.Features;
+                            car.Stats = detailedCar.Stats;
+                            car.Description = detailedCar.Description;
+
+                            Console.WriteLine($"Updated {car.FullTitle} with {car.Images.Count} images");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Failed to get detailed info for {car.FullTitle}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"HTTP {response.StatusCode} for {car.FullTitle}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching details for {car.FullTitle}: {ex.Message}");
+                }
+
+                // Add delay to avoid hitting CarGurus too fast
+                await Task.Delay(2000); // 2 second delay between requests
+            }
+
+            additionalInfoStatus = $"Successfully fetched details for {scrapedCars.Count} vehicles";
+            StateHasChanged();
+            
+            await Task.Delay(250); // Brief pause to show success message
+            NextStep();
+        }
+        catch (Exception ex)
+        {
+            additionalInfoStatus = $"Error: {ex.Message}";
+            Console.WriteLine($"Error in FetchAdditionalInfo: {ex.Message}");
+        }
+        finally
+        {
+            isFetchingAdditionalInfo = false;
+            StateHasChanged();
+        }
+    }
+
+    private int GetAdditionalInfoProgressPercentage()
+    {
+        if (scrapedCars.Count == 0) return 0;
+        return (currentCarIndex * 100) / scrapedCars.Count;
+    }
+
+    private void InitializeCarousel()
+    {
+        filteredCars = new List<ScrapedCar>(scrapedCars);
+        currentPhotoCarIndex = 0;
+        StateHasChanged();
+    }
+
+    private void FilterCars()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredCars = new List<ScrapedCar>(scrapedCars);
+        }
+        else
+        {
+            var term = searchTerm.ToLower();
+            filteredCars = scrapedCars.Where(car => 
+                car.Make.ToLower().Contains(term) ||
+                car.Model.ToLower().Contains(term) ||
+                car.StockNumber.ToLower().Contains(term) ||
+                car.Year.ToString().Contains(term) ||
+                car.FullTitle.ToLower().Contains(term)
+            ).ToList();
+        }
+        
+        currentPhotoCarIndex = 0; // Reset to first car when filtering
+        StateHasChanged();
+    }
+
+    private void PreviousCar()
+    {
+        if (currentPhotoCarIndex > 0)
+        {
+            currentPhotoCarIndex--;
+            StateHasChanged();
+        }
+    }
+
+    private void NextCar()
+    {
+        if (currentPhotoCarIndex < filteredCars.Count - 1)
+        {
+            currentPhotoCarIndex++;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenPhotoViewer(int imageIndex)
+    {
+        photoViewerIndex = imageIndex;
+        isPhotoViewerOpen = true;
+        StateHasChanged();
+        
+        // Setup keyboard navigation
+        await JSRuntime.InvokeVoidAsync("setupFullscreenKeyboard", 
+            DotNetObjectReference.Create(this),
+            "ClosePhotoViewer",
+            "PreviousPhotoViewerImage", 
+            "NextPhotoViewerImage"
+        );
+    }
+
+    [JSInvokable]
+    public async Task ClosePhotoViewer()
+    {
+        isPhotoViewerOpen = false;
+        StateHasChanged();
+        
+        // Cleanup keyboard navigation
+        await JSRuntime.InvokeVoidAsync("cleanupFullscreenKeyboard");
+    }
+
+    [JSInvokable]
+    public async Task PreviousPhotoViewerImage()
+    {
+        if (photoViewerIndex > 0)
+        {
+            photoViewerIndex--;
+            StateHasChanged();
+        }
+        await Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task NextPhotoViewerImage()
+    {
+        if (filteredCars.Count > 0 && currentPhotoCarIndex < filteredCars.Count)
+        {
+            var currentCar = filteredCars[currentPhotoCarIndex];
+            if (photoViewerIndex < currentCar.Images.Count - 1)
+            {
+                photoViewerIndex++;
+                StateHasChanged();
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task SelectPhotoViewerImage(int index)
+    {
+        photoViewerIndex = index;
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private void TogglePhotoSelection(string carId, string photoUrl)
+    {
+        if (!selectedPhotos.ContainsKey(carId))
+            selectedPhotos[carId] = new List<string>();
+
+        if (selectedPhotos[carId].Contains(photoUrl))
+        {
+            selectedPhotos[carId].Remove(photoUrl);
+        }
+        else
+        {
+            selectedPhotos[carId].Add(photoUrl);
+        }
+        StateHasChanged();
+    }
+
+
+
+
+
+
+    private void InitializePhotoSelection()
+    {
+        selectedPhotos.Clear();
+        foreach (var car in scrapedCars)
+        {
+            selectedPhotos[car.Id] = new List<string>();
+        }
+    }
+
+    private void SelectPhoto(string carId, string photoUrl)
+    {
+        if (!selectedPhotos.ContainsKey(carId))
+            selectedPhotos[carId] = new List<string>();
+
+        if (selectedPhotos[carId].Contains(photoUrl))
+        {
+            selectedPhotos[carId].Remove(photoUrl);
+        }
+        else
+        {
+            selectedPhotos[carId].Add(photoUrl);
+        }
+        StateHasChanged();
+    }
+
+    private void SelectAllPhotos(string carId)
+    {
+        var car = scrapedCars.FirstOrDefault(c => c.Id == carId);
+        if (car != null)
+        {
+            selectedPhotos[carId] = new List<string>(car.Images);
+            StateHasChanged();
+        }
+    }
+
+    private void ClearAllPhotos(string carId)
+    {
+        selectedPhotos[carId] = new List<string>();
+        StateHasChanged();
+    }
+
+    private async Task HandlePhotoSelectionComplete()
+    {
+        // Update cars with selected photos
+        foreach (var car in scrapedCars)
+        {
+            if (selectedPhotos.ContainsKey(car.Id))
+            {
+                car.SelectedPhotoUrls = selectedPhotos[car.Id];
+            }
+        }
+
+        // Save the client and cars to Firestore
+        await SaveClientAndCars();
+
+        NextStep();
+    }
+
+
+    private void ClearDealerUrlError()
+    {
+        if (IsValidUrl(newClient.DealerUrl))
+        {
+            dealerUrlError = "";
+            StateHasChanged();
+        }
+    }
+
+
+    private void OnDealerUrlChanged(ChangeEventArgs e)
+    {
+        newClient.DealerUrl = e.Value?.ToString() ?? "";
+        AutoPopulateCarGurusEntityId();
+        StateHasChanged();
+    }
+
+    private void OnDataSourceChanged()
+    {
+        AutoPopulateCarGurusEntityId();
+        StateHasChanged();
+    }
+
+    private void AutoPopulateCarGurusEntityId()
+    {
+        if (newClient.DataSource == "CarGurus" && !string.IsNullOrWhiteSpace(newClient.DealerUrl))
+        {
+            string extractedId = ExtractCarGurusEntityIdFromUrl(newClient.DealerUrl);
+            if (!string.IsNullOrWhiteSpace(extractedId))
+            {
+                newClient.CarGurusEntityId = extractedId;
+            }
+        }
+        else if (newClient.DataSource != "CarGurus")
+        {
+            // Clear the entity ID if not using CarGurus
+            newClient.CarGurusEntityId = "";
+        }
+    }
+
+    private string GetInventoryTypeForDataSource(string dataSource, string vehicleFilter)
+    {
+        // Map the vehicle filter to the appropriate inventory type for the API
+        return vehicleFilter switch
+        {
+            "New Only" => "NEW",
+            "Used Only" => "USED",
+            "Both" => "ALL",
+            _ => "ALL"
+        };
+    }
+
+    private List<ScrapedCar> ConvertScrapedCarsToInternalFormat(List<ScrapedCar> apiCars)
+    {
+        var convertedCars = new List<ScrapedCar>();
+        
+        foreach (var apiCar in apiCars)
+        {
+            // Set the client ID for all cars
+            apiCar.ClientId = newClient.Id;
+            
+            // Ensure we have an ID
+            if (string.IsNullOrEmpty(apiCar.Id))
+            {
+                apiCar.Id = Guid.NewGuid().ToString();
+            }
+            
+            // Set the data source
+            apiCar.DataSource = newClient.DataSource;
+            
+            // Set the listing URL to the dealer URL if not already set
+            if (string.IsNullOrEmpty(apiCar.ListingUrl))
+            {
+                apiCar.ListingUrl = newClient.DealerUrl;
+            }
+            
+            // Set the scraped date
+            apiCar.ScrapedAt = DateTime.UtcNow;
+            
+            convertedCars.Add(apiCar);
+        }
+        
+        return convertedCars;
+    }
+
+    private async Task SaveClientAndCars()
+    {
+        try
+        {
+            // Save the client first
+            var clientJson = System.Text.Json.JsonSerializer.Serialize(newClient);
+            var clientSaved = await JSRuntime.InvokeAsync<bool>("firestore.addClient", clientJson);
+            
+            if (clientSaved)
+            {
+                // Save the cars
+                var carsSaved = await InventoryService.SaveCarsToFirestoreAsync(scrapedCars);
+                
+                if (!carsSaved)
+                {
+                    Console.WriteLine("Warning: Failed to save some cars to Firestore");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Error: Failed to save client to Firestore");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving client and cars: {ex.Message}");
+        }
+    }
+
+    class ScrapeApiResponse
+    {
+        public bool Success { get; set; }
+        public ScrapedCar? Data { get; set; }
+        public string? Error { get; set; }
+    }
+}
