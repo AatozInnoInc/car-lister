@@ -1107,6 +1107,7 @@ class CarGurusScraper:
             ScrapedCar object if successful, None otherwise
         """
         try:
+            logger.info("*** CALLING _extract_car_from_json_tile METHOD ***")
             logger.info(f"Extracting car from tile data: {list(tile_data.keys())}")
             
             # Extract basic car information
@@ -1126,17 +1127,50 @@ class CarGurusScraper:
             # Extract features from options
             features = tile_data.get('options', [])
             
-            # Extract images
+            # Extract images - ENHANCED TO FIND ALL IMAGES
             images = []
+            logger.info(f"=== EXTRACTING IMAGES FROM JSON TILE ===")
+            logger.info(f"Tile data keys: {list(tile_data.keys())}")
+            
+            # Method 1: Get primary image from originalPictureData
             original_picture_data = tile_data.get('originalPictureData', {})
             if original_picture_data and isinstance(original_picture_data, dict):
                 image_url = original_picture_data.get('url', '')
                 if image_url:
                     images.append(image_url)
+                    logger.info(f"Found primary image: {image_url}")
+            
+            # Method 2: Look for additional images in other fields
+            image_fields = ['images', 'photos', 'pictureData', 'gallery', 'imageGallery', 'additionalImages']
+            for field in image_fields:
+                if field in tile_data:
+                    field_data = tile_data[field]
+                    logger.info(f"Found {field} field: {type(field_data)}")
+                    
+                    if isinstance(field_data, list):
+                        for i, item in enumerate(field_data):
+                            if isinstance(item, dict):
+                                for url_key in ['url', 'src', 'imageUrl', 'photoUrl']:
+                                    if url_key in item and item[url_key]:
+                                        if item[url_key] not in images:
+                                            images.append(item[url_key])
+                                            logger.info(f"Found additional image from {field}[{i}].{url_key}: {item[url_key]}")
+                            elif isinstance(item, str) and item not in images:
+                                images.append(item)
+                                logger.info(f"Found additional image from {field}[{i}]: {item}")
+                    elif isinstance(field_data, dict):
+                        for url_key in ['url', 'src', 'imageUrl', 'photoUrl']:
+                            if url_key in field_data and field_data[url_key]:
+                                if field_data[url_key] not in images:
+                                    images.append(field_data[url_key])
+                                    logger.info(f"Found additional image from {field}.{url_key}: {field_data[url_key]}")
+            
+            logger.info(f"Total images found: {len(images)}")
             
             # If no images found, add placeholder
             if not images:
                 images.append("https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop")
+                logger.info("No images found, added placeholder")
             
             # Extract URL (construct from listing ID)
             listing_id = tile_data.get('id', '')
@@ -1200,6 +1234,7 @@ class CarGurusScraper:
             listing_containers = soup.find_all(['div', 'article'], class_=lambda x: x and any(keyword in x.lower() for keyword in ['listing', 'card', 'tile', 'car']))
             
             if listing_containers:
+                logger.info(f"=== METHOD 1: CONTAINER EXTRACTION ===")
                 logger.info(f"Found {len(listing_containers)} potential listing containers")
                 
                 for i, container in enumerate(listing_containers[:50]):  # Limit to first 50 for testing
@@ -1207,19 +1242,24 @@ class CarGurusScraper:
                         car = self._extract_car_from_dealer_listing_container(container)
                         if car:
                             cars.append(car)
-                            logger.info(f"Successfully extracted car {i+1}: {car.make} {car.model} {car.year}")
+                            logger.info(f"Successfully extracted car {i+1}: {car.make} {car.model} {car.year} with {len(car.images)} images")
                     except Exception as e:
                         logger.warning(f"Error extracting car from container {i+1}: {e}")
                         continue
+                
+                if cars:
+                    logger.info(f"SUCCESS: Container extraction found {len(cars)} cars")
+                else:
+                    logger.info("Container extraction found no cars")
             
             # Method 2: Look for JSON data embedded in the page
             if not cars:
-                logger.info("No cars found via containers, trying to extract from embedded JSON")
+                logger.info("=== METHOD 2: EMBEDDED JSON EXTRACTION ===")
                 cars = self._extract_cars_from_embedded_json(html_content)
             
             # Method 3: Look for specific HTML patterns
             if not cars:
-                logger.info("No cars found via JSON, trying HTML pattern matching")
+                logger.info("=== METHOD 3: HTML PATTERN EXTRACTION ===")
                 cars = self._extract_cars_from_html_patterns(html_content)
             
             logger.info(f"Successfully extracted {len(cars)} cars from dealer page HTML")
@@ -1282,6 +1322,7 @@ class CarGurusScraper:
         """
         Try to extract car data from JSON embedded in the HTML page.
         """
+        logger.info("=== ATTEMPTING EMBEDDED JSON EXTRACTION ===")
         try:
             # Look for JSON data in script tags
             json_patterns = [
@@ -1291,30 +1332,38 @@ class CarGurusScraper:
                 r'var\s+listingData\s*=\s*(\[.*?\]);'
             ]
             
-            for pattern in json_patterns:
+            for i, pattern in enumerate(json_patterns):
                 matches = re.findall(pattern, html_content, re.DOTALL)
                 if matches:
                     try:
                         json_data = json.loads(matches[0])
-                        logger.info(f"Found embedded JSON data with keys: {list(json_data.keys()) if isinstance(json_data, dict) else 'Array'}")
+                        logger.info(f"Found embedded JSON data with pattern {i+1}, keys: {list(json_data.keys()) if isinstance(json_data, dict) else 'Array'}")
                         
                         # Try to extract cars from the JSON
                         cars = self._extract_cars_from_json_response(json_data)
                         if cars:
+                            logger.info(f"SUCCESS: Embedded JSON extraction found {len(cars)} cars")
                             return cars
+                        else:
+                            logger.info("Embedded JSON extraction found no cars")
                             
-                    except json.JSONDecodeError:
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to parse JSON from pattern {i+1}: {e}")
                         continue
+            
+            logger.info("No embedded JSON patterns matched")
                         
         except Exception as e:
             logger.warning(f"Error extracting from embedded JSON: {e}")
             
+        logger.info("=== EMBEDDED JSON EXTRACTION FAILED ===")
         return []
 
     def _extract_cars_from_html_patterns(self, html_content: str) -> List[ScrapedCar]:
         """
         Try to extract car data using HTML pattern matching.
         """
+        logger.info("=== ATTEMPTING HTML PATTERN EXTRACTION ===")
         cars = []
         
         try:
@@ -1325,7 +1374,9 @@ class CarGurusScraper:
             car_pattern = re.compile(r'<[^>]*>([^<]*?)\s+([^<]*?)\s+((?:19|20)\d{2})[^<]*</[^>]*>', re.IGNORECASE)
             matches = car_pattern.findall(html_content)
             
-            for match in matches[:20]:  # Limit results
+            logger.info(f"Found {len(matches)} potential car matches in HTML patterns")
+            
+            for i, match in enumerate(matches[:20]):  # Limit results
                 make, model, year = match
                 if make.strip() and model.strip() and year.strip():
                     try:
@@ -1347,12 +1398,20 @@ class CarGurusScraper:
                             stock_number=""
                         )
                         cars.append(car)
-                    except ValueError:
+                        logger.info(f"Created car {i+1} from HTML pattern: {make} {model} {year}")
+                    except ValueError as e:
+                        logger.warning(f"Failed to create car from HTML pattern {i+1}: {e}")
                         continue
+            
+            if cars:
+                logger.info(f"SUCCESS: HTML pattern extraction found {len(cars)} cars")
+            else:
+                logger.info("HTML pattern extraction found no cars")
                         
         except Exception as e:
             logger.warning(f"Error extracting from HTML patterns: {e}")
             
+        logger.info("=== HTML PATTERN EXTRACTION COMPLETED ===")
         return cars 
 
     def _extract_search_params_from_dealer_page(self, html_content: str, dealer_entity_id: str, inventory_type: str = "ALL") -> Optional[dict]:
@@ -1622,6 +1681,7 @@ class CarGurusScraper:
         Extract car data from a single listing container in the AJAX response.
         This should be more reliable than the main page extraction.
         """
+        logger.info("=== EXTRACTING CAR FROM AJAX LISTING CONTAINER ===")
         try:
             # Try to extract basic car information from the container
             # Look for more specific selectors that might be used in AJAX responses
@@ -1631,10 +1691,13 @@ class CarGurusScraper:
             
             if title_elem:
                 title_text = title_elem.get_text(strip=True)
+                logger.info(f"Found title element: {title_text}")
+                
                 # Parse year, make, model from title
                 car_info = self._parse_car_title(title_text)
                 if car_info:
                     make, model, year = car_info
+                    logger.info(f"Parsed car info: {make} {model} {year}")
                     
                     # Look for price
                     price_elem = container.find(['span', 'div'], class_=lambda x: x and any(keyword in x.lower() for keyword in ['price', 'cost']))
@@ -1644,6 +1707,7 @@ class CarGurusScraper:
                         price_match = re.search(r'\$([\d,]+)', price_text)
                         if price_match:
                             price = int(price_match.group(1).replace(',', ''))
+                            logger.info(f"Found price: ${price}")
                     
                     # Look for description
                     desc_elem = container.find(['p', 'div'], class_=lambda x: x and any(keyword in x.lower() for keyword in ['description', 'desc', 'summary']))
@@ -1652,6 +1716,7 @@ class CarGurusScraper:
                     # Look for images
                     img_elem = container.find('img')
                     images = [img_elem.get('src')] if img_elem and img_elem.get('src') else []
+                    logger.info(f"Found {len(images)} images in AJAX container")
                     
                     # Create the car object
                     car = ScrapedCar(
