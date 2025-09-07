@@ -4,105 +4,40 @@ using System.Text.Json;
 
 namespace car_lister.Services;
 
-public class DealerService
+public class DealerService : BaseFirestoreService
 {
-    private readonly IJSRuntime _jsRuntime;
-
-    public DealerService(IJSRuntime jsRuntime)
+    public DealerService(IJSRuntime jsRuntime) : base(jsRuntime)
     {
-        _jsRuntime = jsRuntime;
     }
 
     public async Task<List<Dealer>> GetAllDealersAsync()
     {
-        try
-        {
-            var dealersJson = await _jsRuntime.InvokeAsync<string>("firestore.getAllDealers");
-            if (string.IsNullOrEmpty(dealersJson) || dealersJson == "[]")
-            {
-                return new List<Dealer>();
-            }
-
-            var dealers = JsonSerializer.Deserialize<List<Dealer>>(dealersJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            return dealers ?? new List<Dealer>();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error getting dealers: {ex.Message}");
-            return new List<Dealer>();
-        }
+        return await GetAllAsync<Dealer>("getAllDealers");
     }
 
     public async Task<Dealer?> GetDealerByIdAsync(string id)
     {
-        try
-        {
-            var dealerJson = await _jsRuntime.InvokeAsync<string>("firestore.getDealerById", id);
-            if (string.IsNullOrEmpty(dealerJson))
-            {
-                return null;
-            }
-
-            return JsonSerializer.Deserialize<Dealer>(dealerJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error getting dealer by id: {ex.Message}");
-            return null;
-        }
+        return await GetByIdAsync<Dealer>(id, "getDealerById");
     }
 
     public async Task<bool> AddDealerAsync(Dealer dealer)
     {
-        try
-        {
-            dealer.Id = Guid.NewGuid().ToString();
-            dealer.CreatedAt = DateTime.UtcNow;
-            dealer.UpdatedAt = DateTime.UtcNow;
+        dealer.Id = Guid.NewGuid().ToString();
+        dealer.CreatedAt = DateTime.UtcNow;
+        dealer.UpdatedAt = DateTime.UtcNow;
 
-            var dealerJson = JsonSerializer.Serialize(dealer);
-            return await _jsRuntime.InvokeAsync<bool>("firestore.addDealer", dealerJson);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error adding dealer: {ex.Message}");
-            return false;
-        }
+        return await AddAsync(dealer, "addDealer");
     }
 
     public async Task<bool> UpdateDealerAsync(Dealer dealer)
     {
-        try
-        {
-            dealer.UpdatedAt = DateTime.UtcNow;
-            var dealerJson = JsonSerializer.Serialize(dealer);
-            return await _jsRuntime.InvokeAsync<bool>("firestore.updateDealer", dealerJson);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error updating dealer: {ex.Message}");
-            return false;
-        }
+        dealer.UpdatedAt = DateTime.UtcNow;
+        return await UpdateAsync(dealer, "updateDealer");
     }
 
     public async Task<bool> DeleteDealerAsync(string id)
     {
-        try
-        {
-            return await _jsRuntime.InvokeAsync<bool>("firestore.deleteDealer", id);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting dealer: {ex.Message}");
-            return false;
-        }
+        return await DeleteAsync(id, "deleteDealer");
     }
 
     public async Task<bool> InitializeDefaultDealersAsync()
