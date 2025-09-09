@@ -525,7 +525,9 @@
             scrapedCar.ScrapedAt = DateTime.UtcNow;
             
             // Save to Firestore using CarService
-            var success = await CarService.AddCarAsync(scrapedCar);
+            // Note: This needs to be updated to work with client-based structure
+            // For now, we'll need to determine which client this car belongs to
+            var success = false; // TODO: Implement proper client-based saving
             
             if (success)
             {

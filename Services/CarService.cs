@@ -10,11 +10,12 @@ namespace car_lister.Services
         {
         }
 
-        public async Task<List<ScrapedCar>> GetCarsByClientIdAsync(string clientId)
+        // Client Inventory methods
+        public async Task<List<ScrapedCar>> GetClientInventoryAsync(string clientId)
         {
             try
             {
-                var carsJson = await _jsRuntime.InvokeAsync<string>("firestore.getCarsByClientId", clientId);
+                var carsJson = await _jsRuntime.InvokeAsync<string>("firestore.getClientInventory", clientId);
                 if (string.IsNullOrEmpty(carsJson) || carsJson == "[]")
                 {
                     return new List<ScrapedCar>();
@@ -29,36 +30,12 @@ namespace car_lister.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting cars by client ID: {ex.Message}");
+                Console.WriteLine($"Error getting client inventory: {ex.Message}");
                 return new List<ScrapedCar>();
             }
         }
 
-        public async Task<List<Car>> GetLegacyCarsByClientIdAsync(string clientId)
-        {
-            try
-            {
-                var carsJson = await _jsRuntime.InvokeAsync<string>("firestore.getCarsByClientId", clientId);
-                if (string.IsNullOrEmpty(carsJson) || carsJson == "[]")
-                {
-                    return new List<Car>();
-                }
-
-                var cars = JsonSerializer.Deserialize<List<Car>>(carsJson, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return cars ?? new List<Car>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting legacy cars by client ID: {ex.Message}");
-                return new List<Car>();
-            }
-        }
-
-        public async Task<bool> AddCarAsync(ScrapedCar car)
+        public async Task<bool> AddToClientInventoryAsync(string clientId, ScrapedCar car)
         {
             if (string.IsNullOrEmpty(car.Id))
             {
@@ -66,13 +43,14 @@ namespace car_lister.Services
             }
             
             car.ScrapedAt = DateTime.UtcNow;
+            car.ClientId = clientId; // Ensure the clientId is set
 
-            return await AddAsync(car, "addCar");
+            return await _jsRuntime.InvokeAsync<bool>("firestore.addToClientInventory", clientId, JsonSerializer.Serialize(car));
         }
 
-        public async Task<bool> AddCarsAsync(List<ScrapedCar> cars)
+        public async Task<bool> AddMultipleToClientInventoryAsync(string clientId, List<ScrapedCar> cars)
         {
-            // Ensure all cars have IDs and timestamps
+            // Ensure all cars have IDs, timestamps, and clientId
             foreach (var car in cars)
             {
                 if (string.IsNullOrEmpty(car.Id))
@@ -80,47 +58,28 @@ namespace car_lister.Services
                     car.Id = Guid.NewGuid().ToString();
                 }
                 car.ScrapedAt = DateTime.UtcNow;
+                car.ClientId = clientId; // Ensure the clientId is set
             }
 
-            return await AddAsync(cars, "addCars");
+            return await _jsRuntime.InvokeAsync<bool>("firestore.addMultipleToClientInventory", clientId, JsonSerializer.Serialize(cars));
         }
 
-        public async Task<bool> AddLegacyCarsAsync(List<Car> cars)
-        {
-            // Ensure all cars have IDs and timestamps
-            foreach (var car in cars)
-            {
-                if (string.IsNullOrEmpty(car.Id))
-                {
-                    car.Id = Guid.NewGuid().ToString();
-                }
-                car.CreatedAt = DateTime.UtcNow;
-                car.LastUpdated = DateTime.UtcNow;
-            }
-
-            return await AddAsync(cars, "addCars");
-        }
-
-        public async Task<bool> UpdateCarAsync(ScrapedCar car)
+        public async Task<bool> UpdateClientInventoryCarAsync(string clientId, ScrapedCar car)
         {
             car.ScrapedAt = DateTime.UtcNow;
-            return await UpdateAsync(car, "updateCar");
+            car.ClientId = clientId; // Ensure the clientId is set
+
+            return await _jsRuntime.InvokeAsync<bool>("firestore.updateClientInventoryCar", clientId, JsonSerializer.Serialize(car));
         }
 
-        public async Task<bool> UpdateLegacyCarAsync(Car car)
+        public async Task<bool> DeleteFromClientInventoryAsync(string clientId, string carId)
         {
-            car.LastUpdated = DateTime.UtcNow;
-            return await UpdateAsync(car, "updateCar");
+            return await _jsRuntime.InvokeAsync<bool>("firestore.deleteFromClientInventory", clientId, carId);
         }
 
-        public async Task<bool> DeleteCarAsync(string id)
+        public async Task<bool> ClearClientInventoryAsync(string clientId)
         {
-            return await DeleteAsync(id, "deleteCar");
-        }
-
-        public async Task<bool> DeleteCarsByClientIdAsync(string clientId)
-        {
-            return await DeleteByClientIdAsync(clientId, "deleteCarsByClientId");
+            return await _jsRuntime.InvokeAsync<bool>("firestore.clearClientInventory", clientId);
         }
     }
 }

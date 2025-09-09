@@ -7,23 +7,32 @@ service cloud.firestore {
       allow read, write: if false;
     }
     
-    // Rules for the cars collection
-    match /cars/{carId} {
+    // Rules for the clients collection
+    match /clients/{clientId} {
       // Allow read for all authenticated users
       allow read: if request.auth != null;
       
-      // Allow create if the user is authenticated and they're creating a car listing
-      allow create: if request.auth != null && 
-                   request.auth.uid == request.resource.data.userId;
+      // Allow create, update, delete for all authenticated users (admin functionality)
+      allow create, update, delete: if request.auth != null;
       
-      // Allow update if the user is authenticated and they own the car listing
-      allow update: if request.auth != null && 
-                   request.auth.uid == resource.data.userId &&
-                   request.auth.uid == request.resource.data.userId;
-      
-      // Allow delete if the user is authenticated and they own the car listing
-      allow delete: if request.auth != null && 
-                   request.auth.uid == resource.data.userId;
+      // Rules for client inventory subcollection
+      match /inventory/{carId} {
+        // Allow read for all authenticated users
+        allow read: if request.auth != null;
+        
+        // Allow create if the user is authenticated and the car has the correct clientId
+        allow create: if request.auth != null && 
+                     request.resource.data.clientId == clientId;
+        
+        // Allow update if the user is authenticated and the car belongs to this client
+        allow update: if request.auth != null && 
+                     resource.data.clientId == clientId &&
+                     request.resource.data.clientId == clientId;
+        
+        // Allow delete if the user is authenticated and the car belongs to this client
+        allow delete: if request.auth != null && 
+                     resource.data.clientId == clientId;
+      }
     }
     
     // Rules for the dealers collection
@@ -35,21 +44,27 @@ service cloud.firestore {
       allow create, update, delete: if request.auth != null;
     }
     
-    // Function to validate car data structure
-    function validCar(car) {
-      return car.size() >= 5 &&                    // Must have at least 5 fields
-             car.userId is string &&               // userId must be string
+    // Function to validate ScrapedCar data structure
+    function validScrapedCar(car) {
+      return car.size() >= 3 &&                    // Must have at least 3 fields
+             car.clientId is string &&             // clientId must be string
              car.make is string &&                 // make must be string
              car.model is string &&                // model must be string
              car.year is number &&                 // year must be number
              car.price is number &&                // price must be number
-             car.createdAt is timestamp &&         // createdAt must be timestamp
+             car.scrapedAt is timestamp &&         // scrapedAt must be timestamp
              (!('description' in car) || 
               car.description is string) &&        // description must be string if present
              (!('mileage' in car) || 
               car.mileage is number) &&            // mileage must be number if present
              (!('images' in car) || 
-              car.images is list);                 // images must be list if present
+              car.images is list) &&               // images must be list if present
+             (!('features' in car) || 
+              car.features is list) &&             // features must be list if present
+             (!('photoUrls' in car) || 
+              car.photoUrls is list) &&            // photoUrls must be list if present
+             (!('selectedPhotoUrls' in car) || 
+              car.selectedPhotoUrls is list);      // selectedPhotoUrls must be list if present
     }
   }
 } 

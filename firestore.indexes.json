@@ -1,29 +1,57 @@
 {
   "indexes": [
     {
-      "collectionGroup": "cars",
+      "collectionGroup": "inventory",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "userId",
+          "fieldPath": "clientId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "createdAt",
+          "fieldPath": "scrapedAt",
           "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "cars",
+      "collectionGroup": "inventory",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "clientId",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "make",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "model",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "inventory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "clientId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "price",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "inventory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "clientId",
           "order": "ASCENDING"
         },
         {
@@ -33,11 +61,29 @@
       ]
     },
     {
-      "collectionGroup": "cars",
+      "collectionGroup": "inventory",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "price",
+          "fieldPath": "clientId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "enhancementStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scrapedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "clients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isActive",
           "order": "ASCENDING"
         },
         {

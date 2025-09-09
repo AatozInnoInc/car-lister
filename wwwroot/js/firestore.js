@@ -114,10 +114,10 @@ window.firestore = {
             const client = JSON.parse(clientJson);
             const db = firebase.firestore();
             const docRef = await db.collection('clients').add(client);
-            return true;
+            return docRef.id; // Return the document ID instead of just true
         } catch (error) {
             console.error('Error adding client:', error);
-            return false;
+            return null;
         }
     },
 
@@ -144,11 +144,11 @@ window.firestore = {
         }
     },
 
-    // Car functions
-    getCarsByClientId: async function(clientId) {
+    // Client Inventory functions
+    getClientInventory: async function(clientId) {
         try {
             const db = firebase.firestore();
-            const snapshot = await db.collection('cars').where('clientId', '==', clientId).get();
+            const snapshot = await db.collection('clients').doc(clientId).collection('inventory').get();
             const cars = [];
             snapshot.forEach(doc => {
                 cars.push({
@@ -158,69 +158,69 @@ window.firestore = {
             });
             return JSON.stringify(cars);
         } catch (error) {
-            console.error('Error getting cars by client id:', error);
+            console.error('Error getting client inventory:', error);
             return '[]';
         }
     },
 
-    addCar: async function(carJson) {
+    addToClientInventory: async function(clientId, carJson) {
         try {
             const car = JSON.parse(carJson);
             const db = firebase.firestore();
-            const docRef = await db.collection('cars').add(car);
+            const docRef = await db.collection('clients').doc(clientId).collection('inventory').add(car);
             return true;
         } catch (error) {
-            console.error('Error adding car:', error);
+            console.error('Error adding car to client inventory:', error);
             return false;
         }
     },
 
-    addCars: async function(carsJson) {
+    addMultipleToClientInventory: async function(clientId, carsJson) {
         try {
             const cars = JSON.parse(carsJson);
             const db = firebase.firestore();
             const batch = db.batch();
             
             cars.forEach(car => {
-                const docRef = db.collection('cars').doc();
+                const docRef = db.collection('clients').doc(clientId).collection('inventory').doc();
                 batch.set(docRef, car);
             });
             
             await batch.commit();
             return true;
         } catch (error) {
-            console.error('Error adding cars:', error);
+            console.error('Error adding cars to client inventory:', error);
             return false;
         }
     },
 
-    updateCar: async function(carJson) {
+    updateClientInventoryCar: async function(clientId, carJson) {
         try {
             const car = JSON.parse(carJson);
             const db = firebase.firestore();
-            await db.collection('cars').doc(car.id).update(car);
+            await db.collection('clients').doc(clientId).collection('inventory').doc(car.id).update(car);
             return true;
         } catch (error) {
-            console.error('Error updating car:', error);
+            console.error('Error updating car in client inventory:', error);
             return false;
         }
     },
 
-    deleteCar: async function(id) {
+    deleteFromClientInventory: async function(clientId, carId) {
         try {
             const db = firebase.firestore();
-            await db.collection('cars').doc(id).delete();
+            await db.collection('clients').doc(clientId).collection('inventory').doc(carId).delete();
             return true;
         } catch (error) {
-            console.error('Error deleting car:', error);
+            console.error('Error deleting car from client inventory:', error);
             return false;
         }
     },
 
-    deleteCarsByClientId: async function(clientId) {
+    clearClientInventory: async function(clientId) {
         try {
             const db = firebase.firestore();
-            const snapshot = await db.collection('cars').where('clientId', '==', clientId).get();
+            const snapshot = await db.collection('clients').doc(clientId).collection('inventory').get();
             const batch = db.batch();
             
             snapshot.forEach(doc => {
@@ -230,7 +230,7 @@ window.firestore = {
             await batch.commit();
             return true;
         } catch (error) {
-            console.error('Error deleting cars by client id:', error);
+            console.error('Error clearing client inventory:', error);
             return false;
         }
     },

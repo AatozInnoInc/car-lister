@@ -1025,19 +1025,39 @@
 
     private async Task HandlePhotoSelectionComplete()
     {
-        // Update cars with selected photos
-        foreach (var car in scrapedCars)
+        isLoading = true;
+        loadingMessage = "Saving client and inventory to database...";
+        StateHasChanged();
+
+        try
         {
-            if (selectedPhotos.ContainsKey(car.Id))
+            // Update cars with selected photos
+            foreach (var car in scrapedCars)
             {
-                car.SelectedPhotoUrls = selectedPhotos[car.Id];
+                if (selectedPhotos.ContainsKey(car.Id))
+                {
+                    car.SelectedPhotoUrls = selectedPhotos[car.Id];
+                }
             }
+
+            // Save the client and cars to Firestore
+            await SaveClientAndCars();
+
+            loadingMessage = "Setup complete!";
+            await Task.Delay(500); // Brief pause to show success
+
+            NextStep();
         }
-
-        // Save the client and cars to Firestore
-        await SaveClientAndCars();
-
-        NextStep();
+        catch (Exception ex)
+        {
+            loadingMessage = $"Error: {ex.Message}";
+            Console.WriteLine($"Error in HandlePhotoSelectionComplete: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
 
@@ -1099,8 +1119,7 @@
         
         foreach (var apiCar in apiCars)
         {
-            // Set the client ID for all cars
-            apiCar.ClientId = newClient.Id;
+            // Note: ClientId will be set later when the client is saved and we have the ID
             
             // Ensure we have an ID
             if (string.IsNullOrEmpty(apiCar.Id))
@@ -1130,18 +1149,23 @@
     {
         try
         {
-            // Save the client first
-            var clientJson = System.Text.Json.JsonSerializer.Serialize(newClient);
-            var clientSaved = await JSRuntime.InvokeAsync<bool>("firestore.addClient", clientJson);
+            // Save the client first using ClientService
+            var clientSaved = await ClientService.AddClientAsync(newClient);
             
-            if (clientSaved)
+            if (clientSaved && !string.IsNullOrEmpty(newClient.Id))
             {
-                // Save the cars
-                var carsSaved = await InventoryService.SaveCarsToFirestoreAsync(scrapedCars);
+                // Update all cars with the client ID now that we have it
+                foreach (var car in scrapedCars)
+                {
+                    car.ClientId = newClient.Id;
+                }
+                
+                // Save the cars to the client's inventory subcollection
+                var carsSaved = await InventoryService.SaveCarsToClientInventoryAsync(newClient.Id, scrapedCars);
                 
                 if (!carsSaved)
                 {
-                    Console.WriteLine("Warning: Failed to save some cars to Firestore");
+                    Console.WriteLine("Warning: Failed to save some cars to client inventory");
                 }
             }
             else

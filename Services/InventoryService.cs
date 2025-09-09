@@ -88,18 +88,34 @@ public class InventoryService
 		return await SearchDealerInventoryAsync(request);
 	}
 
-	public async Task<bool> SaveCarsToFirestoreAsync(List<ScrapedCar> cars)
+	// Client inventory methods
+	public async Task<bool> SaveCarsToClientInventoryAsync(string clientId, List<ScrapedCar> cars)
 	{
-		return await _carService.AddCarsAsync(cars);
+		return await _carService.AddMultipleToClientInventoryAsync(clientId, cars);
 	}
 
-	public async Task<List<ScrapedCar>> GetCarsByClientIdAsync(string clientId)
+	public async Task<List<ScrapedCar>> GetClientInventoryAsync(string clientId)
 	{
-		return await _carService.GetCarsByClientIdAsync(clientId);
+		return await _carService.GetClientInventoryAsync(clientId);
 	}
 
-	public async Task<bool> DeleteCarsByClientIdAsync(string clientId)
+	public async Task<bool> ClearClientInventoryAsync(string clientId)
 	{
-		return await _carService.DeleteCarsByClientIdAsync(clientId);
+		return await _carService.ClearClientInventoryAsync(clientId);
+	}
+
+	public async Task<bool> AddCarToClientInventoryAsync(string clientId, ScrapedCar car)
+	{
+		return await _carService.AddToClientInventoryAsync(clientId, car);
+	}
+
+	public async Task<bool> UpdateCarInClientInventoryAsync(string clientId, ScrapedCar car)
+	{
+		return await _carService.UpdateClientInventoryCarAsync(clientId, car);
+	}
+
+	public async Task<bool> DeleteCarFromClientInventoryAsync(string clientId, string carId)
+	{
+		return await _carService.DeleteFromClientInventoryAsync(clientId, carId);
 	}
 }

@@ -26,11 +26,27 @@ public class ClientService : BaseFirestoreService
 
     public async Task<bool> AddClientAsync(Client client)
     {
-        client.Id = Guid.NewGuid().ToString();
         client.CreatedAt = DateTime.UtcNow;
         client.UpdatedAt = DateTime.UtcNow;
 
-        return await AddAsync(client, "addClient");
+        try
+        {
+            var json = JsonSerializer.Serialize(client);
+            var clientId = await _jsRuntime.InvokeAsync<string>("firestore.addClient", json);
+            
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                client.Id = clientId; // Set the ID returned from Firestore
+                return true;
+            }
+            
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error adding client: {ex.Message}");
+            return false;
+        }
     }
 
     public async Task<bool> UpdateClientAsync(Client client)
@@ -44,34 +60,34 @@ public class ClientService : BaseFirestoreService
         return await DeleteAsync(id, "deleteClient");
     }
 
-    // Car operations - delegated to CarService
-    public async Task<List<Car>> GetCarsByClientIdAsync(string clientId)
+    // Client inventory operations - delegated to CarService
+    public async Task<List<ScrapedCar>> GetClientInventoryAsync(string clientId)
     {
-        return await _carService.GetLegacyCarsByClientIdAsync(clientId);
+        return await _carService.GetClientInventoryAsync(clientId);
     }
 
-    public async Task<bool> AddCarAsync(Car car)
+    public async Task<bool> AddToClientInventoryAsync(string clientId, ScrapedCar car)
     {
-        return await _carService.AddLegacyCarsAsync(new List<Car> { car });
+        return await _carService.AddToClientInventoryAsync(clientId, car);
     }
 
-    public async Task<bool> AddCarsAsync(List<Car> cars)
+    public async Task<bool> AddMultipleToClientInventoryAsync(string clientId, List<ScrapedCar> cars)
     {
-        return await _carService.AddLegacyCarsAsync(cars);
+        return await _carService.AddMultipleToClientInventoryAsync(clientId, cars);
     }
 
-    public async Task<bool> UpdateCarAsync(Car car)
+    public async Task<bool> UpdateClientInventoryCarAsync(string clientId, ScrapedCar car)
     {
-        return await _carService.UpdateLegacyCarAsync(car);
+        return await _carService.UpdateClientInventoryCarAsync(clientId, car);
     }
 
-    public async Task<bool> DeleteCarAsync(string id)
+    public async Task<bool> DeleteFromClientInventoryAsync(string clientId, string carId)
     {
-        return await _carService.DeleteCarAsync(id);
+        return await _carService.DeleteFromClientInventoryAsync(clientId, carId);
     }
 
-    public async Task<bool> DeleteCarsByClientIdAsync(string clientId)
+    public async Task<bool> ClearClientInventoryAsync(string clientId)
     {
-        return await _carService.DeleteCarsByClientIdAsync(clientId);
+        return await _carService.ClearClientInventoryAsync(clientId);
     }
 }
