@@ -10,38 +10,30 @@ window.firebaseAuth = {
             this.ensureInitialized();
             const provider = new firebase.auth.GoogleAuthProvider();
             
-            // Set the redirect URL explicitly for localhost
-            const currentHost = window.location.hostname;
-            const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+            // Use popup instead of redirect for better Blazor WebAssembly compatibility
+            const result = await firebase.auth().signInWithPopup(provider);
             
-            if (isLocalhost) {
-                // For localhost, we need to handle the redirect manually
-                try {
-                    const result = await firebase.auth().signInWithPopup(provider);
-                    return !!result.user;
-                } catch (popupError) {
-                    // Fallback to redirect if popup fails
-                    await firebase.auth().signInWithRedirect(provider);
-                    return true;
-                }
-            } else {
-                // Use redirect for production
-                await firebase.auth().signInWithRedirect(provider);
+            if (result.user) {
+                console.log("User signed in successfully:", result.user.email);
                 return true;
             }
+            return false;
         } catch (error) {
             console.error("Error signing in with Google:", error);
-            return false;
-        }
-    },
-
-    handleRedirectResult: async function () {
-        try {
-            this.ensureInitialized();
-            const result = await firebase.auth().getRedirectResult();
-            return !!result.user;
-        } catch (error) {
-            console.error("Error handling redirect result:", error);
+            
+            // If popup is blocked, fall back to redirect
+            if (error.code === 'auth/popup-blocked') {
+                console.log("Popup blocked, falling back to redirect");
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await firebase.auth().signInWithRedirect(provider);
+                    return true;
+                } catch (redirectError) {
+                    console.error("Error with redirect fallback:", redirectError);
+                    return false;
+                }
+            }
+            
             return false;
         }
     },
@@ -90,16 +82,17 @@ window.firebaseAuth = {
         }
     },
 
-    onAuthStateChanged: function(callback) {
+    handleRedirectResult: async function() {
         try {
             this.ensureInitialized();
-            return firebase.auth().onAuthStateChanged(callback);
+            const result = await firebase.auth().getRedirectResult();
+            return !!result.user;
         } catch (error) {
-            console.error("Error setting up auth state listener:", error);
-            return null;
+            console.error("Error handling redirect result:", error);
+            return false;
         }
     }
-};
+}; 
 
 // Download functionality
 window.downloadFile = function(fileName, content) {

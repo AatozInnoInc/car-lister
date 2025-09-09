@@ -101,3 +101,6 @@ wwwroot/service-worker.js
 wwwroot/service-worker.published.js
 wwwroot/_framework/
 wwwroot/css/app.css.map
+
+# Resources
+searchPreflight.action_preview_response.json

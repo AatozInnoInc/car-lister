@@ -44,7 +44,6 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 	<script>
-		// Your web app's Firebase configuration
 		const currentHost = window.location.hostname;
 		const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
 		
@@ -69,6 +68,49 @@
 
 			// Add initialization check
 			window.firebaseInitialized = true;
+
+			// Handle Firebase auth redirect (fallback for when popup is blocked)
+			window.RedirectHandler = {
+				handleRedirect: async function() {
+					try {
+						console.log('RedirectHandler: Current URL:', window.location.href);
+
+						// Check if this is a Firebase auth redirect
+						if (window.location.href.includes('/__/auth/')) {
+							console.log('RedirectHandler: Detected Firebase auth redirect, waiting for Firebase to initialize...');
+
+							// Wait for Firebase to be ready
+							let attempts = 0;
+							while (!window.firebaseInitialized && attempts < 50) {
+								await new Promise(resolve => setTimeout(resolve, 100));
+								attempts++;
+							}
+
+							if (window.firebaseInitialized) {
+								console.log('RedirectHandler: Firebase ready:', window.firebaseInitialized);
+								console.log('RedirectHandler: Handling redirect result...');
+
+								// Handle the redirect result
+								const result = await firebase.auth().getRedirectResult();
+								if (result.user) {
+									console.log('RedirectHandler: User authenticated:', result.user.email);
+									// Redirect to the main app
+									window.location.href = '/';
+								} else {
+									console.log('RedirectHandler: No user in redirect result, redirecting to login');
+									window.location.href = '/login';
+								}
+							} else {
+								console.log('RedirectHandler: Firebase not ready, redirecting to login');
+								window.location.href = '/login';
+							}
+						}
+					} catch (error) {
+						console.error('RedirectHandler: Error handling redirect:', error);
+						window.location.href = '/login';
+					}
+				}
+			};
 			
 			// Set up authentication state listener
 			firebase.auth().onAuthStateChanged(function(user) {
@@ -83,6 +125,10 @@
 					}
 				}
 			});
+
+			// Handle redirect on page load
+			window.RedirectHandler.handleRedirect();
+
 		} catch (error) {
 			console.error('Firebase initialization error:', error);
 			window.firebaseInitialized = false;
