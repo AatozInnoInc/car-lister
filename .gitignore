@@ -24,6 +24,7 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
+obj
 
 # Visual Studio Code
 .vscode/*
@@ -104,3 +105,4 @@ wwwroot/css/app.css.map
 
 # Resources
 searchPreflight.action_preview_response.json
+

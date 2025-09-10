@@ -1,6 +1,6 @@
 .navbar {
     background-color: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 0.5rem 1rem;
 }
 
@@ -190,6 +190,7 @@
             opacity: 0;
             transform: translateX(-100%);
         }
+
         to {
             opacity: 1;
             transform: translateX(0);
@@ -201,7 +202,7 @@
     .navbar {
         position: relative;
     }
-    
+
     .nav-scrollable {
         display: block;
         position: fixed;
@@ -211,7 +212,7 @@
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
-        box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
         z-index: 1000;
         border-right: 1px solid rgba(255, 255, 255, 0.1);
         overflow-x: hidden;
@@ -220,4 +221,4 @@
     .navbar-toggler {
         display: none;
     }
-} 
+}
