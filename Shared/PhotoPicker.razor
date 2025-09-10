@@ -1,0 +1,249 @@
+@using car_lister.Models
+
+<div class="photo-picker-container">
+    @if (Car != null && Car.Images != null && Car.Images.Count > 0)
+    {
+        <div class="photo-picker-header">
+            <div class="photo-picker-title">
+                <span class="oi oi-image"></span>
+                <h3>@Title</h3>
+            </div>
+            <div class="photo-picker-stats">
+                <div class="stat-item">
+                    <span class="label">Available Photos:</span>
+                    <span class="value">@Car.Images.Count</span>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Selected Photos:</span>
+                    <span class="value">@(SelectedPhotos.ContainsKey(Car.Id) ? SelectedPhotos[Car.Id].Count : 0)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="photo-selection-controls">
+            <button class="btn btn-sm btn-secondary" @onclick="() => SelectAllPhotos()">
+                Select All
+            </button>
+            <button class="btn btn-sm btn-secondary" @onclick="() => ClearAllPhotos()">
+                Clear All
+            </button>
+        </div>
+
+        <div class="photo-grid">
+            @for (int i = 0; i < Car.Images.Count; i++)
+            {
+                var photoUrl = Car.Images[i];
+                var photoIndex = i;
+                var isSelected = SelectedPhotos.ContainsKey(Car.Id) && SelectedPhotos[Car.Id].Contains(photoUrl);
+
+                <div class="photo-item @(isSelected ? "selected" : "")" @onclick="() => OnPhotoClick(photoIndex, photoUrl)">
+                    <img src="@photoUrl" alt="Car photo @(photoIndex + 1)" />
+                    @if (isSelected)
+                    {
+                        <div class="photo-selected-badge">
+                            <span class="oi oi-check"></span>
+                        </div>
+                    }
+                    <div class="photo-hover-overlay">
+                        <span class="oi oi-eye"></span>
+                    </div>
+                    <div class="photo-quick-select" @onclick:stopPropagation="true"
+                        @onclick="() => TogglePhotoSelection(photoUrl)">
+                        @if (isSelected)
+                        {
+                            <span class="oi oi-check"></span>
+                        }
+                        else
+                        {
+                            <span class="oi oi-plus"></span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (ShowNavigation && OnPrevious.HasDelegate && OnNext.HasDelegate)
+        {
+            <div class="photo-picker-navigation">
+                <button class="btn btn-sm btn-secondary" @onclick="OnPrevious" disabled="@IsPreviousDisabled">
+                    <span class="oi oi-chevron-left"></span>
+                    Previous
+                </button>
+                <span class="navigation-counter">@NavigationText</span>
+                <button class="btn btn-sm btn-secondary" @onclick="OnNext" disabled="@IsNextDisabled">
+                    Next
+                    <span class="oi oi-chevron-right"></span>
+                </button>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="no-photos-message">
+            <div class="empty-state">
+                <span class="oi oi-image text-muted fs-1"></span>
+                <h3>No photos available</h3>
+                <p>This vehicle has no photos to select from.</p>
+            </div>
+        </div>
+    }
+</div>
+
+@* Fullscreen Photo Viewer *@
+@if (ShowFullscreenViewer && Car != null && Car.Images != null && photoViewerIndex >= 0 && photoViewerIndex <
+Car.Images.Count)
+{
+    <div class="fullscreen-image-container" @onclick="() => ClosePhotoViewer()">
+        <img src="@Car.Images[photoViewerIndex]" alt="@Car.FullTitle" class="fullscreen-image"
+            @onclick:stopPropagation="true" />
+
+        <!-- Photo Selection Button -->
+        <div class="fullscreen-selection-overlay">
+            <button class="btn btn-primary btn-large" @onclick="() => TogglePhotoSelection(Car.Images[photoViewerIndex])">
+                @if (SelectedPhotos.ContainsKey(Car.Id) && SelectedPhotos[Car.Id].Contains(Car.Images[photoViewerIndex]))
+                {
+                    <span class="oi oi-check"></span>
+                    <span>Selected</span>
+                }
+                else
+                {
+                    <span class="oi oi-plus"></span>
+                    <span>Select Photo</span>
+                }
+            </button>
+        </div>
+
+        @if (Car.Images.Count > 1)
+        {
+            <button class="fullscreen-nav-btn prev" @onclick="() => PreviousPhotoViewerImage()"
+                disabled="@(photoViewerIndex == 0)">
+                <span class="oi oi-chevron-left"></span>
+            </button>
+            <button class="fullscreen-nav-btn next" @onclick="() => NextPhotoViewerImage()"
+                disabled="@(photoViewerIndex == Car.Images.Count - 1)">
+                <span class="oi oi-chevron-right"></span>
+            </button>
+        }
+    </div>
+
+    @if (Car.Images.Count > 1)
+    {
+        <div class="fullscreen-thumbnails">
+            @for (int i = 0; i < Car.Images.Count; i++)
+            {
+                var index = i;
+                <div class="thumbnail @(photoViewerIndex == index ? "active" : "")" @onclick="() => SelectPhotoViewerImage(index)">
+                    <img src="@Car.Images[index]" alt="Thumbnail @(index + 1)" />
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public ScrapedCar Car { get; set; } = new();
+    [Parameter] public string Title { get; set; } = "Select Photos";
+    [Parameter] public Dictionary<string, List<string>> SelectedPhotos { get; set; } = new();
+    [Parameter] public EventCallback<Dictionary<string, List<string>>> SelectedPhotosChanged { get; set; }
+
+    // Navigation parameters
+    [Parameter] public bool ShowNavigation { get; set; } = false;
+    [Parameter] public EventCallback OnPrevious { get; set; }
+    [Parameter] public EventCallback OnNext { get; set; }
+    [Parameter] public bool IsPreviousDisabled { get; set; } = false;
+    [Parameter] public bool IsNextDisabled { get; set; } = false;
+    [Parameter] public string NavigationText { get; set; } = "";
+
+    // Fullscreen viewer parameters
+    [Parameter] public bool ShowFullscreenViewer { get; set; } = true;
+
+    // Internal state
+    private int photoViewerIndex = -1;
+
+    private void TogglePhotoSelection(string photoUrl)
+    {
+        if (Car == null || string.IsNullOrEmpty(Car.Id))
+            return;
+
+        if (!SelectedPhotos.ContainsKey(Car.Id))
+            SelectedPhotos[Car.Id] = new List<string>();
+
+        if (SelectedPhotos[Car.Id].Contains(photoUrl))
+        {
+            SelectedPhotos[Car.Id].Remove(photoUrl);
+        }
+        else
+        {
+            SelectedPhotos[Car.Id].Add(photoUrl);
+        }
+
+        SelectedPhotosChanged.InvokeAsync(SelectedPhotos);
+        StateHasChanged();
+    }
+
+    private void SelectAllPhotos()
+    {
+        if (Car == null || string.IsNullOrEmpty(Car.Id) || Car.Images == null)
+            return;
+
+        SelectedPhotos[Car.Id] = new List<string>(Car.Images);
+        SelectedPhotosChanged.InvokeAsync(SelectedPhotos);
+        StateHasChanged();
+    }
+
+    private void ClearAllPhotos()
+    {
+        if (Car == null || string.IsNullOrEmpty(Car.Id))
+            return;
+
+        SelectedPhotos[Car.Id] = new List<string>();
+        SelectedPhotosChanged.InvokeAsync(SelectedPhotos);
+        StateHasChanged();
+    }
+
+    private void OnPhotoClick(int photoIndex, string photoUrl)
+    {
+        if (ShowFullscreenViewer)
+        {
+            photoViewerIndex = photoIndex;
+            StateHasChanged();
+        }
+        else
+        {
+            TogglePhotoSelection(photoUrl);
+        }
+    }
+
+    private void ClosePhotoViewer()
+    {
+        photoViewerIndex = -1;
+        StateHasChanged();
+    }
+
+    private void PreviousPhotoViewerImage()
+    {
+        if (Car != null && Car.Images != null && photoViewerIndex > 0)
+        {
+            photoViewerIndex--;
+            StateHasChanged();
+        }
+    }
+
+    private void NextPhotoViewerImage()
+    {
+        if (Car != null && Car.Images != null && photoViewerIndex < Car.Images.Count - 1)
+        {
+            photoViewerIndex++;
+            StateHasChanged();
+        }
+    }
+
+    private void SelectPhotoViewerImage(int index)
+    {
+        if (Car != null && Car.Images != null && index >= 0 && index < Car.Images.Count)
+        {
+            photoViewerIndex = index;
+            StateHasChanged();
+        }
+    }
+}

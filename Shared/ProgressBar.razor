@@ -1,0 +1,29 @@
+@using car_lister.Models
+
+<div class="progress-container">
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: @(ProgressPercentage)%"></div>
+    </div>
+    <div class="progress-steps">
+        @foreach (var step in Steps)
+        {
+            <div class="step @(CurrentStep >= step.Number ? "active" : "") @(CurrentStep > step.Number ? "completed" : "")">
+                <div class="step-number">@step.Number</div>
+                <div class="step-label">@step.Label</div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int CurrentStep { get; set; } = 1;
+    [Parameter] public List<StepInfo> Steps { get; set; } = new();
+
+    private int ProgressPercentage => Steps.Count > 0 ? ((CurrentStep - 1) * 100) / (Steps.Count - 1) : 0;
+
+    public class StepInfo
+    {
+        public int Number { get; set; }
+        public string Label { get; set; } = "";
+    }
+}

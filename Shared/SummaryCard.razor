@@ -1,0 +1,39 @@
+<div class="summary-card" @attributes="AdditionalAttributes">
+    <div class="summary-header">
+        @if (!string.IsNullOrEmpty(IconClass))
+        {
+            <span class="@IconClass"></span>
+        }
+        <h3>@Title</h3>
+    </div>
+    @if (Details != null && Details.Any())
+    {
+        <div class="summary-details">
+            @foreach (var detail in Details)
+            {
+                <div class="detail-item">
+                    <span class="label">@detail.Label:</span>
+                    <span class="value">@detail.Value</span>
+                </div>
+            }
+        </div>
+    }
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string IconClass { get; set; } = "";
+    [Parameter] public List<DetailItem> Details { get; set; } = new();
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    public class DetailItem
+    {
+        public string Label { get; set; } = "";
+        public string Value { get; set; } = "";
+    }
+}

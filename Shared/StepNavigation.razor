@@ -1,0 +1,36 @@
+<div class="step-actions">
+    @if (ShowBackButton && OnBack.HasDelegate)
+    {
+        <button class="btn btn-secondary btn-large" @onclick="OnBack">
+            <span class="oi oi-arrow-left"></span>
+            @BackButtonText
+        </button>
+    }
+    
+    @if (OnNext.HasDelegate)
+    {
+        <button class="btn btn-primary btn-large" @onclick="OnNext" disabled="@IsNextDisabled">
+            @if (!string.IsNullOrEmpty(NextButtonIcon))
+            {
+                <span class="@NextButtonIcon"></span>
+            }
+            @NextButtonText
+        </button>
+    }
+    
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    [Parameter] public bool ShowBackButton { get; set; } = true;
+    [Parameter] public string BackButtonText { get; set; } = "Back";
+    [Parameter] public string NextButtonText { get; set; } = "Continue";
+    [Parameter] public string NextButtonIcon { get; set; } = "oi oi-arrow-right";
+    [Parameter] public bool IsNextDisabled { get; set; } = false;
+    [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public EventCallback OnNext { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
