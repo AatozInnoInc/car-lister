@@ -1,0 +1,815 @@
+@page "/reconcile"
+@using Microsoft.AspNetCore.Authorization
+@using car_lister.Services
+@using car_lister.Models
+@inject NavigationManager NavigationManager
+@inject ClientService ClientService
+@inject InventoryService InventoryService
+@attribute [Authorize]
+
+<PageTitle>Inventory Reconciliation - Car Lister</PageTitle>
+<link href="css/workflow.css" rel="stylesheet" />
+<link href="css/addlisting.css" rel="stylesheet" />
+<script src="js/firestore.js"></script>
+
+<div class="onboarding-container">
+    <div class="header">
+        <button class="btn-back" @onclick="GoBack">
+            <span class="oi oi-arrow-left"></span>
+            Back
+        </button>
+        <h1>Inventory Reconciliation</h1>
+        <p class="subtitle">Refresh, review differences, and apply updates</p>
+    </div>
+
+    <!-- Progress Bar -->
+    <ProgressBar CurrentStep="currentStep" Steps="progressSteps" />
+
+    <div class="content">
+        @if (isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>@loadingMessage</p>
+            </div>
+        }
+        else if (currentStep == 1)
+        {
+            <!-- Step 1: Client Selection with UpdatedAt indicator -->
+            <div class="step-content client-setup">
+                <div class="step-header">
+                    <h2>Select Client</h2>
+                    <p>Choose a client to refresh and reconcile inventory</p>
+                </div>
+
+                <div class="form-container">
+                    <div class="form-group">
+                        <label for="client-select">Client</label>
+                        <div class="form-control p-0">
+                            <div class="dropdown w-100">
+                                <select id="client-select" class="form-control" @bind="selectedClientId"
+                                    @bind:after="OnClientSelectionChanged">
+                                    <option value="">Select client</option>
+                                    @foreach (var client in clients)
+                                    {
+                                        var label = $"{client.Name}";
+                                        <option value="@client.Id">@label</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <small class="form-text">Indicator: color-coded status will show after selection.</small>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(selectedClientId))
+                    {
+                        var client = clients.FirstOrDefault(c => c.Id == selectedClientId);
+                        if (client != null)
+                        {
+                            <SummaryCard Title="@client.Name" IconClass="oi oi-briefcase" class="mt-1"
+                                Details="@GetClientSummaryDetails(client)" />
+                        }
+                    }
+                </div>
+
+                <StepNavigation OnNext="NextStep" IsNextDisabled="@(string.IsNullOrEmpty(selectedClientId))"
+                    NextButtonText="Continue to Refresh" />
+            </div>
+        }
+        else if (currentStep == 2)
+        {
+            <!-- Step 2: Refresh (rescrape) -->
+            <div class="step-content import-inventory">
+                <div class="step-header">
+                    <h2>Refresh Inventory</h2>
+                    <p>Scrape the latest inventory for the selected client</p>
+                </div>
+
+                @if (isImporting)
+                {
+                    <div class="import-progress">
+                        <div class="progress-indicator">
+                            <div class="spinner"></div>
+                            <p>@importStatus</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="import-summary">
+                        <div class="summary-card">
+                            <div class="summary-header">
+                                <span class="oi oi-data-transfer-download"></span>
+                                <h3>Ready to Refresh</h3>
+                            </div>
+                            <div class="summary-details">
+                                <div class="detail-item">
+                                    <span class="label">Client:</span>
+                                    <span class="value">@selectedClient?.Name</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Data Source:</span>
+                                    <span class="value">@selectedClient?.DataSource</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Dealer URL:</span>
+                                    <span class="value">@selectedClient?.DealerUrl</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-actions import-actions">
+                            <button class="btn btn-primary btn-large" @onclick="RunRefresh">
+                                <span class="oi oi-data-transfer-download"></span>
+                                Start Refresh
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (currentStep == 3)
+        {
+            <!-- Step 3: Review (diff summary + iterative review) -->
+            <div class="step-content additional-info">
+                <div class="step-header">
+                    <h2>Review Differences</h2>
+                    <p>Summary of detected changes since last update</p>
+                </div>
+
+                <div class="additional-info-summary">
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <span class="oi oi-info"></span>
+                            <h3>Change Summary</h3>
+                        </div>
+                        <div class="summary-details">
+                            <div class="detail-item"><span class="label">New Vehicles:</span><span
+                                    class="value">@newVehicles.Count</span></div>
+                            <div class="detail-item"><span class="label">Sold Vehicles:</span><span
+                                    class="value">@soldVehicles.Count</span></div>
+                            <div class="detail-item"><span class="label">Price Changes:</span><span
+                                    class="value">@priceChanges.Count</span></div>
+                            <div class="detail-item"><span class="label">Photo Changes:</span><span
+                                    class="value">@photoChanges.Count</span></div>
+                            <div class="detail-item"><span class="label">Photo Selection Needed:</span><span
+                                    class="value">@allChanges.Count(c => c.ChangeType == "Photo Selection Needed")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (reviewMode == "summary")
+                {
+                    <div class="step-actions additional-info-actions">
+                        <button class="btn btn-primary btn-large" @onclick="() => StartIterativeReview()">
+                            <span class="oi oi-media-step-forward"></span>
+                            Review Each Change
+                        </button>
+                        @if (allChanges.Any(c => c.ChangeType == "Photo Selection Needed"))
+                        {
+                            <button class="btn btn-secondary btn-large ml-1" @onclick="() => StartPhotoSelection()">
+                                <span class="oi oi-image"></span>
+                                Select Photos for Cars
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @if (allChanges.Count > 0)
+                    {
+                        var change = allChanges[currentChangeIndex];
+                        <div class="summary-card mt-1">
+                            <div class="summary-header">
+                                <span class="oi oi-people"></span>
+                                <h3>@change.ChangeType — @change.Title</h3>
+                            </div>
+                            <div class="summary-details">
+                                <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
+                                            target="_blank" rel="noopener noreferrer">@change.Url</a></span></div>
+                                @if (change.ChangeType == "Price Change")
+                                {
+                                    <div class="detail-item"><span class="label">Old Price:</span><span
+                                            class="value">$@change.OldPrice?.ToString("N0")</span></div>
+                                    <div class="detail-item"><span class="label">New Price:</span><span
+                                            class="value">$@change.NewPrice?.ToString("N0")</span></div>
+                                }
+                                @if (change.ChangeType == "Photo Change")
+                                {
+                                    <div class="detail-item"><span class="label">Old Photos:</span><span
+                                            class="value">@((change.OldPhotos?.Count ?? 0))</span></div>
+                                    <div class="detail-item"><span class="label">New Photos:</span><span
+                                            class="value">@((change.NewPhotos?.Count ?? 0))</span></div>
+                                }
+                                @if (change.ChangeType == "Photo Selection Needed")
+                                {
+                                    <div class="detail-item"><span class="label">Available Photos:</span><span
+                                            class="value">@((change.OldPhotos?.Count ?? 0))</span></div>
+                                    <div class="detail-item"><span class="label">Status:</span><span
+                                            class="value text-danger font-weight-bold">No photos selected</span></div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="car-navigation mt-1">
+                            <button class="btn btn-sm btn-secondary" @onclick="PreviousChange"
+                                disabled="@(currentChangeIndex <= 0)">
+                                <span class="oi oi-chevron-left"></span>
+                                Previous
+                            </button>
+                            <span class="car-counter">@(currentChangeIndex + 1) of @allChanges.Count</span>
+                            <button class="btn btn-sm btn-secondary" @onclick="NextChange"
+                                disabled="@(currentChangeIndex >= allChanges.Count - 1)">
+                                Next
+                                <span class="oi oi-chevron-right"></span>
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-cars-message">
+                            <div class="empty-state">
+                                <span class="oi oi-check text-success fs-1"></span>
+                                <h3>No changes detected</h3>
+                                <p>Everything is up to date.</p>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @* Photo Selection Mode *@
+                @if (isPhotoSelectionMode)
+                {
+                    var photoSelectionChanges = allChanges.Where(c => c.ChangeType == "Photo Selection Needed").ToList();
+                    var currentPhotoChange = photoSelectionChanges.Count > 0 && currentChangeIndex < photoSelectionChanges.Count
+                    ? photoSelectionChanges[currentChangeIndex]
+                    : null;
+
+                    @if (currentPhotoChange != null)
+                    {
+                        var car = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == currentPhotoChange.Url);
+                        if (car != null)
+                        {
+                            <PhotoPicker Car="@car" Title="@($"Select Photos — {car.FullTitle}")" SelectedPhotos="@selectedPhotos"
+                                SelectedPhotosChanged="@OnSelectedPhotosChanged" ShowNavigation="true" OnPrevious="@PreviousPhotoChange"
+                                OnNext="@NextPhotoChange" IsPreviousDisabled="@(currentChangeIndex <= 0)"
+                                IsNextDisabled="@(currentChangeIndex >= photoSelectionChanges.Count - 1)"
+                                NavigationText="@($"{currentChangeIndex + 1} of {photoSelectionChanges.Count}")" />
+                        }
+                    }
+                }
+
+                <div class="step-actions">
+                    <button class="btn btn-primary btn-large" @onclick="NextStep" disabled="@(allChanges.Count == 0)">
+                        <span class="oi oi-arrow-right"></span>
+                        Continue to Save
+                    </button>
+                </div>
+            </div>
+        }
+        else if (currentStep == 4)
+        {
+            <!-- Step 4: Save changes -->
+            <div class="step-content completion">
+                <div class="step-header">
+                    <h2>Apply Changes</h2>
+                    <p>Confirm and save updates to the database</p>
+                </div>
+
+                <div class="completion-summary">
+                    <div class="success-icon">
+                        <span class="oi oi-data-transfer-upload"></span>
+                    </div>
+                    <div class="summary-details">
+                        <h3>Summary</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item"><span class="label">New Vehicles:</span><span
+                                    class="value">@newVehicles.Count</span></div>
+                            <div class="detail-item"><span class="label">Sold Vehicles:</span><span
+                                    class="value">@soldVehicles.Count</span></div>
+                            <div class="detail-item"><span class="label">Price Updates:</span><span
+                                    class="value">@priceChanges.Count</span></div>
+                            <div class="detail-item"><span class="label">Photo Updates:</span><span
+                                    class="value">@photoChanges.Count</span></div>
+                            <div class="detail-item"><span class="label">Photo Selections:</span><span
+                                    class="value">@allChanges.Count(c => c.ChangeType == "Photo Selection Needed")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn btn-primary btn-large" @onclick="ApplyChanges" disabled="@isSaving">
+                        <span class="oi oi-check"></span>
+                        @((isSaving ? "Saving..." : "Save Changes"))
+                    </button>
+                    <button class="btn btn-secondary btn-large" @onclick="StartOver" disabled="@isSaving">
+                        <span class="oi oi-loop"></span>
+                        Start Over
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private int currentStep = 1;
+    private bool isLoading = false;
+    private string loadingMessage = "";
+    private bool isImporting = false;
+    private string importStatus = "";
+    private bool isSaving = false;
+
+    private List<Client> clients = new List<Client>();
+    private string selectedClientId = "";
+    private Client? selectedClient = null;
+
+    private List<ScrapedCar> scrapedNow = new List<ScrapedCar>();
+    private List<ScrapedCar> existingCars = new List<ScrapedCar>();
+
+    // Diffs
+    private List<ScrapedCar> newVehicles = new List<ScrapedCar>();
+    private List<ScrapedCar> soldVehicles = new List<ScrapedCar>();
+    private List<(ScrapedCar OldCar, ScrapedCar NewCar)> priceChanges = new List<(ScrapedCar, ScrapedCar)>();
+    private List<(ScrapedCar OldCar, ScrapedCar NewCar)> photoChanges = new List<(ScrapedCar, ScrapedCar)>();
+
+    private List<ChangeItem> allChanges = new List<ChangeItem>();
+    private int currentChangeIndex = 0;
+    private string reviewMode = "summary";
+
+    // Photo selection variables
+    private Dictionary<string, List<string>> selectedPhotos = new Dictionary<string, List<string>>();
+    private bool isPhotoSelectionMode = false;
+
+    private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
+{
+new ProgressBar.StepInfo { Number = 1, Label = "Select Client" },
+new ProgressBar.StepInfo { Number = 2, Label = "Refresh" },
+new ProgressBar.StepInfo { Number = 3, Label = "Review" },
+new ProgressBar.StepInfo { Number = 4, Label = "Save" }
+};
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        loadingMessage = "Loading clients...";
+        try
+        {
+            clients = await ClientService.GetAllClientsAsync();
+            clients = clients
+            .OrderByDescending(c => c.UpdatedAt)
+            .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading clients: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private void GoBack()
+    {
+        if (currentStep > 1)
+        {
+            currentStep--;
+            StateHasChanged();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private void OnClientSelectionChanged()
+    {
+        selectedClient = clients.FirstOrDefault(c => c.Id == selectedClientId);
+        StateHasChanged();
+    }
+
+    private void NextStep()
+    {
+        if (currentStep == 1)
+        {
+            selectedClient = clients.FirstOrDefault(c => c.Id == selectedClientId);
+        }
+        if (currentStep < 4)
+        {
+            currentStep++;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RunRefresh()
+    {
+        if (selectedClient == null)
+        {
+            return;
+        }
+
+        isImporting = true;
+        importStatus = "Scraping inventory...";
+        StateHasChanged();
+
+        try
+        {
+            var searchResult = await InventoryService.SearchDealerInventoryAsync(
+            dealerEntityId: selectedClient.CarGurusEntityId ?? "",
+            dealerName: selectedClient.Name,
+            dealerUrl: selectedClient.DealerUrl,
+            pageNumber: 1,
+            inventoryType: GetInventoryTypeForDataSource(selectedClient.DataSource, selectedClient.VehicleFilter)
+            );
+
+            if (!searchResult.Success || !searchResult.Cars.Any())
+            {
+                importStatus = searchResult.Success ? "No vehicles found for this dealer" : $"Error: {searchResult.ErrorMessage}";
+                isImporting = false;
+                StateHasChanged();
+                return;
+            }
+
+            scrapedNow = ConvertScrapedCarsToInternalFormat(searchResult.Cars, selectedClient);
+            existingCars = await InventoryService.GetClientInventoryAsync(selectedClient.Id);
+
+            ComputeDiffs();
+
+            // Move to review
+            isImporting = false;
+            currentStep = 3;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            importStatus = $"Error: {ex.Message}";
+            isImporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ComputeDiffs()
+    {
+        newVehicles.Clear();
+        soldVehicles.Clear();
+        priceChanges.Clear();
+        photoChanges.Clear();
+        allChanges.Clear();
+        currentChangeIndex = 0;
+        reviewMode = "summary";
+
+        var existingByUrl = existingCars.ToDictionary(c => GetCarUrlKey(c), c => c, StringComparer.OrdinalIgnoreCase);
+        var nowByUrl = scrapedNow.ToDictionary(c => GetCarUrlKey(c), c => c, StringComparer.OrdinalIgnoreCase);
+
+        // New vehicles (in scrape now, not in DB)
+        foreach (var car in scrapedNow)
+        {
+            var key = GetCarUrlKey(car);
+            if (string.IsNullOrEmpty(key))
+                continue;
+            if (!existingByUrl.ContainsKey(key))
+            {
+                newVehicles.Add(car);
+                allChanges.Add(ChangeItem.NewVehicle(car));
+            }
+        }
+
+        // Sold vehicles (in DB, not in scrape now)
+        foreach (var car in existingCars)
+        {
+            var key = GetCarUrlKey(car);
+            if (string.IsNullOrEmpty(key))
+                continue;
+            if (!nowByUrl.ContainsKey(key))
+            {
+                soldVehicles.Add(car);
+                allChanges.Add(ChangeItem.SoldVehicle(car));
+            }
+        }
+
+        // Price / Photo changes
+        foreach (var kvp in existingByUrl)
+        {
+            if (!nowByUrl.TryGetValue(kvp.Key, out var now))
+            {
+                continue;
+            }
+            var old = kvp.Value;
+            if (Math.Abs((now.Price) - (old.Price)) > 0.01)
+            {
+                priceChanges.Add((old, now));
+                allChanges.Add(ChangeItem.PriceChange(old, now));
+            }
+
+            if (!PhotosEqual(old.Images, now.Images))
+            {
+                photoChanges.Add((old, now));
+                allChanges.Add(ChangeItem.PhotoChange(old, now));
+            }
+        }
+
+        // Cars that exist in DB but have no selected photos (need photo selection)
+        foreach (var car in existingCars)
+        {
+            var key = GetCarUrlKey(car);
+            if (string.IsNullOrEmpty(key))
+                continue;
+
+            // Check if this car has no selected photos
+            if (car.SelectedPhotoUrls == null || car.SelectedPhotoUrls.Count == 0)
+            {
+                // Only add if it's not already in our changes list
+                if (!allChanges.Any(c => c.Url == key && c.ChangeType == "Photo Selection Needed"))
+                {
+                    photoChanges.Add((car, car)); // Use same car for both old and new
+                    allChanges.Add(ChangeItem.PhotoSelectionNeeded(car));
+                }
+            }
+        }
+    }
+
+    private static bool PhotosEqual(List<string> a, List<string> b)
+    {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        if (a.Count != b.Count) return false;
+        for (int i = 0; i < a.Count; i++)
+        {
+            if (!string.Equals(a[i], b[i], StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private string GetCarUrlKey(ScrapedCar car)
+    {
+        if (!string.IsNullOrWhiteSpace(car.OriginalUrl)) return car.OriginalUrl;
+        if (!string.IsNullOrWhiteSpace(car.ListingUrl)) return car.ListingUrl;
+        return "";
+    }
+
+    private List<ScrapedCar> ConvertScrapedCarsToInternalFormat(List<ScrapedCar> apiCars, Client client)
+    {
+        var converted = new List<ScrapedCar>();
+        foreach (var apiCar in apiCars)
+        {
+            apiCar.ClientId = client.Id;
+            if (string.IsNullOrEmpty(apiCar.Id))
+            {
+                apiCar.Id = Guid.NewGuid().ToString();
+            }
+            apiCar.DataSource = client.DataSource;
+            if (string.IsNullOrEmpty(apiCar.ListingUrl))
+            {
+                apiCar.ListingUrl = client.DealerUrl;
+            }
+            apiCar.ScrapedAt = DateTime.UtcNow;
+            converted.Add(apiCar);
+        }
+        return converted;
+    }
+
+    private string GetInventoryTypeForDataSource(string dataSource, string vehicleFilter)
+    {
+        return vehicleFilter switch
+        {
+            "New Only" => "NEW",
+            "Used Only" => "USED",
+            "Both" => "ALL",
+            _ => "ALL"
+        };
+    }
+
+    private void StartIterativeReview()
+    {
+        reviewMode = "iterative";
+        currentChangeIndex = 0;
+        StateHasChanged();
+    }
+
+    private void StartPhotoSelection()
+    {
+        isPhotoSelectionMode = true;
+        currentChangeIndex = 0;
+        StateHasChanged();
+    }
+
+    private void PreviousChange()
+    {
+        if (currentChangeIndex > 0)
+        {
+            currentChangeIndex--;
+            StateHasChanged();
+        }
+    }
+
+    private void NextChange()
+    {
+        if (currentChangeIndex < allChanges.Count - 1)
+        {
+            currentChangeIndex++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousPhotoChange()
+    {
+        if (currentChangeIndex > 0)
+        {
+            currentChangeIndex--;
+            StateHasChanged();
+        }
+    }
+
+    private void NextPhotoChange()
+    {
+        var photoSelectionChanges = allChanges.Where(c => c.ChangeType == "Photo Selection Needed").ToList();
+        if (currentChangeIndex < photoSelectionChanges.Count - 1)
+        {
+            currentChangeIndex++;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ApplyChanges()
+    {
+        if (selectedClient == null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            // Adds
+            if (newVehicles.Count > 0)
+            {
+                await InventoryService.SaveCarsToClientInventoryAsync(selectedClient.Id, newVehicles);
+            }
+
+            // Price/photo updates
+            foreach (var (oldCar, newCar) in priceChanges)
+            {
+                // keep new price, preserve existing car id
+                newCar.Id = oldCar.Id;
+                await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+            }
+            foreach (var (oldCar, newCar) in photoChanges)
+            {
+                newCar.Id = oldCar.Id;
+                await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+            }
+
+            // Photo selections (cars that needed photo selection)
+            foreach (var carId in selectedPhotos.Keys)
+            {
+                var car = existingCars.FirstOrDefault(c => c.Id == carId);
+                if (car != null && selectedPhotos[carId].Count > 0)
+                {
+                    car.SelectedPhotoUrls = selectedPhotos[carId];
+                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, car);
+                }
+            }
+
+            // Deletions (sold)
+            foreach (var car in soldVehicles)
+            {
+                await InventoryService.DeleteCarFromClientInventoryAsync(selectedClient.Id, car.Id);
+            }
+
+            // Update client's UpdatedAt
+            selectedClient.UpdatedAt = DateTime.UtcNow;
+            await ClientService.UpdateClientAsync(selectedClient);
+
+            // Done
+            isSaving = false;
+            NavigationManager.NavigateTo("/reconcile");
+        }
+        catch (Exception ex)
+        {
+            isSaving = false;
+            Console.WriteLine($"Error applying changes: {ex.Message}");
+        }
+    }
+
+    private void StartOver()
+    {
+        currentStep = 1;
+        selectedClientId = "";
+        selectedClient = null;
+        scrapedNow.Clear();
+        existingCars.Clear();
+        newVehicles.Clear();
+        soldVehicles.Clear();
+        priceChanges.Clear();
+        photoChanges.Clear();
+        allChanges.Clear();
+        currentChangeIndex = 0;
+        reviewMode = "summary";
+        selectedPhotos.Clear();
+        isPhotoSelectionMode = false;
+        StateHasChanged();
+    }
+
+    // Helper methods
+    private List<SummaryCard.DetailItem> GetClientSummaryDetails(Client client)
+    {
+        var refreshedToday = client.UpdatedAt.Date == DateTime.UtcNow.Date;
+
+        return new List<SummaryCard.DetailItem>
+{
+new SummaryCard.DetailItem
+{
+Label = "Last Updated",
+Value = client.UpdatedAt.ToString("MMM dd, yyyy HH:mm 'UTC'")
+},
+new SummaryCard.DetailItem
+{
+Label = "Status",
+Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
+}
+};
+    }
+
+    // Photo selection methods
+    private void OnSelectedPhotosChanged(Dictionary<string, List<string>> updatedSelectedPhotos)
+    {
+        selectedPhotos = updatedSelectedPhotos;
+        StateHasChanged();
+    }
+}
+
+@code {
+    private class ChangeItem
+    {
+        public string ChangeType { get; set; } = ""; // New Vehicle, Sold Vehicle, Price Change, Photo Change
+        public string Title { get; set; } = "";
+        public string Url { get; set; } = "";
+        public double? OldPrice { get; set; }
+        public double? NewPrice { get; set; }
+        public List<string>? OldPhotos { get; set; }
+        public List<string>? NewPhotos { get; set; }
+
+        public static ChangeItem NewVehicle(ScrapedCar car)
+        {
+            return new ChangeItem
+            {
+                ChangeType = "New Vehicle",
+                Title = car.FullTitle,
+                Url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl
+            };
+        }
+
+        public static ChangeItem SoldVehicle(ScrapedCar car)
+        {
+            return new ChangeItem
+            {
+                ChangeType = "Sold Vehicle",
+                Title = car.FullTitle,
+                Url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl
+            };
+        }
+
+        public static ChangeItem PriceChange(ScrapedCar oldCar, ScrapedCar newCar)
+        {
+            return new ChangeItem
+            {
+                ChangeType = "Price Change",
+                Title = newCar.FullTitle,
+                Url = string.IsNullOrWhiteSpace(newCar.OriginalUrl) ? newCar.ListingUrl : newCar.OriginalUrl,
+                OldPrice = oldCar.Price,
+                NewPrice = newCar.Price
+            };
+        }
+
+        public static ChangeItem PhotoChange(ScrapedCar oldCar, ScrapedCar newCar)
+        {
+            return new ChangeItem
+            {
+                ChangeType = "Photo Change",
+                Title = newCar.FullTitle,
+                Url = string.IsNullOrWhiteSpace(newCar.OriginalUrl) ? newCar.ListingUrl : newCar.OriginalUrl,
+                OldPhotos = oldCar.Images,
+                NewPhotos = newCar.Images
+            };
+        }
+
+        public static ChangeItem PhotoSelectionNeeded(ScrapedCar car)
+        {
+            return new ChangeItem
+            {
+                ChangeType = "Photo Selection Needed",
+                Title = car.FullTitle,
+                Url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl,
+                OldPhotos = car.Images,
+                NewPhotos = car.Images
+            };
+        }
+    }
+}
