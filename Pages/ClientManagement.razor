@@ -1,0 +1,528 @@
+@page "/client-management"
+@using Microsoft.AspNetCore.Authorization
+@using car_lister.Services
+@using car_lister.Models
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject ClientService ClientService
+@attribute [Authorize]
+
+<PageTitle>Client Management - Car Lister</PageTitle>
+<link href="css/dealer-management.css" rel="stylesheet" />
+<script src="js/firestore.js"></script>
+
+<div class="dealer-management-container">
+    <div class="header">
+        <button class="btn-back" @onclick="GoBack">
+            <span class="oi oi-arrow-left"></span>
+            Back
+        </button>
+        <h1>Client Management</h1>
+        <p class="subtitle">Manage clients in the database</p>
+    </div>
+
+    <div class="content">
+        <div class="actions-section">
+            <button class="btn-add" @onclick="ShowAddClientForm">
+                <span class="oi oi-plus"></span>
+                Add New Client
+            </button>
+            <button class="btn-refresh" @onclick="LoadClients">
+                <span class="oi oi-refresh"></span>
+                Refresh
+            </button>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading clients...</p>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-state">
+                <span class="oi oi-warning"></span>
+                <p>@errorMessage</p>
+                <button class="btn-retry" @onclick="LoadClients">Try Again</button>
+            </div>
+        }
+        else if (clients.Any())
+        {
+            <div class="dealers-section">
+                <h2>@clients.Count Clients</h2>
+                <div class="dealers-grid">
+                    @foreach (var client in clients)
+                    {
+                        <div class="dealer-card">
+                            <div class="dealer-info">
+                                <h3 class="dealer-name">@client.Name</h3>
+                                <div class="dealer-details">
+                                    <p><strong>Location:</strong> @client.Location</p>
+                                    <p><strong>Data Source:</strong> @client.DataSource</p>
+                                    <p><strong>Dealer URL:</strong> <a href="@client.DealerUrl" target="_blank">@client.DealerUrl</a></p>
+                                    <p><strong>Vehicle Filter:</strong> @client.VehicleFilter</p>
+                                    <p><strong>Vehicle Count:</strong> @client.VehicleCount</p>
+                                    <p><strong>Created:</strong> @client.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                    <p><strong>Updated:</strong> @client.UpdatedAt.ToString("MMM dd, yyyy")</p>
+                                    @if (!string.IsNullOrEmpty(client.CarGurusEntityId))
+                                    {
+                                        <p><strong>CarGurus Entity ID:</strong> @client.CarGurusEntityId</p>
+                                    }
+                                </div>
+                            </div>
+                            <div class="dealer-actions">
+                                <button class="btn-edit" @onclick="() => EditClient(client)">
+                                    <span class="oi oi-pencil"></span>
+                                    Edit
+                                </button>
+                                <button class="btn-delete" @onclick="() => DeleteClient(client)">
+                                    <span class="oi oi-trash"></span>
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="no-dealers">
+                <span class="oi oi-people"></span>
+                <h3>No clients found</h3>
+                <p>Add your first client to get started.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@if (showAddForm)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@(editingClient == null ? "Add New Client" : "Edit Client")</h2>
+                <button class="btn-close" @onclick="CloseModal">
+                    <span class="oi oi-x"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="client-name">Client Name *</label>
+                    <input 
+                        id="client-name"
+                        type="text" 
+                        @bind="newClient.Name" 
+                        placeholder="Enter client name"
+                        class="form-input"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="client-location">Location *</label>
+                    <input 
+                        id="client-location"
+                        type="text" 
+                        @bind="newClient.Location" 
+                        placeholder="Enter location"
+                        class="form-input"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="client-dealer-url">Dealer URL *</label>
+                    <input 
+                        id="client-dealer-url"
+                        type="url" 
+                        @bind="newClient.DealerUrl" 
+                        placeholder="Enter dealer URL"
+                        class="form-input @(dealerUrlError != "" ? "validation-error-input" : "")"
+                        @onblur="() => ClearDealerUrlError()"
+                        @oninput="OnDealerUrlChanged"
+                    />
+                    @if (dealerUrlError != "")
+                    {
+                        <div class="validation-error">@dealerUrlError</div>
+                    }
+                </div>
+                <div class="form-group">
+                    <label for="client-data-source">Data Source *</label>
+                    <select id="client-data-source" class="form-input" @bind="newClient.DataSource" @bind:after="OnDataSourceChanged">
+                        <option value="">Select data source</option>
+                        <option value="CarGurus">CarGurus</option>
+                        <option value="Cars.com">Cars.com</option>
+                        <option value="MarketCheck">MarketCheck</option>
+                        <option value="CarsForSale">CarsForSale</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="client-vehicle-filter">Vehicle Filter</label>
+                    <select id="client-vehicle-filter" class="form-input" @bind="newClient.VehicleFilter">
+                        <option value="Used Only">Used Only</option>
+                        <option value="New Only">New Only</option>
+                        <option value="Both">Both</option>
+                    </select>
+                </div>
+                @if (newClient.DataSource == "MarketCheck")
+                {
+                    <div class="form-group">
+                        <label for="client-owned-inventory">Owned Inventory Only</label>
+                        <select id="client-owned-inventory" class="form-input" @bind="newClient.OwnedInventoryOnly">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                }
+                @if (newClient.DataSource == "CarGurus")
+                {
+                    <div class="form-group">
+                        <label for="client-cargurus-entity-id">CarGurus Entity ID</label>
+                        <input 
+                            id="client-cargurus-entity-id"
+                            type="text" 
+                            @bind="newClient.CarGurusEntityId" 
+                            placeholder="Enter CarGurus Entity ID"
+                            class="form-input"
+                        />
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" @onclick="CloseModal">Cancel</button>
+                <button class="btn-save" @onclick="SaveClient" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-small"></span>
+                    }
+                    else
+                    {
+                        <span class="oi oi-check"></span>
+                    }
+                    @(editingClient == null ? "Add Client" : "Update Client")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Client> clients = new();
+    private bool isLoading = false;
+    private string errorMessage = "";
+    private bool showAddForm = false;
+    private bool isSaving = false;
+    private Client? editingClient = null;
+    private Client newClient = new();
+    private string dealerUrlError = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClients();
+    }
+
+    private async Task LoadClients()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+            StateHasChanged();
+
+            clients = await ClientService.GetAllClientsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading clients: {ex.Message}";
+            Console.WriteLine($"Error in LoadClients: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/");
+
+    private void ShowAddClientForm()
+    {
+        editingClient = null;
+        newClient = new Client();
+        dealerUrlError = "";
+        showAddForm = true;
+        StateHasChanged();
+    }
+
+    private void EditClient(Client client)
+    {
+        editingClient = client;
+        
+        // Create a deep copy of the client for editing using the ID constructor
+        newClient = new Client(client.Id)
+        {
+            Name = client.Name,
+            Location = client.Location,
+            DealerUrl = client.DealerUrl,
+            DataSource = client.DataSource,
+            VehicleFilter = client.VehicleFilter,
+            OwnedInventoryOnly = client.OwnedInventoryOnly,
+            CarGurusEntityId = client.CarGurusEntityId,
+            CreatedAt = client.CreatedAt,
+            UpdatedAt = client.UpdatedAt,
+            LastUpdate = client.LastUpdate,
+            VehicleCount = client.VehicleCount,
+            EnhancedCount = client.EnhancedCount,
+            IsActive = client.IsActive
+        };
+        
+        dealerUrlError = "";
+        showAddForm = true;
+        StateHasChanged();
+    }
+
+    private async Task DeleteClient(Client client)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete '{client.Name}'? This will also delete all associated inventory data."))
+        {
+            return;
+        }
+
+        try
+        {
+            var success = await ClientService.DeleteClientAsync(client.Id);
+            if (success)
+            {
+                await LoadClients();
+            }
+            else
+            {
+                errorMessage = "Failed to delete client";
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting client: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveClient()
+    {
+        if (string.IsNullOrWhiteSpace(newClient.Name) || 
+            string.IsNullOrWhiteSpace(newClient.Location) ||
+            string.IsNullOrWhiteSpace(newClient.DealerUrl) || 
+            string.IsNullOrWhiteSpace(newClient.DataSource))
+        {
+            errorMessage = "Please fill in all required fields";
+            StateHasChanged();
+            return;
+        }
+
+        // Check for duplicate dealer URL
+        if (!string.IsNullOrWhiteSpace(dealerUrlError) && dealerUrlError.Contains("already exists"))
+        {
+            errorMessage = "A client with this dealer URL already exists";
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            bool success;
+            if (editingClient == null)
+            {
+                success = await ClientService.AddClientAsync(newClient);
+            }
+            else
+            {
+                success = await ClientService.UpdateClientAsync(newClient);
+            }
+
+            if (success)
+            {
+                await LoadClients();
+                CloseModal();
+            }
+            else
+            {
+                errorMessage = $"Failed to {(editingClient == null ? "add" : "update")} client";
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving client: {ex.Message}";
+            StateHasChanged();
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseModal()
+    {
+        showAddForm = false;
+        editingClient = null;
+        newClient = new Client();
+        errorMessage = "";
+        dealerUrlError = "";
+        StateHasChanged();
+    }
+
+    private async void OnDealerUrlChanged(ChangeEventArgs e)
+    {
+        newClient.DealerUrl = e.Value?.ToString() ?? "";
+        AutoPopulateCarGurusEntityId();
+        
+        // Check for duplicate dealer URL
+        if (!string.IsNullOrWhiteSpace(newClient.DealerUrl) && IsValidUrl(newClient.DealerUrl))
+        {
+            await CheckForDuplicateDealerUrl();
+        }
+        
+        StateHasChanged();
+    }
+
+    private void OnDataSourceChanged()
+    {
+        AutoPopulateCarGurusEntityId();
+        StateHasChanged();
+    }
+
+    private void AutoPopulateCarGurusEntityId()
+    {
+        if (newClient.DataSource == "CarGurus" && !string.IsNullOrWhiteSpace(newClient.DealerUrl))
+        {
+            string extractedId = ExtractCarGurusEntityIdFromUrl(newClient.DealerUrl);
+            if (!string.IsNullOrWhiteSpace(extractedId))
+            {
+                newClient.CarGurusEntityId = extractedId;
+            }
+        }
+        else if (newClient.DataSource != "CarGurus")
+        {
+            // Clear the entity ID if not using CarGurus
+            newClient.CarGurusEntityId = "";
+        }
+    }
+
+    private async Task CheckForDuplicateDealerUrl()
+    {
+        try
+        {
+            bool isUnique = await ClientService.IsDealerUrlUniqueAsync(newClient.DealerUrl, editingClient?.Id);
+            if (!isUnique)
+            {
+                dealerUrlError = "A client with this dealer URL already exists. Please use a different URL.";
+            }
+            else
+            {
+                dealerUrlError = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking dealer URL uniqueness: {ex.Message}");
+            dealerUrlError = "Error checking URL uniqueness. Please try again.";
+        }
+    }
+
+    private void ClearDealerUrlError()
+    {
+        if (IsValidUrl(newClient.DealerUrl))
+        {
+            dealerUrlError = "";
+            StateHasChanged();
+        }
+    }
+
+    private bool IsValidUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return false;
+
+        // Add protocol if missing
+        string urlToTest = url.Trim();
+        if (!urlToTest.StartsWith("http://") && !urlToTest.StartsWith("https://"))
+        {
+            urlToTest = "https://" + urlToTest;
+        }
+
+        // Try to create URI
+        if (!Uri.TryCreate(urlToTest, UriKind.Absolute, out Uri? result) || 
+            (result.Scheme != Uri.UriSchemeHttp && result.Scheme != Uri.UriSchemeHttps))
+        {
+            return false;
+        }
+
+        // Validate domain structure (must have at least one dot and valid characters)
+        string host = result.Host.ToLower();
+        if (string.IsNullOrWhiteSpace(host) || host.Length < 3)
+            return false;
+
+        // Must contain at least one dot (for domain structure)
+        if (!host.Contains('.'))
+            return false;
+
+        // Check for valid domain characters (letters, numbers, hyphens, dots)
+        if (!host.All(c => char.IsLetterOrDigit(c) || c == '.' || c == '-'))
+            return false;
+
+        // Must not start or end with dot or hyphen
+        if (host.StartsWith('.') || host.EndsWith('.') || host.StartsWith('-') || host.EndsWith('-'))
+            return false;
+
+        // Must not have consecutive dots or hyphens
+        if (host.Contains("..") || host.Contains("--"))
+            return false;
+
+        return true;
+    }
+
+    private string ExtractCarGurusEntityIdFromUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || newClient.DataSource != "CarGurus")
+        {
+            return "";
+        }
+
+        try
+        {
+            // Parse the URL
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+            {
+                return "";
+            }
+
+            // Check if it's a CarGurus URL
+            if (!uri.Host.ToLower().Contains("cargurus.com"))
+            {
+                return "";
+            }
+
+            // Look for patterns like sp413483 in the URL path
+            // Example: https://www.cargurus.com/Cars/m-Thompson-Cadillac-sp413483
+            string path = uri.AbsolutePath;
+            
+            // Use regex to find sp followed by digits
+            var match = System.Text.RegularExpressions.Regex.Match(path, @"sp(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                return match.Groups[1].Value; // Return just the digits
+            }
+
+            return "";
+        }
+        catch (Exception)
+        {
+            return "";
+        }
+    }
+}
