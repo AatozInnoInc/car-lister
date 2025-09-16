@@ -2,13 +2,15 @@
 
 @using Microsoft.AspNetCore.Components.Authorization
 @using car_lister.Services
+@using car_lister.Models
 
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject ClientService ClientService
 
-<PageTitle>Car Lister - Find Your Perfect Ride</PageTitle>
-<link href="css/home.css" rel="stylesheet" />
+<PageTitle>Car Lister - Dealer Inventory Management</PageTitle>
+<link href="css/workflow.css" rel="stylesheet" />
 
 <div class="home-container">
     <AuthorizeView>
@@ -18,30 +20,94 @@
                     <div class="hero-content">
                         <img src="images/car-lister-favicon.png" alt="Car Lister Logo" class="hero-logo" />
                         <h1>Welcome Back, <span class="user-name">@(GetUserName())</span>!</h1>
-                        <p class="subtitle">Your personal car marketplace</p>
+                        <p class="subtitle">Dealer Inventory Management Dashboard</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <span class="oi oi-briefcase"></span>
+                        </div>
+                        <div class="stat-content">
+                            <h3>@(totalClients)</h3>
+                            <p>Active Clients</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <span class="oi oi-list"></span>
+                        </div>
+                        <div class="stat-content">
+                            <h3>@(totalInventory)</h3>
+                            <p>Total Inventory</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <span class="oi oi-clock"></span>
+                        </div>
+                        <div class="stat-content">
+                            <h3>@(needsRefresh)</h3>
+                            <p>Need Refresh Today</p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="quick-actions">
                     <div class="action-card">
                         <span class="oi oi-plus action-icon"></span>
-                        <h3>List Your Car</h3>
-                        <p>Sell your vehicle quickly and easily</p>
-                        <button class="btn btn-primary" @onclick="NavigateToAddListing">Get Started</button>
+                        <h3>Add New Client</h3>
+                        <p>Set up a new dealer and scrape their inventory</p>
+                        <button class="btn btn-primary" @onclick="NavigateToClientOnboarding">Get Started</button>
                     </div>
                     <div class="action-card">
-                        <span class="oi oi-search action-icon"></span>
-                        <h3>Browse Cars</h3>
-                        <p>Find your perfect ride from thousands of listings</p>
-                        <button class="btn btn-secondary" @onclick="NavigateToInventory">Browse Now</button>
+                        <span class="oi oi-spreadsheet action-icon"></span>
+                        <h3>Daily Actions</h3>
+                        <p>Reconcile inventory changes and update listings</p>
+                        <button class="btn btn-secondary" @onclick="NavigateToReconcile">Reconcile Now</button>
                     </div>
                     <div class="action-card">
-                        <span class="oi oi-heart action-icon"></span>
-                        <h3>Saved Listings</h3>
-                        <p>View your favorite cars</p>
-                        <button class="btn btn-outline">View Saved</button>
+                        <span class="oi oi-list action-icon"></span>
+                        <h3>View Inventory</h3>
+                        <p>Browse all vehicles across all clients</p>
+                        <button class="btn btn-outline" @onclick="NavigateToInventory">View All</button>
+                    </div>
+                    <div class="action-card">
+                        <span class="oi oi-briefcase action-icon"></span>
+                        <h3>Manage Clients</h3>
+                        <p>View and manage dealer client information</p>
+                        <button class="btn btn-outline" @onclick="NavigateToDealerManagement">Manage</button>
                     </div>
                 </div>
+
+                @if (recentClients.Any())
+                {
+                    <div class="recent-activity">
+                        <h2>Recent Clients</h2>
+                        <div class="clients-list">
+                            @foreach (var client in recentClients.Take(5))
+                            {
+                                <div class="client-item">
+                                    <div class="client-info">
+                                        <h4>@client.Name</h4>
+                                        <p>Last updated: @client.UpdatedAt.ToString("MMM dd, yyyy")</p>
+                                    </div>
+                                    <div class="client-status">
+                                        @if (client.UpdatedAt.Date == DateTime.UtcNow.Date)
+                                        {
+                                            <span class="status-badge status-refreshed">Refreshed Today</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge status-needs-refresh">Needs Refresh</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
         </Authorized>
         <NotAuthorized>
@@ -49,32 +115,32 @@
                 <div class="hero-section">
                     <img src="images/car-lister-favicon.png" alt="Car Lister Logo" class="hero-logo" />
                     <h1>Car Lister</h1>
-                    <p class="tagline">Find your perfect ride or sell your car with ease</p>
-                    <button class="btn btn-primary get-started" @onclick="NavigateToLogin">Get Started</button>
+                    <p class="tagline">Professional Dealer Inventory Management System</p>
+                    <button class="btn btn-primary get-started" @onclick="NavigateToLogin">Sign In</button>
                 </div>
 
                 <div class="features-section">
-                    <h2>Why Choose Car Lister?</h2>
+                    <h2>Streamline Your Dealer Operations</h2>
                     <div class="features-grid">
                         <div class="feature-card">
-                            <span class="oi oi-search feature-icon"></span>
-                            <h3>Easy Search</h3>
-                            <p>Find exactly what you're looking for with advanced filters</p>
+                            <span class="oi oi-cloud-download feature-icon"></span>
+                            <h3>Automated Scraping</h3>
+                            <p>Automatically scrape and sync inventory from dealer websites</p>
                         </div>
                         <div class="feature-card">
-                            <span class="oi oi-shield feature-icon"></span>
-                            <h3>Secure Transactions</h3>
-                            <p>Safe and secure car buying and selling experience</p>
+                            <span class="oi oi-spreadsheet feature-icon"></span>
+                            <h3>Daily Reconciliation</h3>
+                            <p>Track changes, new vehicles, and price updates across all clients</p>
                         </div>
                         <div class="feature-card">
-                            <span class="oi oi-phone feature-icon"></span>
-                            <h3>Direct Contact</h3>
-                            <p>Connect directly with buyers and sellers</p>
+                            <span class="oi oi-image feature-icon"></span>
+                            <h3>Photo Management</h3>
+                            <p>Curate and select the best photos for each vehicle listing</p>
                         </div>
                         <div class="feature-card">
-                            <span class="oi oi-star feature-icon"></span>
-                            <h3>Verified Listings</h3>
-                            <p>All listings are verified for your peace of mind</p>
+                            <span class="oi oi-briefcase feature-icon"></span>
+                            <h3>Multi-Client Support</h3>
+                            <p>Manage inventory for multiple dealer clients from one dashboard</p>
                         </div>
                     </div>
                 </div>
@@ -84,6 +150,38 @@
 </div>
 
 @code {
+    private List<Client> recentClients = new List<Client>();
+    private int totalClients = 0;
+    private int totalInventory = 0;
+    private int needsRefresh = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            recentClients = await ClientService.GetAllClientsAsync();
+            totalClients = recentClients.Count;
+            needsRefresh = recentClients.Count(c => c.UpdatedAt.Date < DateTime.UtcNow.Date);
+
+            // Calculate total inventory across all clients
+            totalInventory = 0;
+            foreach (var client in recentClients)
+            {
+                var inventory = await ClientService.GetClientInventoryAsync(client.Id);
+                totalInventory += inventory.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+    }
+
     private string GetUserName()
     {
         try
@@ -110,13 +208,23 @@
         NavigationManager.NavigateTo("/login");
     }
 
-    private void NavigateToAddListing()
+    private void NavigateToClientOnboarding()
     {
-        NavigationManager.NavigateTo("/add-listing");
+        NavigationManager.NavigateTo("/client-onboarding");
+    }
+
+    private void NavigateToReconcile()
+    {
+        NavigationManager.NavigateTo("/reconcile");
     }
 
     private void NavigateToInventory()
     {
         NavigationManager.NavigateTo("/inventory");
+    }
+
+    private void NavigateToDealerManagement()
+    {
+        NavigationManager.NavigateTo("/dealer-management");
     }
 }
