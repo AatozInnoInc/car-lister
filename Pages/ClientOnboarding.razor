@@ -11,7 +11,7 @@
 @attribute [Authorize]
 
 <PageTitle>Client Onboarding - Car Lister</PageTitle>
-<link href="css/client-onboarding.css" rel="stylesheet" />
+<link href="css/workflow.css" rel="stylesheet" />
 <link href="css/addlisting.css" rel="stylesheet" />
 <script src="js/firestore.js"></script>
 
@@ -319,63 +319,18 @@
                                     <span class="photo-count">@currentCar.Images.Count photos</span>
                                 </div>
                             </div>
-                            <div class="step-actions photo-actions">
-                                <button class="btn btn-sm btn-secondary" @onclick="() => SelectAllPhotos(currentCar.Id)">
-                                    Select All
-                                </button>
-                                <button class="btn btn-sm btn-secondary" @onclick="() => ClearAllPhotos(currentCar.Id)">
-                                    Clear All
-                                </button>
-                            </div>
                         </div>
 
-                        <div class="photo-grid">
-                            @for (int j = 0; j < currentCar.Images.Count; j++)
-                            {
-                                var photoUrl = currentCar.Images[j];
-                                var photoIndex = j;
-                                var isSelected = selectedPhotos.ContainsKey(currentCar.Id) && selectedPhotos[currentCar.Id].Contains(photoUrl);
-                                
-                                <div class="photo-item @(isSelected ? "selected" : "")" @onclick="async () => await OpenPhotoViewer(photoIndex)">
-                                    <img src="@photoUrl" alt="Car photo @(photoIndex + 1)" />
-                                    @if (isSelected)
-                                    {
-                                        <div class="photo-selected-badge">
-                                            <span class="oi oi-check"></span>
-                                        </div>
-                                    }
-                                    <div class="photo-hover-overlay">
-                                        <span class="oi oi-eye"></span>
-                                    </div>
-                                    <div class="photo-quick-select" @onclick:stopPropagation="true" @onclick="() => TogglePhotoSelection(currentCar.Id, photoUrl)">
-                                        @if (isSelected)
-                                        {
-                                            <span class="oi oi-check"></span>
-                                        }
-                                        else
-                                        {
-                                            <span class="oi oi-plus"></span>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        </div>
-
-                        <div class="photo-summary">
-                            <span>@(selectedPhotos.ContainsKey(currentCar.Id) ? selectedPhotos[currentCar.Id].Count : 0) of @currentCar.Images.Count photos selected</span>
-                        </div>
-                    </div>
-
-                    <div class="car-navigation">
-                        <button class="btn btn-sm btn-secondary" @onclick="PreviousCar" disabled="@(currentPhotoCarIndex <= 0)">
-                            <span class="oi oi-chevron-left"></span>
-                            Previous
-                        </button>
-                        <span class="car-counter">@(currentPhotoCarIndex + 1) of @filteredCars.Count</span>
-                        <button class="btn btn-sm btn-secondary" @onclick="NextCar" disabled="@(currentPhotoCarIndex >= filteredCars.Count - 1)">
-                            Next
-                            <span class="oi oi-chevron-right"></span>
-                        </button>
+                        <PhotoPicker Car="@currentCar" 
+                                    Title="@($"Select Photos — {currentCar.FullTitle}")"
+                                    SelectedPhotos="@selectedPhotos"
+                                    SelectedPhotosChanged="@OnSelectedPhotosChanged"
+                                    ShowNavigation="true"
+                                    OnPrevious="@PreviousCar"
+                                    OnNext="@NextCar"
+                                    IsPreviousDisabled="@(currentPhotoCarIndex <= 0)"
+                                    IsNextDisabled="@(currentPhotoCarIndex >= filteredCars.Count - 1)"
+                                    NavigationText="@($"{currentPhotoCarIndex + 1} of {filteredCars.Count}")" />
                     </div>
                 }
                 else
@@ -449,70 +404,11 @@
     </div>
 </div>
 
-@if (isPhotoViewerOpen && filteredCars.Count > 0)
-{
-    var currentCar = filteredCars[currentPhotoCarIndex];
-    <div class="fullscreen-overlay" @onclick="async () => await ClosePhotoViewer()">
-        <div class="fullscreen-container" @onclick:stopPropagation="true">
-            <div class="fullscreen-header">
-                <button class="fullscreen-close" @onclick="async () => await ClosePhotoViewer()">
-                    <span class="oi oi-x"></span>
-                </button>
-                <div class="fullscreen-counter">
-                    @(photoViewerIndex + 1) of @currentCar.Images.Count
-                </div>
-            </div>
-            
-            <div class="fullscreen-image-container">
-                <img src="@currentCar.Images[photoViewerIndex]" alt="@currentCar.FullTitle" class="fullscreen-image" />
-                
-                <!-- Photo Selection Button -->
-                <div class="fullscreen-selection-overlay">
-                    <button class="btn btn-primary btn-large" @onclick="() => TogglePhotoSelection(currentCar.Id, currentCar.Images[photoViewerIndex])">
-                        @if (selectedPhotos.ContainsKey(currentCar.Id) && selectedPhotos[currentCar.Id].Contains(currentCar.Images[photoViewerIndex]))
-                        {
-                            <span class="oi oi-check"></span>
-                            <span>Selected</span>
-                        }
-                        else
-                        {
-                            <span class="oi oi-plus"></span>
-                            <span>Select Photo</span>
-                        }
-                    </button>
-                </div>
-                
-                @if (currentCar.Images.Count > 1)
-                {
-                    <button class="fullscreen-nav-btn prev" @onclick="async () => await PreviousPhotoViewerImage()" disabled="@(photoViewerIndex == 0)">
-                        <span class="oi oi-chevron-left"></span>
-                    </button>
-                    <button class="fullscreen-nav-btn next" @onclick="async () => await NextPhotoViewerImage()" disabled="@(photoViewerIndex == currentCar.Images.Count - 1)">
-                        <span class="oi oi-chevron-right"></span>
-                    </button>
-                }
-            </div>
-            
-            @if (currentCar.Images.Count > 1)
-            {
-                <div class="fullscreen-thumbnails">
-                    @for (int i = 0; i < currentCar.Images.Count; i++)
-                    {
-                        var index = i;
-                        <div class="fullscreen-thumbnail @(index == photoViewerIndex ? "active" : "")" @onclick="async () => await SelectPhotoViewerImage(index)">
-                            <img src="@currentCar.Images[i]" alt="Car image @(i + 1)" />
-                        </div>
-                    }
-                </div>
-            }
-        </div>
-    </div>
-}
 
 @code {
-    private Client newClient = new Client();
-    private List<ScrapedCar> scrapedCars = new List<ScrapedCar>();
-    private Dictionary<string, List<string>> selectedPhotos = new Dictionary<string, List<string>>();
+    private Client newClient = new();
+    private List<ScrapedCar> scrapedCars = new();
+    private Dictionary<string, List<string>> selectedPhotos = new();
     private int currentStep = 1;
     private bool isLoading = false;
     private string loadingMessage = "";
@@ -521,11 +417,9 @@
     private bool isFetchingAdditionalInfo = false;
     private string additionalInfoStatus = "";
     private string searchTerm = "";
-    private List<ScrapedCar> filteredCars = new List<ScrapedCar>();
+    private List<ScrapedCar> filteredCars = new();
     private int currentCarIndex = 0; // For additional info progress tracking
     private int currentPhotoCarIndex = 0; // For photo selection car navigation
-    private bool isPhotoViewerOpen = false;
-    private int photoViewerIndex = 0;
 
     // Validation properties
     private string dealerUrlError = "";
@@ -550,7 +444,13 @@
 
     private void AddAnotherClient()
     {
-        NavigationManager.NavigateTo("/client-onboarding");
+        // Reset the form with a new client (ID will be auto-generated)
+        newClient = new Client();
+        scrapedCars.Clear();
+        selectedPhotos.Clear();
+        currentStep = 1;
+        dealerUrlError = "";
+        StateHasChanged();
     }
 
     private int GetProgressPercentage()
@@ -570,8 +470,7 @@
     private bool ValidateClient()
     {
         bool isValid = true;
-        dealerUrlError = "";
-
+        
         // Basic required field validation
         if (string.IsNullOrWhiteSpace(newClient.Name) ||
             string.IsNullOrWhiteSpace(newClient.DealerUrl) ||
@@ -586,6 +485,12 @@
         {
             isValid = false;
             dealerUrlError = "Please enter a valid URL (e.g., https://www.example.com)";
+        }
+
+        // Check for duplicate dealer URL error
+        if (!string.IsNullOrWhiteSpace(dealerUrlError) && dealerUrlError.Contains("already exists"))
+        {
+            isValid = false;
         }
 
         // CarGurus Entity ID validation - now auto-populated from URL
@@ -903,77 +808,10 @@
         }
     }
 
-    private async Task OpenPhotoViewer(int imageIndex)
-    {
-        photoViewerIndex = imageIndex;
-        isPhotoViewerOpen = true;
-        StateHasChanged();
-        
-        // Setup keyboard navigation
-        await JSRuntime.InvokeVoidAsync("setupFullscreenKeyboard", 
-            DotNetObjectReference.Create(this),
-            "ClosePhotoViewer",
-            "PreviousPhotoViewerImage", 
-            "NextPhotoViewerImage"
-        );
-    }
 
-    [JSInvokable]
-    public async Task ClosePhotoViewer()
+    private void OnSelectedPhotosChanged(Dictionary<string, List<string>> updatedSelectedPhotos)
     {
-        isPhotoViewerOpen = false;
-        StateHasChanged();
-        
-        // Cleanup keyboard navigation
-        await JSRuntime.InvokeVoidAsync("cleanupFullscreenKeyboard");
-    }
-
-    [JSInvokable]
-    public async Task PreviousPhotoViewerImage()
-    {
-        if (photoViewerIndex > 0)
-        {
-            photoViewerIndex--;
-            StateHasChanged();
-        }
-        await Task.CompletedTask;
-    }
-
-    [JSInvokable]
-    public async Task NextPhotoViewerImage()
-    {
-        if (filteredCars.Count > 0 && currentPhotoCarIndex < filteredCars.Count)
-        {
-            var currentCar = filteredCars[currentPhotoCarIndex];
-            if (photoViewerIndex < currentCar.Images.Count - 1)
-            {
-                photoViewerIndex++;
-                StateHasChanged();
-            }
-        }
-        await Task.CompletedTask;
-    }
-
-    private async Task SelectPhotoViewerImage(int index)
-    {
-        photoViewerIndex = index;
-        StateHasChanged();
-        await Task.CompletedTask;
-    }
-
-    private void TogglePhotoSelection(string carId, string photoUrl)
-    {
-        if (!selectedPhotos.ContainsKey(carId))
-            selectedPhotos[carId] = new List<string>();
-
-        if (selectedPhotos[carId].Contains(photoUrl))
-        {
-            selectedPhotos[carId].Remove(photoUrl);
-        }
-        else
-        {
-            selectedPhotos[carId].Add(photoUrl);
-        }
+        selectedPhotos = updatedSelectedPhotos;
         StateHasChanged();
     }
 
@@ -991,37 +829,7 @@
         }
     }
 
-    private void SelectPhoto(string carId, string photoUrl)
-    {
-        if (!selectedPhotos.ContainsKey(carId))
-            selectedPhotos[carId] = new List<string>();
 
-        if (selectedPhotos[carId].Contains(photoUrl))
-        {
-            selectedPhotos[carId].Remove(photoUrl);
-        }
-        else
-        {
-            selectedPhotos[carId].Add(photoUrl);
-        }
-        StateHasChanged();
-    }
-
-    private void SelectAllPhotos(string carId)
-    {
-        var car = scrapedCars.FirstOrDefault(c => c.Id == carId);
-        if (car != null)
-        {
-            selectedPhotos[carId] = new List<string>(car.Images);
-            StateHasChanged();
-        }
-    }
-
-    private void ClearAllPhotos(string carId)
-    {
-        selectedPhotos[carId] = new List<string>();
-        StateHasChanged();
-    }
 
     private async Task HandlePhotoSelectionComplete()
     {
@@ -1071,10 +879,17 @@
     }
 
 
-    private void OnDealerUrlChanged(ChangeEventArgs e)
+    private async void OnDealerUrlChanged(ChangeEventArgs e)
     {
         newClient.DealerUrl = e.Value?.ToString() ?? "";
         AutoPopulateCarGurusEntityId();
+        
+        // Check for duplicate dealer URL
+        if (!string.IsNullOrWhiteSpace(newClient.DealerUrl) && IsValidUrl(newClient.DealerUrl))
+        {
+            await CheckForDuplicateDealerUrl();
+        }
+        
         StateHasChanged();
     }
 
@@ -1098,6 +913,27 @@
         {
             // Clear the entity ID if not using CarGurus
             newClient.CarGurusEntityId = "";
+        }
+    }
+
+    private async Task CheckForDuplicateDealerUrl()
+    {
+        try
+        {
+            bool isUnique = await ClientService.IsDealerUrlUniqueAsync(newClient.DealerUrl);
+            if (!isUnique)
+            {
+                dealerUrlError = "A client with this dealer URL already exists. Please use a different URL.";
+            }
+            else
+            {
+                dealerUrlError = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking dealer URL uniqueness: {ex.Message}");
+            dealerUrlError = "Error checking URL uniqueness. Please try again.";
         }
     }
 
