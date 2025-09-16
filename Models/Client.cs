@@ -3,6 +3,16 @@ namespace car_lister.Models;
 public class Client
 {
     public string Id { get; set; } = "";
+
+    public Client()
+    {
+        Id = Guid.NewGuid().ToString();
+    }
+
+    public Client(string id)
+    {
+        Id = id;
+    }
     public string Name { get; set; } = "";
     public string DealerUrl { get; set; } = "";
     public string Location { get; set; } = "";

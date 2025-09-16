@@ -41,7 +41,7 @@ namespace car_lister.Services
             {
                 car.Id = Guid.NewGuid().ToString();
             }
-            
+
             car.ScrapedAt = DateTime.UtcNow;
             car.ClientId = clientId; // Ensure the clientId is set
 
