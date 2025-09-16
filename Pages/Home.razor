@@ -193,7 +193,7 @@
             }
             else if (user != null && user.ContainsKey("email"))
             {
-                return user["email"].ToString().Split('@')[0];
+                return user["email"]?.ToString().Split('@')[0];
             }
             return "User";
         }
@@ -225,6 +225,6 @@
 
     private void NavigateToDealerManagement()
     {
-        NavigationManager.NavigateTo("/dealer-management");
+        NavigationManager.NavigateTo("/client-management");
     }
 }
