@@ -33,13 +33,13 @@ public class ClientService : BaseFirestoreService
         {
             var json = JsonSerializer.Serialize(client);
             var clientId = await _jsRuntime.InvokeAsync<string>("firestore.addClient", json);
-            
+
             if (!string.IsNullOrEmpty(clientId))
             {
                 client.Id = clientId; // Set the ID returned from Firestore
                 return true;
             }
-            
+
             return false;
         }
         catch (Exception ex)
@@ -58,6 +58,21 @@ public class ClientService : BaseFirestoreService
     public async Task<bool> DeleteClientAsync(string id)
     {
         return await DeleteAsync(id, "deleteClient");
+    }
+
+    public async Task<bool> IsDealerUrlUniqueAsync(string dealerUrl, string? excludeClientId = null)
+    {
+        try
+        {
+            var clients = await GetAllClientsAsync();
+            return !clients.Any(c => c.DealerUrl.Equals(dealerUrl, StringComparison.OrdinalIgnoreCase) &&
+                                   (excludeClientId == null || c.Id != excludeClientId));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking dealer URL uniqueness: {ex.Message}");
+            return false;
+        }
     }
 
     // Client inventory operations - delegated to CarService
