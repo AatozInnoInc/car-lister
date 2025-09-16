@@ -3,7 +3,7 @@
 
 window.firestore = {
     // Dealer functions
-    getAllDealers: async function() {
+    getAllDealers: async function () {
         try {
             const db = firebase.firestore();
             const snapshot = await db.collection('dealers').get();
@@ -21,7 +21,7 @@ window.firestore = {
         }
     },
 
-    getDealerById: async function(id) {
+    getDealerById: async function (id) {
         try {
             const db = firebase.firestore();
             const doc = await db.collection('dealers').doc(id).get();
@@ -38,7 +38,7 @@ window.firestore = {
         }
     },
 
-    addDealer: async function(dealerJson) {
+    addDealer: async function (dealerJson) {
         try {
             const dealer = JSON.parse(dealerJson);
             const db = firebase.firestore();
@@ -50,7 +50,7 @@ window.firestore = {
         }
     },
 
-    updateDealer: async function(dealerJson) {
+    updateDealer: async function (dealerJson) {
         try {
             const dealer = JSON.parse(dealerJson);
             const db = firebase.firestore();
@@ -62,7 +62,7 @@ window.firestore = {
         }
     },
 
-    deleteDealer: async function(id) {
+    deleteDealer: async function (id) {
         try {
             const db = firebase.firestore();
             await db.collection('dealers').doc(id).delete();
@@ -74,16 +74,22 @@ window.firestore = {
     },
 
     // Client functions
-    getAllClients: async function() {
+    getAllClients: async function () {
         try {
             const db = firebase.firestore();
             const snapshot = await db.collection('clients').get();
             const clients = [];
             snapshot.forEach(doc => {
-                clients.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
+                const docData = doc.data();
+                const clientData = {
+                    Id: doc.id,  // Use uppercase 'Id' to match C# property
+                    ...docData
+                };
+                // Ensure the Id field is set correctly
+                if (!clientData.Id || clientData.Id === '') {
+                    clientData.Id = doc.id;
+                }
+                clients.push(clientData);
             });
             return JSON.stringify(clients);
         } catch (error) {
@@ -92,15 +98,21 @@ window.firestore = {
         }
     },
 
-    getClientById: async function(id) {
+    getClientById: async function (id) {
         try {
             const db = firebase.firestore();
             const doc = await db.collection('clients').doc(id).get();
             if (doc.exists) {
-                return JSON.stringify({
-                    id: doc.id,
-                    ...doc.data()
-                });
+                const docData = doc.data();
+                const clientData = {
+                    Id: doc.id,  // Use uppercase 'Id' to match C# property
+                    ...docData
+                };
+                // Ensure the Id field is set correctly
+                if (!clientData.Id || clientData.Id === '') {
+                    clientData.Id = doc.id;
+                }
+                return JSON.stringify(clientData);
             }
             return null;
         } catch (error) {
@@ -109,23 +121,42 @@ window.firestore = {
         }
     },
 
-    addClient: async function(clientJson) {
+    addClient: async function (clientJson) {
         try {
             const client = JSON.parse(clientJson);
             const db = firebase.firestore();
-            const docRef = await db.collection('clients').add(client);
-            return docRef.id; // Return the document ID instead of just true
+            // Use the client's ID as the document ID
+            const clientId = client.Id || client.id;
+            await db.collection('clients').doc(clientId).set(client);
+            return clientId; // Return the client ID
         } catch (error) {
             console.error('Error adding client:', error);
             return null;
         }
     },
 
-    updateClient: async function(clientJson) {
+    updateClient: async function (clientJson) {
         try {
             const client = JSON.parse(clientJson);
             const db = firebase.firestore();
-            await db.collection('clients').doc(client.id).update(client);
+            // Use the correct property name (Id with uppercase I)
+            const clientId = client.Id || client.id;
+
+            // First, try to find existing documents with this ID
+            const snapshot = await db.collection('clients').where('Id', '==', clientId).get();
+            if (!snapshot.empty) {
+                // Update all existing documents
+                const updatePromises = [];
+                snapshot.forEach(doc => {
+                    updatePromises.push(doc.ref.update(client));
+                });
+                await Promise.all(updatePromises);
+                return true;
+            }
+
+            // If no existing documents found, create a new one
+            const docRef = db.collection('clients').doc(clientId);
+            await docRef.set(client);
             return true;
         } catch (error) {
             console.error('Error updating client:', error);
@@ -133,11 +164,31 @@ window.firestore = {
         }
     },
 
-    deleteClient: async function(id) {
+    deleteClient: async function (id) {
         try {
             const db = firebase.firestore();
-            await db.collection('clients').doc(id).delete();
-            return true;
+
+            // First, try to find the document by the GUID in the data
+            const snapshot = await db.collection('clients').where('Id', '==', id).get();
+            if (!snapshot.empty) {
+                // Delete all documents that match this ID
+                const deletePromises = [];
+                snapshot.forEach(doc => {
+                    deletePromises.push(doc.ref.delete());
+                });
+                await Promise.all(deletePromises);
+                return true;
+            }
+
+            // Fallback: try to delete by document ID directly
+            const docRef = db.collection('clients').doc(id);
+            const doc = await docRef.get();
+            if (doc.exists) {
+                await docRef.delete();
+                return true;
+            }
+
+            return false;
         } catch (error) {
             console.error('Error deleting client:', error);
             return false;
@@ -145,7 +196,7 @@ window.firestore = {
     },
 
     // Client Inventory functions
-    getClientInventory: async function(clientId) {
+    getClientInventory: async function (clientId) {
         try {
             const db = firebase.firestore();
             const snapshot = await db.collection('clients').doc(clientId).collection('inventory').get();
@@ -163,7 +214,7 @@ window.firestore = {
         }
     },
 
-    addToClientInventory: async function(clientId, carJson) {
+    addToClientInventory: async function (clientId, carJson) {
         try {
             const car = JSON.parse(carJson);
             const db = firebase.firestore();
@@ -175,17 +226,17 @@ window.firestore = {
         }
     },
 
-    addMultipleToClientInventory: async function(clientId, carsJson) {
+    addMultipleToClientInventory: async function (clientId, carsJson) {
         try {
             const cars = JSON.parse(carsJson);
             const db = firebase.firestore();
             const batch = db.batch();
-            
+
             cars.forEach(car => {
                 const docRef = db.collection('clients').doc(clientId).collection('inventory').doc();
                 batch.set(docRef, car);
             });
-            
+
             await batch.commit();
             return true;
         } catch (error) {
@@ -194,7 +245,7 @@ window.firestore = {
         }
     },
 
-    updateClientInventoryCar: async function(clientId, carJson) {
+    updateClientInventoryCar: async function (clientId, carJson) {
         try {
             const car = JSON.parse(carJson);
             const db = firebase.firestore();
@@ -206,7 +257,7 @@ window.firestore = {
         }
     },
 
-    deleteFromClientInventory: async function(clientId, carId) {
+    deleteFromClientInventory: async function (clientId, carId) {
         try {
             const db = firebase.firestore();
             await db.collection('clients').doc(clientId).collection('inventory').doc(carId).delete();
@@ -217,16 +268,16 @@ window.firestore = {
         }
     },
 
-    clearClientInventory: async function(clientId) {
+    clearClientInventory: async function (clientId) {
         try {
             const db = firebase.firestore();
             const snapshot = await db.collection('clients').doc(clientId).collection('inventory').get();
             const batch = db.batch();
-            
+
             snapshot.forEach(doc => {
                 batch.delete(doc.ref);
             });
-            
+
             await batch.commit();
             return true;
         } catch (error) {
@@ -236,43 +287,43 @@ window.firestore = {
     },
 
     // Car listing functions (placeholder for future use)
-    getUserCars: async function(userId) {
+    getUserCars: async function (userId) {
         console.log('getUserCars called for user:', userId);
         return [];
     },
-    
-    addCar: async function(car) {
+
+    addCar: async function (car) {
         console.log('addCar called with:', car);
         return null;
     },
-    
-    updateCar: async function(car) {
+
+    updateCar: async function (car) {
         console.log('updateCar called with:', car);
         return false;
     },
-    
-    deleteCar: async function(carId) {
+
+    deleteCar: async function (carId) {
         console.log('deleteCar called for:', carId);
         return false;
     },
-    
-    getAllCars: async function() {
+
+    getAllCars: async function () {
         console.log('getAllCars called');
         return [];
     }
 };
 
 // Generic scroll to element utility (replaces both thumbnail functions)
-window.scrollToElement = function(containerSelector, elementSelector, activeIndex) {
+window.scrollToElement = function (containerSelector, elementSelector, activeIndex) {
     const container = document.querySelector(containerSelector);
     const element = document.querySelector(`${elementSelector}:nth-child(${activeIndex + 1})`);
-    
+
     if (container && element) {
         const containerWidth = container.offsetWidth;
         const targetLeft = element.offsetLeft;
         const targetWidth = element.offsetWidth;
         const scrollLeft = targetLeft - (containerWidth / 2) + (targetWidth / 2);
-        
+
         container.scrollTo({
             left: Math.max(0, scrollLeft),
             behavior: 'smooth'
@@ -281,37 +332,37 @@ window.scrollToElement = function(containerSelector, elementSelector, activeInde
 };
 
 // Thumbnail carousel functionality (now uses generic function)
-window.scrollToActiveThumbnail = function(activeIndex) {
+window.scrollToActiveThumbnail = function (activeIndex) {
     window.scrollToElement('.thumbnail-scroll', '.thumbnail-wrapper', activeIndex);
 };
 
 // Fullscreen thumbnail carousel functionality (now uses generic function)
-window.scrollToActiveFullscreenThumbnail = function(activeIndex) {
+window.scrollToActiveFullscreenThumbnail = function (activeIndex) {
     window.scrollToElement('.fullscreen-thumbnails', '.fullscreen-thumbnail', activeIndex);
 };
 
 // Click outside listener for dropdowns
-window.addClickOutsideListener = function(elementId, dotNetRef) {
+window.addClickOutsideListener = function (elementId, dotNetRef) {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
-    const clickHandler = function(event) {
+
+    const clickHandler = function (event) {
         if (!element.contains(event.target)) {
             dotNetRef.invokeMethodAsync('OnClickOutside');
         }
     };
-    
+
     // Remove existing listener if any
     if (window.clickOutsideHandler) {
         document.removeEventListener('click', window.clickOutsideHandler);
     }
-    
+
     window.clickOutsideHandler = clickHandler;
     document.addEventListener('click', clickHandler);
 };
 
 // Focus element utility
-window.focusElement = function(elementId) {
+window.focusElement = function (elementId) {
     const element = document.getElementById(elementId);
     if (element) {
         element.focus();
@@ -319,7 +370,7 @@ window.focusElement = function(elementId) {
 };
 
 // Scroll to results utility
-window.scrollToResults = function() {
+window.scrollToResults = function () {
     const resultsSection = document.querySelector('.results-section');
     if (resultsSection) {
         resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -327,10 +378,10 @@ window.scrollToResults = function() {
 };
 
 // Scroll to highlighted option in dropdown
-window.scrollToHighlightedOption = function(containerId, highlightedIndex) {
+window.scrollToHighlightedOption = function (containerId, highlightedIndex) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    
+
     const options = container.querySelectorAll('.dropdown-option');
     if (highlightedIndex >= 0 && highlightedIndex < options.length) {
         const optionHeight = options[0].offsetHeight;
@@ -339,7 +390,7 @@ window.scrollToHighlightedOption = function(containerId, highlightedIndex) {
         const targetScrollTop = highlightedIndex * optionHeight;
         const optionBottom = targetScrollTop + optionHeight;
         const containerBottom = containerScrollTop + containerHeight;
-        
+
         // Only scroll if the option is outside the visible area
         if (targetScrollTop < containerScrollTop || optionBottom > containerBottom) {
             container.scrollTop = targetScrollTop;
@@ -348,18 +399,18 @@ window.scrollToHighlightedOption = function(containerId, highlightedIndex) {
 };
 
 // Fullscreen keyboard navigation
-window.setupFullscreenKeyboard = function(dotNetRef, closeMethod, prevMethod, nextMethod) {
+window.setupFullscreenKeyboard = function (dotNetRef, closeMethod, prevMethod, nextMethod) {
     // Remove any existing listeners
     if (window.fullscreenKeyHandler) {
         document.removeEventListener('keydown', window.fullscreenKeyHandler);
     }
-    
+
     // Create new handler
-    window.fullscreenKeyHandler = function(e) {
+    window.fullscreenKeyHandler = function (e) {
         const fullscreenOverlay = document.querySelector('.fullscreen-overlay');
         if (!fullscreenOverlay) return;
-        
-        switch(e.key) {
+
+        switch (e.key) {
             case 'Escape':
                 dotNetRef.invokeMethodAsync(closeMethod);
                 break;
@@ -371,12 +422,12 @@ window.setupFullscreenKeyboard = function(dotNetRef, closeMethod, prevMethod, ne
                 break;
         }
     };
-    
+
     document.addEventListener('keydown', window.fullscreenKeyHandler);
 };
 
 // Cleanup function
-window.cleanupFullscreenKeyboard = function() {
+window.cleanupFullscreenKeyboard = function () {
     if (window.fullscreenKeyHandler) {
         document.removeEventListener('keydown', window.fullscreenKeyHandler);
         window.fullscreenKeyHandler = null;
