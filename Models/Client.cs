@@ -2,8 +2,6 @@ namespace car_lister.Models;
 
 public class Client
 {
-    public string Id { get; set; } = "";
-
     public Client()
     {
         Id = Guid.NewGuid().ToString();
@@ -13,6 +11,9 @@ public class Client
     {
         Id = id;
     }
+
+
+    public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string DealerUrl { get; set; } = "";
     public string Location { get; set; } = "";
@@ -37,7 +38,7 @@ public class Car
     public int Year { get; set; }
     public string Make { get; set; } = "";
     public string Model { get; set; } = "";
-    public string Trim { get; set; } = "";
+    public string Trim { get; set; } = "";  
     public decimal Price { get; set; }
     public int Mileage { get; set; }
     public string ExteriorColor { get; set; } = "";
