@@ -1,0 +1,194 @@
+@using Microsoft.AspNetCore.Components.Web
+@inject IJSRuntime JSRuntime
+
+<div class="modal @(IsVisible ? "show" : "") @(Fade ? "fade" : "")" tabindex="-1" role="dialog"
+    aria-labelledby="@TitleId" aria-hidden="@(!IsVisible)" style="@(IsVisible ? "display: block;" : "display: none;")"
+    @onkeydown="OnKeyDown" @onfocus="OnModalFocus" @ref="modalElement">
+    <div class="modal-dialog @SizeClass" role="document">
+        <div class="modal-content" @onclick="OnModalContentClick">
+            @if (ShowHeader)
+            {
+                <div class="modal-header">
+                    @if (!string.IsNullOrEmpty(Title))
+                    {
+                        <h5 class="modal-title" id="@TitleId">@Title</h5>
+                    }
+                    @if (ShowCloseButton)
+                    {
+                        <button type="button" class="close" @onclick="CloseModal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    }
+                </div>
+            }
+            <div class="modal-body">
+                @Body
+            </div>
+            @if (ShowFooter)
+            {
+                <div class="modal-footer">
+                    @Footer
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop fade show" @onclick="OnBackdropClick"></div>
+}
+
+@code {
+    private ElementReference modalElement;
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? Body { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public bool ShowHeader { get; set; } = true;
+    [Parameter] public bool ShowFooter { get; set; } = true;
+    [Parameter] public bool ShowCloseButton { get; set; } = true;
+    [Parameter] public bool Fade { get; set; } = true;
+    [Parameter] public bool CloseOnBackdropClick { get; set; } = true;
+    [Parameter] public bool CloseOnEscape { get; set; } = true;
+    [Parameter] public ModalSize Size { get; set; } = ModalSize.Default;
+    [Parameter] public EventCallback OnShow { get; set; }
+    [Parameter] public EventCallback OnHide { get; set; }
+
+    private string TitleId => $"modal-title-{GetHashCode()}";
+    private string SizeClass => Size switch
+    {
+        ModalSize.Small => "modal-sm",
+        ModalSize.Large => "modal-lg",
+        ModalSize.ExtraLarge => "modal-xl",
+        _ => ""
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            await OnShow.InvokeAsync();
+        }
+        else
+        {
+            await OnHide.InvokeAsync();
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await SetVisible(false);
+    }
+
+    private async Task OnBackdropClick()
+    {
+        if (CloseOnBackdropClick)
+        {
+            await SetVisible(false);
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && CloseOnEscape)
+        {
+            await SetVisible(false);
+        }
+    }
+
+    private void OnModalContentClick(MouseEventArgs e)
+    {
+        // Prevent event bubbling to backdrop
+        // In Blazor, we don't need to explicitly stop propagation
+        // The event won't bubble to the backdrop because it's a separate element
+    }
+
+    private void OnModalFocus(FocusEventArgs e)
+    {
+        // Modal is now focused and can receive keyboard events
+    }
+
+    public async Task SetVisible(bool visible)
+    {
+        if (visible)
+        {
+            IsVisible = true;
+            StateHasChanged();
+            await Task.Delay(10); // Small delay to ensure DOM is updated
+
+            // Focus the modal to receive keyboard events
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", @"
+setTimeout(() => {
+const modal = document.querySelector('.modal.show');
+if (modal) {
+modal.focus();
+console.log('Modal focused for keyboard events');
+}
+}, 50);
+");
+            }
+            catch
+            {
+                // Fallback if JS fails
+            }
+
+            await OnShow.InvokeAsync();
+        }
+        else
+        {
+            // Start exit animation
+            await OnHide.InvokeAsync();
+
+            // Trigger exit animation
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", @"
+const modal = document.querySelector('.modal.show');
+const backdrop = document.querySelector('.modal-backdrop.show');
+if (modal) {
+modal.classList.remove('show');
+modal.classList.add('hide');
+}
+if (backdrop) {
+backdrop.classList.remove('show');
+backdrop.classList.add('hide');
+}
+");
+            }
+            catch
+            {
+                // Fallback if JS fails
+            }
+
+            // Wait for exit animation to complete
+            await Task.Delay(400); // Match the CSS animation duration
+            IsVisible = false;
+        }
+
+        await IsVisibleChanged.InvokeAsync(visible);
+        StateHasChanged();
+    }
+
+    public async Task Show()
+    {
+        await SetVisible(true);
+    }
+
+    public async Task Hide()
+    {
+        await SetVisible(false);
+    }
+
+    public enum ModalSize
+    {
+        Default,
+        Small,
+        Large,
+        ExtraLarge
+    }
+}
