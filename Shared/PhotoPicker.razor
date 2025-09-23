@@ -1,4 +1,5 @@
 @using car_lister.Models
+@using car_lister.Shared
 
 <div class="photo-picker-container">
     @if (Car != null && Car.Images != null && Car.Images.Count > 0)
@@ -89,56 +90,73 @@
     }
 </div>
 
-@* Fullscreen Photo Viewer *@
-@if (ShowFullscreenViewer && Car != null && Car.Images != null && photoViewerIndex >= 0 && photoViewerIndex <
-Car.Images.Count)
-{
-    <div class="fullscreen-image-container" @onclick="() => ClosePhotoViewer()">
-        <img src="@Car.Images[photoViewerIndex]" alt="@Car.FullTitle" class="fullscreen-image"
-            @onclick:stopPropagation="true" />
+@* Fullscreen Photo Viewer Modal *@
+<Modal @ref="photoViewerModal" IsVisible="@isPhotoViewerVisible" IsVisibleChanged="@OnPhotoViewerVisibilityChanged"
+    Title="@(Car?.FullTitle ?? "Photo Viewer")" Size="Modal.ModalSize.Large" ShowHeader="true" ShowFooter="true"
+    CloseOnBackdropClick="true" CloseOnEscape="true">
 
-        <!-- Photo Selection Button -->
-        <div class="fullscreen-selection-overlay">
-            <button class="btn btn-primary btn-large" @onclick="() => TogglePhotoSelection(Car.Images[photoViewerIndex])">
-                @if (SelectedPhotos.ContainsKey(Car.Id) && SelectedPhotos[Car.Id].Contains(Car.Images[photoViewerIndex]))
-                {
-                    <span class="oi oi-check"></span>
-                    <span>Selected</span>
-                }
-                else
-                {
-                    <span class="oi oi-plus"></span>
-                    <span>Select Photo</span>
-                }
-            </button>
-        </div>
-
-        @if (Car.Images.Count > 1)
+    <Body>
+        @if (Car != null && Car.Images != null && photoViewerIndex >= 0 && photoViewerIndex < Car.Images.Count)
         {
-            <button class="fullscreen-nav-btn prev" @onclick="() => PreviousPhotoViewerImage()"
-                disabled="@(photoViewerIndex == 0)">
-                <span class="oi oi-chevron-left"></span>
-            </button>
-            <button class="fullscreen-nav-btn next" @onclick="() => NextPhotoViewerImage()"
-                disabled="@(photoViewerIndex == Car.Images.Count - 1)">
-                <span class="oi oi-chevron-right"></span>
-            </button>
-        }
-    </div>
-
-    @if (Car.Images.Count > 1)
-    {
-        <div class="fullscreen-thumbnails">
-            @for (int i = 0; i < Car.Images.Count; i++)
-            {
-                var index = i;
-                <div class="thumbnail @(photoViewerIndex == index ? "active" : "")" @onclick="() => SelectPhotoViewerImage(index)">
-                    <img src="@Car.Images[index]" alt="Thumbnail @(index + 1)" />
+            <div class="photo-viewer-container">
+                <div class="photo-viewer-image-container">
+                    <img src="@Car.Images[photoViewerIndex]" alt="@Car.FullTitle" class="photo-viewer-image" />
                 </div>
+
+                @if (Car.Images.Count > 1)
+                {
+                    <div class="photo-viewer-navigation">
+                        <button class="btn btn-secondary" @onclick="() => PreviousPhotoViewerImage()"
+                            disabled="@(photoViewerIndex == 0)">
+                            <span class="oi oi-chevron-left"></span>
+                            Previous
+                        </button>
+                        <span class="photo-counter">@(photoViewerIndex + 1) of @Car.Images.Count</span>
+                        <button class="btn btn-secondary" @onclick="() => NextPhotoViewerImage()"
+                            disabled="@(photoViewerIndex == Car.Images.Count - 1)">
+                            Next
+                            <span class="oi oi-chevron-right"></span>
+                        </button>
+                    </div>
+
+                    <div class="photo-viewer-thumbnails">
+                        @for (int i = 0; i < Car.Images.Count; i++)
+                        {
+                            var index = i;
+                            <div class="thumbnail @(photoViewerIndex == index ? "active" : "")"
+                                @onclick="() => SelectPhotoViewerImage(index)">
+                                <img src="@Car.Images[index]" alt="Thumbnail @(index + 1)" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </Body>
+    <Footer>
+        <div class="photo-viewer-footer">
+            @if (Car != null && Car.Images != null && photoViewerIndex >= 0 && photoViewerIndex < Car.Images.Count)
+            {
+                <button class="btn btn-primary" @onclick="() => TogglePhotoSelection(Car.Images[photoViewerIndex])">
+                    @if (SelectedPhotos.ContainsKey(Car.Id) &&
+                                    SelectedPhotos[Car.Id].Contains(Car.Images[photoViewerIndex]))
+                    {
+                        <span class="oi oi-check"></span>
+                        <span>Selected</span>
+                    }
+                    else
+                    {
+                        <span class="oi oi-plus"></span>
+                        <span>Select Photo</span>
+                    }
+                </button>
             }
+            <button class="btn btn-secondary" @onclick="() => ClosePhotoViewer()">
+                Close
+            </button>
         </div>
-    }
-}
+    </Footer>
+</Modal>
 
 @code {
     [Parameter] public ScrapedCar Car { get; set; } = new();
@@ -157,7 +175,9 @@ Car.Images.Count)
     // Fullscreen viewer parameters
     [Parameter] public bool ShowFullscreenViewer { get; set; } = true;
 
-    // Internal state
+    // Modal reference and state
+    private Modal? photoViewerModal;
+    private bool isPhotoViewerVisible = false;
     private int photoViewerIndex = -1;
 
     private void TogglePhotoSelection(string photoUrl)
@@ -201,12 +221,16 @@ Car.Images.Count)
         StateHasChanged();
     }
 
-    private void OnPhotoClick(int photoIndex, string photoUrl)
+    private async Task OnPhotoClick(int photoIndex, string photoUrl)
     {
         if (ShowFullscreenViewer)
         {
             photoViewerIndex = photoIndex;
-            StateHasChanged();
+            isPhotoViewerVisible = true;
+            if (photoViewerModal != null)
+            {
+                await photoViewerModal.Show();
+            }
         }
         else
         {
@@ -214,36 +238,53 @@ Car.Images.Count)
         }
     }
 
-    private void ClosePhotoViewer()
+    private async Task ClosePhotoViewer()
     {
         photoViewerIndex = -1;
-        StateHasChanged();
+        isPhotoViewerVisible = false;
+        if (photoViewerModal != null)
+        {
+            await photoViewerModal.Hide();
+        }
     }
 
-    private void PreviousPhotoViewerImage()
+    private async Task OnPhotoViewerVisibilityChanged(bool isVisible)
+    {
+        isPhotoViewerVisible = isVisible;
+        if (!isVisible)
+        {
+            photoViewerIndex = -1;
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task PreviousPhotoViewerImage()
     {
         if (Car != null && Car.Images != null && photoViewerIndex > 0)
         {
             photoViewerIndex--;
             StateHasChanged();
         }
+        await Task.CompletedTask;
     }
 
-    private void NextPhotoViewerImage()
+    private async Task NextPhotoViewerImage()
     {
         if (Car != null && Car.Images != null && photoViewerIndex < Car.Images.Count - 1)
         {
             photoViewerIndex++;
             StateHasChanged();
         }
+        await Task.CompletedTask;
     }
 
-    private void SelectPhotoViewerImage(int index)
+    private async Task SelectPhotoViewerImage(int index)
     {
         if (Car != null && Car.Images != null && index >= 0 && index < Car.Images.Count)
         {
             photoViewerIndex = index;
             StateHasChanged();
         }
+        await Task.CompletedTask;
     }
 }
