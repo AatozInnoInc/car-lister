@@ -128,6 +128,8 @@
     border-radius: 0.5rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     outline: 0;
+    /* Ensure inner content cannot visually overflow rounded corners */
+    overflow: hidden;
 }
 
 .modal-backdrop {
@@ -182,6 +184,8 @@
     padding: 1rem;
     color: #333;
     line-height: 1.6;
+    /* Constrain overflowing content to scroll within the body */
+    overflow: auto;
 }
 
 .modal-footer {
@@ -230,15 +234,15 @@
     }
 
     .modal-dialog.modal-sm {
-        max-width: 300px;
+        max-width: 300px !important;
     }
 
     .modal-dialog.modal-lg {
-        max-width: 800px;
+        max-width: 90% !important;
     }
 
     .modal-dialog.modal-xl {
-        max-width: 1140px;
+        max-width: 1440px !important;
     }
 }
 
