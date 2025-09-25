@@ -22,10 +22,10 @@
         </div>
 
         <div class="photo-selection-controls">
-            <button class="btn btn-sm btn-secondary" @onclick="() => SelectAllPhotos()">
+            <button type="button" class="btn btn-sm btn-secondary" @onclick="() => SelectAllPhotos()">
                 Select All
             </button>
-            <button class="btn btn-sm btn-secondary" @onclick="() => ClearAllPhotos()">
+            <button type="button" class="btn btn-sm btn-secondary" @onclick="() => ClearAllPhotos()">
                 Clear All
             </button>
         </div>
@@ -66,12 +66,12 @@
         @if (ShowNavigation && OnPrevious.HasDelegate && OnNext.HasDelegate)
         {
             <div class="photo-picker-navigation">
-                <button class="btn btn-sm btn-secondary" @onclick="OnPrevious" disabled="@IsPreviousDisabled">
+                <button type="button" class="btn btn-sm btn-secondary" @onclick="OnPrevious" disabled="@IsPreviousDisabled">
                     <span class="oi oi-chevron-left"></span>
                     Previous
                 </button>
                 <span class="navigation-counter">@NavigationText</span>
-                <button class="btn btn-sm btn-secondary" @onclick="OnNext" disabled="@IsNextDisabled">
+                <button type="button" class="btn btn-sm btn-secondary" @onclick="OnNext" disabled="@IsNextDisabled">
                     Next
                     <span class="oi oi-chevron-right"></span>
                 </button>
@@ -100,23 +100,52 @@
         {
             <div class="photo-viewer-container">
                 <div class="photo-viewer-image-container">
-                    <img src="@Car.Images[photoViewerIndex]" alt="@Car.FullTitle" class="photo-viewer-image" />
+                    <div class="photo-viewer-image-wrapper">
+                        <img src="@Car.Images[photoViewerIndex]" alt="@Car.FullTitle" class="photo-viewer-image" />
+                        @if (SelectedPhotos.ContainsKey(Car.Id) &&
+                                            SelectedPhotos[Car.Id].Contains(Car.Images[photoViewerIndex]))
+                        {
+                            <div class="photo-viewer-selected-overlay">
+                                <div class="selected-icon">
+                                    <span class="oi oi-check"></span>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
 
                 @if (Car.Images.Count > 1)
                 {
                     <div class="photo-viewer-navigation">
-                        <button class="btn btn-secondary" @onclick="() => PreviousPhotoViewerImage()"
-                            disabled="@(photoViewerIndex == 0)">
-                            <span class="oi oi-chevron-left"></span>
-                            Previous
-                        </button>
-                        <span class="photo-counter">@(photoViewerIndex + 1) of @Car.Images.Count</span>
-                        <button class="btn btn-secondary" @onclick="() => NextPhotoViewerImage()"
-                            disabled="@(photoViewerIndex == Car.Images.Count - 1)">
-                            Next
-                            <span class="oi oi-chevron-right"></span>
-                        </button>
+                        <div class="photo-controls">
+                            <button type="button" class="btn btn-secondary" @onclick="() => PreviousPhotoViewerImage()"
+                                disabled="@(photoViewerIndex == 0)">
+                                <span class="oi oi-chevron-left"></span>
+                                Previous
+                            </button>
+                            <span class="photo-counter">@(photoViewerIndex + 1) of @Car.Images.Count</span>
+                            <button type="button" class="btn btn-secondary" @onclick="() => NextPhotoViewerImage()"
+                                disabled="@(photoViewerIndex == Car.Images.Count - 1)">
+                                Next
+                                <span class="oi oi-chevron-right"></span>
+                            </button>
+                        </div>
+                        <div class="photo-viewer-select">
+                            <button type="button" class="btn btn-secondary"
+                                @onclick="() => TogglePhotoSelection(Car.Images[photoViewerIndex])">
+                                @if (SelectedPhotos.ContainsKey(Car.Id) &&
+                                                        SelectedPhotos[Car.Id].Contains(Car.Images[photoViewerIndex]))
+                                {
+                                    <span class="oi oi-check"></span>
+                                    <span>Selected</span>
+                                }
+                                else
+                                {
+                                    <span class="oi oi-plus"></span>
+                                    <span>Select</span>
+                                }
+                            </button>
+                        </div>
                     </div>
 
                     <div class="photo-viewer-thumbnails">
@@ -135,23 +164,7 @@
     </Body>
     <Footer>
         <div class="photo-viewer-footer">
-            @if (Car != null && Car.Images != null && photoViewerIndex >= 0 && photoViewerIndex < Car.Images.Count)
-            {
-                <button class="btn btn-primary" @onclick="() => TogglePhotoSelection(Car.Images[photoViewerIndex])">
-                    @if (SelectedPhotos.ContainsKey(Car.Id) &&
-                                    SelectedPhotos[Car.Id].Contains(Car.Images[photoViewerIndex]))
-                    {
-                        <span class="oi oi-check"></span>
-                        <span>Selected</span>
-                    }
-                    else
-                    {
-                        <span class="oi oi-plus"></span>
-                        <span>Select Photo</span>
-                    }
-                </button>
-            }
-            <button class="btn btn-secondary" @onclick="() => ClosePhotoViewer()">
+            <button type="button" class="btn btn-secondary" @onclick="() => ClosePhotoViewer()">
                 Close
             </button>
         </div>

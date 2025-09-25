@@ -122,11 +122,11 @@
     flex-direction: column;
     width: 100%;
     pointer-events: auto;
-    background-color: #fff;
+    background-color: #1a1a2e;
     background-clip: padding-box;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.5rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     outline: 0;
     /* Ensure inner content cannot visually overflow rounded corners */
     overflow: hidden;
@@ -164,7 +164,7 @@
     align-items: flex-start;
     justify-content: space-between;
     padding: 1rem 1rem;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     border-top-left-radius: calc(0.5rem - 1px);
     border-top-right-radius: calc(0.5rem - 1px);
     background: linear-gradient(135deg, #1b6ec2 0%, #0d47a1 100%);
@@ -172,7 +172,7 @@
 }
 
 .modal-title {
-    margin-bottom: 0;
+    margin: 0;
     line-height: 1.5;
     font-weight: 600;
     font-size: 1.25rem;
@@ -182,7 +182,7 @@
     position: relative;
     flex: 1 1 auto;
     padding: 1rem;
-    color: #333;
+    color: #e5e7eb;
     line-height: 1.6;
     /* Constrain overflowing content to scroll within the body */
     overflow: auto;
@@ -194,10 +194,10 @@
     align-items: center;
     justify-content: flex-end;
     padding: 0.75rem;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     border-bottom-right-radius: calc(0.5rem - 1px);
     border-bottom-left-radius: calc(0.5rem - 1px);
-    background-color: #f8f9fa;
+    background-color: rgba(255, 255, 255, 0.03);
     gap: 0.5rem;
 }
 
@@ -308,7 +308,7 @@
 }
 
 .modal-body::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 3px;
 }
 
