@@ -174,34 +174,112 @@
                     @if (allChanges.Count > 0)
                     {
                         var change = allChanges[currentChangeIndex];
-                        <div class="summary-card mt-1">
-                            <div class="summary-header">
-                                <span class="oi oi-people"></span>
+                        <div class="summary-card mt-1 @GetChangeCardClass(change.ChangeType)">
+                            <div class="summary-header @GetChangeHeaderClass(change.ChangeType)">
+                                <span class="@GetChangeIconClass(change.ChangeType)"></span>
                                 <h3>@change.ChangeType — @change.Title</h3>
+                                @if (change.ChangeType == "Sold Vehicle")
+                                {
+                                    <span class="action-badge action-badge-remove">REMOVE</span>
+                                }
+                                else if (change.ChangeType == "New Vehicle")
+                                {
+                                    <span class="action-badge action-badge-add">ADD</span>
+                                }
+                                else if (change.ChangeType == "Price Change")
+                                {
+                                    <span class="action-badge action-badge-update">UPDATE</span>
+                                }
+                                else if (change.ChangeType == "Photo Change")
+                                {
+                                    <span class="action-badge action-badge-update">UPDATE</span>
+                                }
+                                else if (change.ChangeType == "Photo Selection Needed")
+                                {
+                                    <span class="action-badge action-badge-select">SELECT</span>
+                                }
                             </div>
                             <div class="summary-details">
-                                <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
-                                            target="_blank" rel="noopener noreferrer">@change.Url</a></span></div>
-                                @if (change.ChangeType == "Price Change")
+                                @if (change.ChangeType == "Sold Vehicle")
+                                {
+                                    var soldCar = soldVehicles.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
+                                    if (soldCar != null)
+                                    {
+                                        <div class="detail-item"><span class="label">Stock Number:</span><span
+                                                class="value">@soldCar.StockNumber</span></div>
+                                        <div class="detail-item"><span class="label">Price:</span><span
+                                                class="value">$@soldCar.Price.ToString("N0")</span></div>
+                                        <div class="detail-item"><span class="label">Mileage:</span><span
+                                                class="value">@soldCar.Mileage.ToString("N0") miles</span></div>
+                                        <div class="detail-item"><span class="label">Year:</span><span class="value">@soldCar.Year</span>
+                                        </div>
+                                        <div class="detail-item"><span class="label">Make/Model:</span><span class="value">@soldCar.Make
+                                                @soldCar.Model</span></div>
+                                        <div class="detail-item"><span class="label">Action:</span><span
+                                                class="value text-danger font-weight-bold">🚫 Remove from inventory</span></div>
+                                        <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
+                                                    target="_blank" rel="noopener noreferrer">View listing</a></span></div>
+                                    }
+                                }
+                                else if (change.ChangeType == "New Vehicle")
+                                {
+                                    var newCar = newVehicles.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
+                                    if (newCar != null)
+                                    {
+                                        <div class="detail-item"><span class="label">Stock Number:</span><span
+                                                class="value">@newCar.StockNumber</span></div>
+                                        <div class="detail-item"><span class="label">Price:</span><span
+                                                class="value">$@newCar.Price.ToString("N0")</span></div>
+                                        <div class="detail-item"><span class="label">Mileage:</span><span
+                                                class="value">@newCar.Mileage.ToString("N0") miles</span></div>
+                                        <div class="detail-item"><span class="label">Year:</span><span class="value">@newCar.Year</span>
+                                        </div>
+                                        <div class="detail-item"><span class="label">Make/Model:</span><span class="value">@newCar.Make
+                                                @newCar.Model</span></div>
+                                        <div class="detail-item"><span class="label">Action:</span><span
+                                                class="value text-success font-weight-bold">✅ Add to inventory</span></div>
+                                        <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
+                                                    target="_blank" rel="noopener noreferrer">View listing</a></span></div>
+                                    }
+                                }
+                                else if (change.ChangeType == "Price Change")
                                 {
                                     <div class="detail-item"><span class="label">Old Price:</span><span
                                             class="value">$@change.OldPrice?.ToString("N0")</span></div>
                                     <div class="detail-item"><span class="label">New Price:</span><span
                                             class="value">$@change.NewPrice?.ToString("N0")</span></div>
+                                    <div class="detail-item"><span class="label">Price Difference:</span><span
+                                            class="value @(change.NewPrice > change.OldPrice ? "text-danger" : "text-success")">$@((change.NewPrice
+                                                                        - change.OldPrice)?.ToString("N0"))</span></div>
+                                    <div class="detail-item"><span class="label">Action:</span><span
+                                            class="value text-warning font-weight-bold">🔄 Update price</span></div>
+                                    <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
+                                                target="_blank" rel="noopener noreferrer">View listing</a></span></div>
                                 }
-                                @if (change.ChangeType == "Photo Change")
+                                else if (change.ChangeType == "Photo Change")
                                 {
                                     <div class="detail-item"><span class="label">Old Photos:</span><span
                                             class="value">@((change.OldPhotos?.Count ?? 0))</span></div>
                                     <div class="detail-item"><span class="label">New Photos:</span><span
                                             class="value">@((change.NewPhotos?.Count ?? 0))</span></div>
+                                    <div class="detail-item"><span class="label">Photo Difference:</span><span
+                                            class="value @((change.NewPhotos?.Count ?? 0) > (change.OldPhotos?.Count ?? 0) ? "text-success" : "text-danger")">@(((change.NewPhotos?.Count
+                                                                        ?? 0) - (change.OldPhotos?.Count ?? 0)).ToString("+0;-0;0"))</span></div>
+                                    <div class="detail-item"><span class="label">Action:</span><span
+                                            class="value text-warning font-weight-bold">🔄 Update photos</span></div>
+                                    <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
+                                                target="_blank" rel="noopener noreferrer">View listing</a></span></div>
                                 }
-                                @if (change.ChangeType == "Photo Selection Needed")
+                                else if (change.ChangeType == "Photo Selection Needed")
                                 {
                                     <div class="detail-item"><span class="label">Available Photos:</span><span
                                             class="value">@((change.OldPhotos?.Count ?? 0))</span></div>
                                     <div class="detail-item"><span class="label">Status:</span><span
                                             class="value text-danger font-weight-bold">No photos selected</span></div>
+                                    <div class="detail-item"><span class="label">Action:</span><span
+                                            class="value text-info font-weight-bold">📸 Select photos</span></div>
+                                    <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
+                                                target="_blank" rel="noopener noreferrer">View listing</a></span></div>
                                 }
                             </div>
                         </div>
@@ -743,6 +821,46 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
     {
         selectedPhotos = updatedSelectedPhotos;
         StateHasChanged();
+    }
+
+    // Helper methods for change display
+    private string GetChangeCardClass(string changeType)
+    {
+        return changeType switch
+        {
+            "Sold Vehicle" => "change-card-remove",
+            "New Vehicle" => "change-card-add",
+            "Price Change" => "change-card-update",
+            "Photo Change" => "change-card-update",
+            "Photo Selection Needed" => "change-card-select",
+            _ => ""
+        };
+    }
+
+    private string GetChangeHeaderClass(string changeType)
+    {
+        return changeType switch
+        {
+            "Sold Vehicle" => "change-header-remove",
+            "New Vehicle" => "change-header-add",
+            "Price Change" => "change-header-update",
+            "Photo Change" => "change-header-update",
+            "Photo Selection Needed" => "change-header-select",
+            _ => ""
+        };
+    }
+
+    private string GetChangeIconClass(string changeType)
+    {
+        return changeType switch
+        {
+            "Sold Vehicle" => "oi oi-x text-danger",
+            "New Vehicle" => "oi oi-plus text-success",
+            "Price Change" => "oi oi-dollar text-warning",
+            "Photo Change" => "oi oi-image text-warning",
+            "Photo Selection Needed" => "oi oi-camera text-info",
+            _ => "oi oi-info"
+        };
     }
 }
 

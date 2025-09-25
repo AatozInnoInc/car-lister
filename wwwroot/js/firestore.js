@@ -217,6 +217,8 @@ window.firestore = {
     addToClientInventory: async function (clientId, carJson) {
         try {
             const car = JSON.parse(carJson);
+            // Normalize fields to satisfy security rules and path lookups
+            car.clientId = clientId;
             const db = firebase.firestore();
             const docRef = await db.collection('clients').doc(clientId).collection('inventory').add(car);
             return true;
@@ -233,6 +235,8 @@ window.firestore = {
             const batch = db.batch();
 
             cars.forEach(car => {
+                // Normalize fields to satisfy security rules
+                car.clientId = clientId;
                 const docRef = db.collection('clients').doc(clientId).collection('inventory').doc();
                 batch.set(docRef, car);
             });
@@ -248,8 +252,11 @@ window.firestore = {
     updateClientInventoryCar: async function (clientId, carJson) {
         try {
             const car = JSON.parse(carJson);
+            // Ensure we have the correct document id and rule-required fields
+            const carId = car.id || car.Id;
+            car.clientId = clientId;
             const db = firebase.firestore();
-            await db.collection('clients').doc(clientId).collection('inventory').doc(car.id).update(car);
+            await db.collection('clients').doc(clientId).collection('inventory').doc(carId).update(car);
             return true;
         } catch (error) {
             console.error('Error updating car in client inventory:', error);
