@@ -26,12 +26,10 @@ service cloud.firestore {
         
         // Allow update if the user is authenticated and the car belongs to this client
         allow update: if request.auth != null && 
-                     resource.data.clientId == clientId &&
                      request.resource.data.clientId == clientId;
         
         // Allow delete if the user is authenticated and the car belongs to this client
-        allow delete: if request.auth != null && 
-                     resource.data.clientId == clientId;
+        allow delete: if request.auth != null;
       }
     }
     
