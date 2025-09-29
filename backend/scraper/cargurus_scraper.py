@@ -292,34 +292,43 @@ class CarGurusScraper:
             # Get the initial page to extract search parameters
             response = self.session.get(dealer_url, timeout=self.timeout)
             
+            direct_fallback = False
             if response.status_code != 200:
                 logger.error(f"Failed to get initial dealer page: HTTP {response.status_code}")
-                return InventorySearchResult(
-                    success=False,
-                    cars=[],
-                    totalResults=0,
-                    currentPage=page_number,
-                    totalPages=0,
-                    hasNextPage=False,
-                    processingTime=time.time() - start_time,
-                    message=f"Failed to get initial dealer page: HTTP {response.status_code}"
-                )
+                # Do NOT return early. Fall back to a direct AJAX request with synthesized params.
+                direct_fallback = True
             
-            # Extract search parameters from the initial page
-            search_params = self._extract_search_params_from_dealer_page(response.text, dealer_entity_id, inventory_type)
+            # Build search parameters
+            if not direct_fallback:
+                # Extract from page when available
+                search_params = self._extract_search_params_from_dealer_page(response.text, dealer_entity_id, inventory_type)
+            else:
+                search_params = None
             
             if not search_params:
-                logger.error("Failed to extract search parameters from dealer page")
-                return InventorySearchResult(
-                    success=False,
-                    cars=[],
-                    totalResults=0,
-                    currentPage=page_number,
-                    totalPages=0,
-                    hasNextPage=False,
-                    processingTime=time.time() - start_time,
-                    message="Failed to extract search parameters from dealer page"
-                )
+                # Fallback: synthesize parameters for dealer inventory AJAX endpoint
+                logger.info("Synthesizing dealer inventory AJAX parameters (fallback)")
+                import uuid as _uuid
+                # Map inventory type to CarGurus newUsed
+                inv = (inventory_type or "ALL").upper()
+                new_used_value = {
+                    "NEW": 1,
+                    "USED": 2,
+                    "ALL": 3,
+                    "NEW_CERTIFIED": 1,
+                }.get(inv, 3)
+                search_params = {
+                    'searchId': str(_uuid.uuid4()),
+                    'srpVariation': 'DEALER_INVENTORY',
+                    'pageNumber': page_number,
+                    'newUsed': new_used_value,
+                    'isDeliveryEnabled': 'true',
+                    'nonShippableBaseline': '0',
+                    'filtersModified': 'true',
+                    'sourceContext': 'dealerInventory',
+                    # Strong hint to scope to this dealer
+                    'entitySelectingHelper.selectedEntity': f'sp{dealer_entity_id}',
+                }
             
             # Now make the AJAX request to get the specific page
             ajax_url = "https://www.cargurus.com/Cars/searchPage.action"
@@ -342,7 +351,8 @@ class CarGurusScraper:
                 'sec-fetch-site': 'same-origin',
                 'x-cg-client-id': 'site-cars',
                 'x-requested-with': 'XMLHttpRequest',
-                'referer': dealer_url
+                'referer': dealer_url,
+                'origin': 'https://www.cargurus.com',
             })
             
             # Update search parameters for the specific page
@@ -1626,11 +1636,43 @@ class CarGurusScraper:
             if engine:
                 stats.append({"header": "Engine", "value": engine})
             
-            # Extract images
+            # Extract images (collect all, not just primary)
             images = []
             original_picture = car_data.get('originalPictureData', {})
             if original_picture and original_picture.get('url'):
                 images.append(original_picture['url'])
+
+            # Additional sources commonly present on tiles
+            # 1) pictures: [{ url: ... }]
+            pictures = car_data.get('pictures') or car_data.get('pictureData') or []
+            if isinstance(pictures, list):
+                for pic in pictures:
+                    if isinstance(pic, dict):
+                        url = pic.get('url') or pic.get('imageUrl') or pic.get('src') or pic.get('photoUrl')
+                        if url and url not in images:
+                            images.append(url)
+                    elif isinstance(pic, str) and pic and pic not in images:
+                        images.append(pic)
+
+            # 2) other potential fields that sometimes hold arrays/objects of image urls
+            for field in ['images', 'photos', 'gallery', 'imageGallery', 'additionalImages']:
+                field_data = car_data.get(field)
+                if not field_data:
+                    continue
+                if isinstance(field_data, list):
+                    for item in field_data:
+                        if isinstance(item, dict):
+                            for key in ['url', 'imageUrl', 'photoUrl', 'src']:
+                                u = item.get(key)
+                                if u and u not in images:
+                                    images.append(u)
+                        elif isinstance(item, str) and item not in images:
+                            images.append(item)
+                elif isinstance(field_data, dict):
+                    for key in ['url', 'imageUrl', 'photoUrl', 'src']:
+                        u = field_data.get(key)
+                        if u and u not in images:
+                            images.append(u)
             
             # Extract VIN and stock number
             vin = car_data.get('vin', '')
