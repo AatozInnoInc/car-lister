@@ -202,10 +202,25 @@ window.firestore = {
             const snapshot = await db.collection('clients').doc(clientId).collection('inventory').get();
             const cars = [];
             snapshot.forEach(doc => {
-                cars.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
+                // Spread stored data first, then set id/firestoreId from doc.id so they cannot be overridden by stored fields
+                const data = doc.data() || {};
+                const carData = {
+                    ...data,
+                    id: doc.id
+                };
+
+                // Add logging to debug image data from Firestore
+                console.log(`Firestore - Car: ${carData.fullTitle || 'Unknown'}`);
+                console.log(`Firestore - Images count: ${carData.images?.length || 0}`);
+                if (carData.images && carData.images.length > 0) {
+                    console.log(`Firestore - First image: ${carData.images[0]}`);
+                    if (carData.images.length > 1) {
+                        console.log(`Firestore - Second image: ${carData.images[1]}`);
+                        console.log(`Firestore - Total images: ${carData.images.length}`);
+                    }
+                }
+
+                cars.push(carData);
             });
             return JSON.stringify(cars);
         } catch (error) {
@@ -219,6 +234,8 @@ window.firestore = {
             const car = JSON.parse(carJson);
             // Normalize fields to satisfy security rules and path lookups
             car.clientId = clientId;
+            // Do not persist id in the document data; rely on doc.id instead
+            delete car.id;
             const db = firebase.firestore();
             const docRef = await db.collection('clients').doc(clientId).collection('inventory').add(car);
             return true;
@@ -237,6 +254,8 @@ window.firestore = {
             cars.forEach(car => {
                 // Normalize fields to satisfy security rules
                 car.clientId = clientId;
+                // Do not persist id in the document data; rely on doc.id instead
+                delete car.id;
                 const docRef = db.collection('clients').doc(clientId).collection('inventory').doc();
                 batch.set(docRef, car);
             });
@@ -261,6 +280,26 @@ window.firestore = {
             }
             // Avoid writing id into the document data on update
             const { id: _omitId, ...updatePayload } = car;
+            // Preserve existing selectedPhotoUrls if not provided, to avoid wiping on partial updates
+            if (updatePayload.selectedPhotoUrls === undefined) {
+                const existingDoc = await db.collection('clients').doc(clientId).collection('inventory').doc(carId).get();
+                if (existingDoc.exists) {
+                    const existing = existingDoc.data() || {};
+                    if (existing.selectedPhotoUrls !== undefined) {
+                        updatePayload.selectedPhotoUrls = existing.selectedPhotoUrls;
+                    }
+                }
+            }
+
+            // Log the car data for debugging
+            console.log('Updating car with data:', {
+                carId: carId,
+                clientId: clientId,
+                carClientId: car.clientId,
+                make: car.make,
+                model: car.model
+            });
+
             const db = firebase.firestore();
             await db.collection('clients').doc(clientId).collection('inventory').doc(carId).update(updatePayload);
             return true;
