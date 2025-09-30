@@ -23,8 +23,11 @@
         <p class="subtitle">Refresh, review differences, and apply updates</p>
     </div>
 
-    <!-- Progress Bar -->
-    <ProgressBar CurrentStep="currentStep" Steps="progressSteps" />
+    <!-- Progress Bar (shown globally except on Save, where it's shown in-step) -->
+    @if (currentStep != 3)
+    {
+        <ProgressBar CurrentStep="currentStep" Steps="progressSteps" />
+    }
 
     <div class="content">
         @if (isLoading)
@@ -73,19 +76,6 @@
                     }
                 </div>
 
-                <StepNavigation OnNext="NextStep" IsNextDisabled="@(string.IsNullOrEmpty(selectedClientId))"
-                    NextButtonText="Continue to Refresh" />
-            </div>
-        }
-        else if (currentStep == 2)
-        {
-            <!-- Step 2: Refresh (rescrape) -->
-            <div class="step-content import-inventory">
-                <div class="step-header">
-                    <h2>Refresh Inventory</h2>
-                    <p>Scrape the latest inventory for the selected client</p>
-                </div>
-
                 @if (isImporting)
                 {
                     <div class="import-progress">
@@ -95,41 +85,11 @@
                         </div>
                     </div>
                 }
-                else
-                {
-                    <div class="import-summary">
-                        <div class="summary-card">
-                            <div class="summary-header">
-                                <span class="oi oi-data-transfer-download"></span>
-                                <h3>Ready to Refresh</h3>
-                            </div>
-                            <div class="summary-details">
-                                <div class="detail-item">
-                                    <span class="label">Client:</span>
-                                    <span class="value">@selectedClient?.Name</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="label">Data Source:</span>
-                                    <span class="value">@selectedClient?.DataSource</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="label">Dealer URL:</span>
-                                    <span class="value">@selectedClient?.DealerUrl</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="step-actions import-actions">
-                            <button class="btn btn-primary btn-large" @onclick="async () => await RunRefresh()">
-                                <span class="oi oi-data-transfer-download"></span>
-                                Start Refresh
-                            </button>
-                        </div>
-                    </div>
-                }
+                <StepNavigation ShowBackButton="false" OnNext="RefreshAndProceed" NextButtonText="Refresh Inventory"
+                    IsNextDisabled="@(isImporting || string.IsNullOrEmpty(selectedClientId))" />
             </div>
         }
-        else if (currentStep == 3)
+        else if (currentStep == 2)
         {
             <!-- Step 3: Review (diff summary + iterative review) -->
             <div class="step-content additional-info">
@@ -284,36 +244,35 @@
                             </div>
                         </div>
 
-                        @* Inline Photo Picker for photo-related changes *@
-                        @if (change.ChangeType == "Photo Selection Needed" || change.ChangeType == "Photo Change")
+                        @* Inline Photo Picker for photo selection on relevant changes *@
+                        // Prefer the existing car instance so Car.Id matches the Firestore document id for selections
+                        var carForPicker = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url)
+                            ?? scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
+                        if (carForPicker != null)
                         {
-                            var carForPicker = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
-                            if (carForPicker != null)
-                            {
-                                <div class="car-photo-section">
-                                    <div class="car-header">
-                                        <div class="car-info">
-                                            <h3>
-                                                <a href="@carForPicker.OriginalUrl" target="_blank" rel="noopener noreferrer"
-                                                    class="car-title-link">
-                                                    @carForPicker.FullTitle
-                                                    <span class="oi oi-external-link"
-                                                        style="font-size: 0.8em; margin-left: 0.5rem; opacity: 0.7;"></span>
-                                                </a>
-                                            </h3>
-                                            <div class="car-meta">
-                                                <span class="stock-number">Stock: @carForPicker.StockNumber</span>
-                                                <span class="price">$@carForPicker.Price.ToString("N0")</span>
-                                                <span class="photo-count">@carForPicker.Images.Count photos</span>
-                                            </div>
+                            <div class="car-photo-section">
+                                <div class="car-header">
+                                    <div class="car-info">
+                                        <h3>
+                                            <a href="@carForPicker.OriginalUrl" target="_blank" rel="noopener noreferrer"
+                                                class="car-title-link">
+                                                @carForPicker.FullTitle
+                                                <span class="oi oi-external-link"
+                                                    style="font-size: 0.8em; margin-left: 0.5rem; opacity: 0.7;"></span>
+                                            </a>
+                                        </h3>
+                                        <div class="car-meta">
+                                            <span class="stock-number">Stock: @carForPicker.StockNumber</span>
+                                            <span class="price">$@carForPicker.Price.ToString("N0")</span>
+                                            <span class="photo-count">@carForPicker.Images.Count photos</span>
                                         </div>
                                     </div>
-
-                                    <PhotoPicker Car="@carForPicker" Title="@($"Select Photos — {carForPicker.FullTitle}")"
-                                        SelectedPhotos="@selectedPhotos" SelectedPhotosChanged="@OnSelectedPhotosChanged"
-                                        ShowNavigation="false" />
                                 </div>
-                            }
+
+                                <PhotoPicker Car="@carForPicker" Title="@($"Select Photos — {carForPicker.FullTitle}")"
+                                    SelectedPhotos="@selectedPhotos" SelectedPhotosChanged="@OnSelectedPhotosChanged"
+                                    ShowNavigation="false" />
+                            </div>
                         }
 
                         <div class="car-navigation mt-1">
@@ -352,20 +311,25 @@
                 </div>
             </div>
         }
-        else if (currentStep == 4)
+        else if (currentStep == 3)
         {
-            <!-- Step 4: Save changes -->
+            <!-- Step 3: Save changes -->
             <div class="step-content completion">
+                <div class="mb-1">
+                    <ProgressBar CurrentStep="currentStep" Steps="progressSteps" />
+                </div>
                 @if (!string.IsNullOrEmpty(saveMessage))
                 {
                     <div class="alert @(saveMessageType == "success" ? "alert-success" : "alert-error")">
                         @saveMessage
                     </div>
                 }
+
                 <div class="step-header">
                     <h2>Apply Changes</h2>
                     <p>Confirm and save updates to the database</p>
                 </div>
+
 
                 <div class="completion-summary">
                     <div class="success-icon">
@@ -374,25 +338,25 @@
                     <div class="summary-details">
                         <h3>Summary</h3>
                         <div class="detail-grid">
-                            <div class="detail-item"><span class="label">New Vehicles:</span><span
-                                    class="value">@newVehicles.Count</span></div>
-                            <div class="detail-item"><span class="label">Sold Vehicles:</span><span
-                                    class="value">@soldVehicles.Count</span></div>
-                            <div class="detail-item"><span class="label">Price Updates:</span><span
-                                    class="value">@priceChanges.Count</span></div>
-                            <div class="detail-item"><span class="label">Photo Updates:</span><span
-                                    class="value">@photoChanges.Count</span></div>
-                            <div class="detail-item"><span class="label">Photo Selections:</span><span
-                                    class="value">@allChanges.Count(c => c.ChangeType == "Photo Selection Needed")</span>
+                        <div class="detail-item"><span class="label">New Vehicles:</span><span
+                                class="value">@summaryNewVehicles</span></div>
+                        <div class="detail-item"><span class="label">Sold Vehicles:</span><span
+                                class="value">@summarySoldVehicles</span></div>
+                        <div class="detail-item"><span class="label">Price Updates:</span><span
+                                class="value">@summaryPriceUpdates</span></div>
+                        <div class="detail-item"><span class="label">Photo Updates:</span><span
+                                class="value">@summaryPhotoUpdates</span></div>
+                        <div class="detail-item"><span class="label">Photo Selection Updates:</span><span
+                                class="value">@summarySelectionUpdates</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="step-actions">
-                    <button class="btn btn-primary btn-large" @onclick="ApplyChanges" disabled="@isSaving">
+                    <button class="btn btn-primary btn-large" @onclick="ApplyChanges" disabled="@(isSaving || isSaved)">
                         <span class="oi oi-check"></span>
-                        @((isSaving ? "Saving..." : "Save Changes"))
+                        @((isSaving ? "Saving..." : (isSaved ? "Saved" : "Save Changes")))
                     </button>
                     <button class="btn btn-secondary btn-large" @onclick="StartOver" disabled="@isSaving">
                         <span class="oi oi-loop"></span>
@@ -411,6 +375,15 @@
     private bool isImporting = false;
     private string importStatus = "";
     private bool isSaving = false;
+    private bool isSaved = false;
+    private string saveMessage = "";
+    private string saveMessageType = ""; // "success" | "error"
+    private bool hasRefreshed = false;
+    private int summaryNewVehicles = 0;
+    private int summarySoldVehicles = 0;
+    private int summaryPriceUpdates = 0;
+    private int summaryPhotoUpdates = 0;
+    private int summarySelectionUpdates = 0;
 
     private List<Client> clients = new List<Client>();
     private string selectedClientId = "";
@@ -447,12 +420,11 @@
     }
 
     private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
-{
-new ProgressBar.StepInfo { Number = 1, Label = "Select Client" },
-new ProgressBar.StepInfo { Number = 2, Label = "Refresh" },
-new ProgressBar.StepInfo { Number = 3, Label = "Review" },
-new ProgressBar.StepInfo { Number = 4, Label = "Save" }
-};
+    {
+        new ProgressBar.StepInfo { Number = 1, Label = "Select Client" },
+        new ProgressBar.StepInfo { Number = 2, Label = "Review" },
+        new ProgressBar.StepInfo { Number = 3, Label = "Save" }
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -464,6 +436,14 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
             clients = clients
             .OrderByDescending(c => c.UpdatedAt)
             .ToList();
+
+            // Preselect first client if available and auto-run refresh
+            if (clients.Count > 0)
+            {
+                selectedClientId = clients.First().Id;
+                selectedClient = clients.First();
+                StateHasChanged();
+            }
         }
         catch (Exception ex)
         {
@@ -492,6 +472,7 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
     private void OnClientSelectionChanged()
     {
         selectedClient = clients.FirstOrDefault(c => c.Id == selectedClientId);
+        hasRefreshed = false;
         StateHasChanged();
     }
 
@@ -501,8 +482,12 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
         {
             selectedClient = clients.FirstOrDefault(c => c.Id == selectedClientId);
         }
-        if (currentStep < 4)
+        if (currentStep < 3)
         {
+            if (currentStep == 2)
+            {
+                CaptureSummarySnapshot();
+            }
             currentStep++;
             StateHasChanged();
         }
@@ -540,21 +525,60 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
                 return;
             }
 
+            // Hydrate image lists per car if needed using VDP scrape
+            try
+            {
+                foreach (var car in searchResult.Cars)
+                {
+                    if (car.Images == null || car.Images.Count <= 1)
+                    {
+                        var url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl;
+                        if (!string.IsNullOrWhiteSpace(url))
+                        {
+                            Console.WriteLine("Hydrating by calling ScrapeCarByUrlAsync directly. Remove if this is never used");
+                            var hydrated = await InventoryService.ScrapeCarByUrlAsync(url);
+                            if (hydrated != null && hydrated.Images != null && hydrated.Images.Count > (car.Images?.Count ?? 0))
+                            {
+                                car.Images = hydrated.Images;
+                                car.FullTitle = string.IsNullOrWhiteSpace(car.FullTitle) ? hydrated.FullTitle : car.FullTitle;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
             scrapedNow = ConvertScrapedCarsToInternalFormat(searchResult.Cars, selectedClient);
             existingCars = await InventoryService.GetClientInventoryAsync(selectedClient.Id);
+
             InitializeSelectedPhotosFromExisting();
 
             ComputeDiffs();
 
-            // Move to review
+            // Finish refresh, remain on step 1 until user proceeds
             isImporting = false;
-            currentStep = 3;
+            hasRefreshed = true;
             StateHasChanged();
         }
         catch (Exception ex)
         {
             importStatus = $"Error: {ex.Message}";
             isImporting = false;
+            hasRefreshed = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshAndProceed()
+    {
+        if (string.IsNullOrEmpty(selectedClientId))
+            return;
+
+        await RunRefresh();
+
+        if (hasRefreshed)
+        {
+            currentStep = 2;
             StateHasChanged();
         }
     }
@@ -654,6 +678,14 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
         return true;
     }
 
+    private static bool SelectedPhotosEqual(List<string> a, List<string> b)
+    {
+        // Treat null and empty as equal, and compare as sets (order-insensitive)
+        var setA = new HashSet<string>(a ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+        var setB = new HashSet<string>(b ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+        return setA.SetEquals(setB);
+    }
+
     private string GetCarUrlKey(ScrapedCar car)
     {
         if (!string.IsNullOrWhiteSpace(car.OriginalUrl)) return car.OriginalUrl;
@@ -733,6 +765,7 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
         isSaved = false;
         saveMessage = "";
         saveMessageType = "";
+        int skippedUpdates = 0;
         try
         {
             // Adds
@@ -744,30 +777,66 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
             // Price/photo updates
             foreach (var (oldCar, newCar) in priceChanges)
             {
-                // keep new price, preserve existing car id
-                newCar.Id = oldCar.Id;
-                await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                // Only update if there's actually a price difference
+                if (Math.Abs(newCar.Price - oldCar.Price) > 0.01)
+                {
+                    // Merge in existing selected photos to avoid wiping
+                    newCar.SelectedPhotoUrls = oldCar.SelectedPhotoUrls ?? new List<string>();
+                    // Use the Firestore document ID for updates
+                    newCar.Id = oldCar.Id;
+                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                }
+                else
+                {
+                    skippedUpdates++;
+                    Console.WriteLine($"Skipping price update for {newCar.FullTitle} - no significant price change");
+                }
             }
             foreach (var (oldCar, newCar) in photoChanges)
             {
-                newCar.Id = oldCar.Id;
-                await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                // Only update if photos are actually different
+                if (!PhotosEqual(oldCar.Images, newCar.Images))
+                {
+                    // Use the Firestore document ID for updates
+                    newCar.Id = oldCar.Id;
+                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                }
+                else
+                {
+                    skippedUpdates++;
+                    Console.WriteLine($"Skipping photo update for {newCar.FullTitle} - photos are identical");
+                }
             }
 
             // Photo selections (cars that needed photo selection)
             foreach (var carId in selectedPhotos.Keys)
             {
                 var car = existingCars.FirstOrDefault(c => c.Id == carId);
-                if (car != null && selectedPhotos[carId].Count > 0)
+                if (car == null)
                 {
-                    car.SelectedPhotoUrls = selectedPhotos[carId];
-                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, car);
+                    continue;
                 }
+
+                var newSelectedPhotos = selectedPhotos.TryGetValue(carId, out var lst) ? lst : new List<string>();
+                var currentSelectedPhotos = car.SelectedPhotoUrls ?? new List<string>();
+
+                // Skip when selection hasn't changed (covers: previously selected unchanged, or none before and none now)
+                if (SelectedPhotosEqual(newSelectedPhotos, currentSelectedPhotos))
+                {
+                    skippedUpdates++;
+                    Console.WriteLine($"Skipping photo selection update for {car.FullTitle} - selection unchanged");
+                    continue;
+                }
+
+                // Persist selection change (including clearing selections)
+                car.SelectedPhotoUrls = newSelectedPhotos;
+                await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, car);
             }
 
             // Deletions (sold)
             foreach (var car in soldVehicles)
             {
+                // Use the Firestore document ID for deletions
                 await InventoryService.DeleteCarFromClientInventoryAsync(selectedClient.Id, car.Id);
             }
 
@@ -780,6 +849,8 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
             isSaved = true;
             saveMessageType = "success";
             saveMessage = "Changes saved successfully.";
+            // Keep the summary numbers stable after save
+            CaptureSummarySnapshot();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -802,6 +873,11 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
         saveMessage = "";
         saveMessageType = "";
         hasRefreshed = false;
+        summaryNewVehicles = 0;
+        summarySoldVehicles = 0;
+        summaryPriceUpdates = 0;
+        summaryPhotoUpdates = 0;
+        summarySelectionUpdates = 0;
         scrapedNow.Clear();
         existingCars.Clear();
         newVehicles.Clear();
@@ -841,6 +917,35 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
     {
         selectedPhotos = updatedSelectedPhotos;
         StateHasChanged();
+    }
+
+    private int GetPhotoSelectionChangesCount()
+    {
+        int changes = 0;
+        foreach (var car in existingCars)
+        {
+            var carId = car.Id;
+            if (string.IsNullOrWhiteSpace(carId))
+                continue;
+
+            var currentSelected = car.SelectedPhotoUrls ?? new List<string>();
+            var newSelected = selectedPhotos.TryGetValue(carId, out var list) ? list : new List<string>();
+
+            if (!SelectedPhotosEqual(newSelected, currentSelected))
+            {
+                changes++;
+            }
+        }
+        return changes;
+    }
+
+    private void CaptureSummarySnapshot()
+    {
+        summaryNewVehicles = newVehicles.Count;
+        summarySoldVehicles = soldVehicles.Count;
+        summaryPriceUpdates = priceChanges.Count;
+        summaryPhotoUpdates = photoChanges.Count;
+        summarySelectionUpdates = GetPhotoSelectionChangesCount();
     }
 
     // Helper methods for change display
