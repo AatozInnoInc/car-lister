@@ -252,14 +252,22 @@ window.firestore = {
     updateClientInventoryCar: async function (clientId, carJson) {
         try {
             const car = JSON.parse(carJson);
-            // Ensure we have the correct document id and rule-required fields
-            const carId = car.id || car.Id;
+            // Ensure clientId is set correctly for Firestore rules
             car.clientId = clientId;
+            // Use the Firestore document ID (lowercase 'id') as the primary identifier
+            const carId = car.id;
+            if (!carId || carId === '') {
+                throw new Error('Function updateClientInventoryCar: missing car.id');
+            }
+            // Avoid writing id into the document data on update
+            const { id: _omitId, ...updatePayload } = car;
             const db = firebase.firestore();
-            await db.collection('clients').doc(clientId).collection('inventory').doc(carId).update(car);
+            await db.collection('clients').doc(clientId).collection('inventory').doc(carId).update(updatePayload);
             return true;
         } catch (error) {
             console.error('Error updating car in client inventory:', error);
+            console.error('Car data:', carJson);
+            console.error('ClientId:', clientId);
             return false;
         }
     },
