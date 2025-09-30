@@ -20,7 +20,8 @@ public class InventoryService
 
 	private string GetBaseUrl()
 	{
-		return _navigationManager.BaseUri.Contains("localhost") 
+        var baseUri = _navigationManager.BaseUri ?? string.Empty;
+        return (baseUri.Contains("localhost") || baseUri.Contains("127.0.0.1"))
 				? "http://localhost:8000" 
 				: "https://car-lister-api.onrender.com";
 	}
@@ -30,11 +31,7 @@ public class InventoryService
 		try
 		{
 				var baseUrl = GetBaseUrl();
-				_httpClient.BaseAddress = new Uri(baseUrl);
-				_httpClient.DefaultRequestHeaders.Clear();
-				_httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-
-				var response = await _httpClient.PostAsJsonAsync("/api/dealer/inventory", request);
+            var response = await _httpClient.PostAsJsonAsync($"{baseUrl}/api/dealer/inventory", request);
 				
 				if (response.IsSuccessStatusCode)
 				{

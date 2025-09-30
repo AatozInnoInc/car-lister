@@ -111,5 +111,7 @@ namespace car_lister.Models
 
         [JsonPropertyName("id")]
         public string Id { get; set; } = "";
+
+        // Note: Firestore document id is represented by the 'Id' property
     }
 }
