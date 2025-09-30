@@ -356,6 +356,12 @@
         {
             <!-- Step 4: Save changes -->
             <div class="step-content completion">
+                @if (!string.IsNullOrEmpty(saveMessage))
+                {
+                    <div class="alert @(saveMessageType == "success" ? "alert-success" : "alert-error")">
+                        @saveMessage
+                    </div>
+                }
                 <div class="step-header">
                     <h2>Apply Changes</h2>
                     <p>Confirm and save updates to the database</p>
@@ -724,6 +730,9 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
         }
 
         isSaving = true;
+        isSaved = false;
+        saveMessage = "";
+        saveMessageType = "";
         try
         {
             // Adds
@@ -768,12 +777,18 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
 
             // Done
             isSaving = false;
-            NavigationManager.NavigateTo("/reconcile");
+            isSaved = true;
+            saveMessageType = "success";
+            saveMessage = "Changes saved successfully.";
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             isSaving = false;
             Console.WriteLine($"Error applying changes: {ex.Message}");
+            saveMessageType = "error";
+            saveMessage = $"Error saving changes: {ex.Message}";
+            StateHasChanged();
         }
     }
 
@@ -782,6 +797,11 @@ new ProgressBar.StepInfo { Number = 4, Label = "Save" }
         currentStep = 1;
         selectedClientId = "";
         selectedClient = null;
+        isSaving = false;
+        isSaved = false;
+        saveMessage = "";
+        saveMessageType = "";
+        hasRefreshed = false;
         scrapedNow.Clear();
         existingCars.Clear();
         newVehicles.Clear();

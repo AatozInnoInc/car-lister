@@ -756,6 +756,27 @@ select.form-control::-webkit-option:checked {
     margin: 0 auto;
 }
 
+/* Inline alerts for save result */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    text-align: left;
+}
+
+.alert-success {
+    background: rgba(0, 255, 135, 0.1);
+    border-color: rgba(0, 255, 135, 0.3);
+    color: var(--success-color);
+}
+
+.alert-error {
+    background: rgba(255, 107, 107, 0.1);
+    border-color: rgba(255, 107, 107, 0.3);
+    color: var(--error-color);
+}
+
 .success-icon {
     font-size: 4rem;
     color: var(--warning-color);
