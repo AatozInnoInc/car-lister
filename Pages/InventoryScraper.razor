@@ -1,0 +1,419 @@
+@page "/inventory-scraper"
+@using Microsoft.AspNetCore.Authorization
+@using car_lister.Services
+@using car_lister.Models
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject DealerService DealerService
+@inject InventoryService InventoryService
+@attribute [Authorize]
+@implements IDisposable
+
+<PageTitle>Inventory Scraper - Car Lister</PageTitle>
+<link href="css/inventory.css" rel="stylesheet" />
+<script src="js/firestore.js"></script>
+
+<div id="inventory-container" class="inventory-container" @onkeydown="HandleKeyDown" tabindex="0">
+    <div class="header">
+        <button class="btn-back" @onclick="GoBack">
+            <span class="oi oi-arrow-left"></span>
+            Back
+        </button>
+        <h1>Inventory Scraper</h1>
+        <p class="subtitle">Select a dealer to view their inventory</p>
+    </div>
+
+    <div class="search-section">
+        <div class="search-form">
+            <div class="form-group">
+                <label>Dealer</label>
+                <div class="searchable-dropdown @(isDropdownOpen ? "open" : "")" id="searchable-dropdown">
+                    <div class="dropdown-trigger" @onclick="ToggleDropdown">
+                        <span class="selected-text">@(selectedDealer?.Name ?? "Select a dealer")</span>
+                        <span class="oi @(isDropdownOpen ? "oi-chevron-top" : "oi-chevron-bottom")"></span>
+                    </div>
+                    @if (isDropdownOpen)
+                    {
+                        <div class="dropdown-content">
+                            <div class="search-input-container">
+                                <input 
+                                    type="text" 
+                                    @bind="searchTerm" 
+                                    @bind:event="oninput"
+                                    @onkeydown="HandleSearchKeyDown"
+                                    placeholder="Search dealers..."
+                                    class="search-input"
+                                    id="search-input"
+                                />
+                                <span class="oi oi-magnifying-glass search-icon"></span>
+                            </div>
+                            <div class="dropdown-options" id="dropdown-options">
+                                @for (int i = 0; i < filteredDealers.Count; i++)
+                                {
+                                    var dealer = filteredDealers[i];
+                                    var isSelected = availableDealers.IndexOf(dealer) == selectedDealerIndex;
+                                    var isHighlighted = i == highlightedIndex;
+                                    <div 
+                                        class="dropdown-option @(isSelected ? "selected" : "") @(isHighlighted ? "highlighted" : "")"
+                                        @onclick="() => SelectDealer(availableDealers.IndexOf(dealer))"
+                                    >
+                                        @dealer.Name
+                                    </div>
+                                }
+                                @if (!filteredDealers.Any())
+                                {
+                                    <div class="no-results-option">No dealers found</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Inventory Type</label>
+                <select @bind="selectedInventoryType" class="form-control">
+                    <option value="ALL">All (New, Used & Certified)</option>
+                    <option value="NEW">New Only</option>
+                    <option value="USED">Used Only</option>
+                    <option value="NEW_CERTIFIED">New Certified Only</option>
+                </select>
+            </div>
+            <button class="btn-search" @onclick="SearchInventory" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-small"></span>
+                }
+                else
+                {
+                    <span class="oi oi-refresh"></span>
+                }
+                Load Inventory
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading dealer inventory...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-state">
+            <span class="oi oi-warning"></span>
+            <p>@errorMessage</p>
+            <button class="btn-retry" @onclick="SearchInventory">Try Again</button>
+        </div>
+    }
+    else if (searchResults != null && searchResults.Cars.Any())
+    {
+        <div class="results-section">
+            <div class="results-header">
+                <h2>Found @searchResults.Cars.Count cars</h2>
+                <div class="pagination-info">
+                    Page @searchResults.CurrentPage of @searchResults.TotalPages
+                </div>
+            </div>
+
+            <div class="cars-grid">
+                @foreach (var car in searchResults.Cars)
+                {
+                    <div class="car-card" @onclick="() => ViewCarDetails(car)">
+                        <div class="car-image">
+                            @if (car.Images != null && car.Images.Any())
+                            {
+                                <img src="@car.Images[0]" alt="@car.FullTitle" />
+                            }
+                            else
+                            {
+                                <div class="no-image">
+                                    <img src="images/coming-soon-placeholder.svg" alt="Coming Soon" />
+                                </div>
+                            }
+                        </div>
+                        <div class="car-info">
+                            <h3 class="car-title">@car.FullTitle</h3>
+                            <div class="car-price">$@car.Price.ToString("N0")</div>
+                            <div class="car-location">@selectedDealer?.Name</div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (searchResults.TotalPages > 1)
+            {
+                <div class="pagination">
+                    <button class="btn-pagination" @onclick="PreviousPage" disabled="@(searchResults.CurrentPage <= 1)">
+                        <span class="oi oi-chevron-left"></span>
+                        Previous
+                    </button>
+                    <div class="page-info">
+                        Page @searchResults.CurrentPage of @searchResults.TotalPages
+                    </div>
+                    <button class="btn-pagination" @onclick="NextPage" disabled="@(searchResults.CurrentPage >= searchResults.TotalPages)">
+                        Next
+                        <span class="oi oi-chevron-right"></span>
+                    </button>
+                </div>
+            }
+        </div>
+    }
+    else if (hasSearched)
+    {
+        <div class="no-results">
+            <span class="oi oi-search"></span>
+            <h3>No cars found</h3>
+            <p>Try adjusting your search criteria or expanding your search area.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Dealer> availableDealers = new();
+    private int selectedDealerIndex = 0;
+    private Dealer? selectedDealer => availableDealers.Count > selectedDealerIndex ? availableDealers[selectedDealerIndex] : null;
+    private string selectedInventoryType = "ALL";
+    
+    private bool isLoading = false;
+    private string errorMessage = "";
+    private InventorySearchResult? searchResults = null;
+    private bool hasSearched = false;
+    private bool shouldScrollToTop = false;
+    private bool isDropdownOpen = false;
+    private string searchTerm = "";
+    private int highlightedIndex = -1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDealers();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("focusElement", "inventory-container");
+            await JSRuntime.InvokeVoidAsync("addClickOutsideListener", "searchable-dropdown", DotNetObjectReference.Create(this));
+        }
+        
+        if (shouldScrollToTop)
+        {
+            shouldScrollToTop = false;
+            await JSRuntime.InvokeVoidAsync("scrollToResults");
+        }
+    }
+
+    private async Task LoadDealers()
+    {
+        try
+        {
+            availableDealers = await DealerService.GetAllDealersAsync();
+            
+            // Initialize with default dealers if none exist
+            if (!availableDealers.Any())
+            {
+                await DealerService.InitializeDefaultDealersAsync();
+                availableDealers = await DealerService.GetAllDealersAsync();
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dealers: {ex.Message}");
+            // Fallback to empty list
+            availableDealers = new List<Dealer>();
+        }
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/");
+
+    private void OnDealerChanged()
+    {
+        searchResults = null;
+        hasSearched = false;
+        errorMessage = "";
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (searchResults?.TotalPages > 1)
+        {
+            switch (e.Key)
+            {
+                case "ArrowLeft" when searchResults.CurrentPage > 1:
+                    await PreviousPage();
+                    break;
+                case "ArrowRight" when searchResults.CurrentPage < searchResults.TotalPages:
+                    await NextPage();
+                    break;
+            }
+        }
+    }
+
+    private async Task SearchInventory() => await SearchPage(1);
+
+    private async Task PreviousPage()
+    {
+        if (searchResults != null && searchResults.CurrentPage > 1)
+        {
+            await SearchPage(searchResults.CurrentPage - 1);
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (searchResults != null && searchResults.CurrentPage < searchResults.TotalPages)
+        {
+            await SearchPage(searchResults.CurrentPage + 1);
+        }
+    }
+
+    private async Task SearchPage(int pageNumber)
+    {
+        if (selectedDealer == null)
+        {
+            errorMessage = "Please select a dealer";
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+            hasSearched = true;
+            StateHasChanged();
+
+            var request = new InventorySearchRequest
+            {
+                DealerEntityId = selectedDealer.EntityId,
+                DealerName = selectedDealer.Name,
+                DealerUrl = selectedDealer.Url,
+                PageNumber = pageNumber,
+                InventoryType = selectedInventoryType
+            };
+
+            searchResults = await InventoryService.SearchDealerInventoryAsync(request);
+            
+            if (searchResults != null && !searchResults.Success)
+            {
+                errorMessage = searchResults.ErrorMessage ?? "Search failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error searching inventory: {ex.Message}";
+            Console.WriteLine($"Error in SearchPage: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            shouldScrollToTop = searchResults?.Success == true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ViewCarDetails(ScrapedCar car)
+    {
+        if (!string.IsNullOrEmpty(car.OriginalUrl))
+        {
+            await JSRuntime.InvokeVoidAsync("open", car.OriginalUrl, "_blank");
+        }
+    }
+
+    private async Task ToggleDropdown()
+    {
+        isDropdownOpen = !isDropdownOpen;
+        if (isDropdownOpen)
+        {
+            highlightedIndex = -1;
+            await Task.Delay(100);
+            await JSRuntime.InvokeVoidAsync("focusElement", "search-input");
+        }
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Enter":
+                if (highlightedIndex >= 0 && highlightedIndex < filteredDealers.Count)
+                {
+                    SelectDealer(availableDealers.IndexOf(filteredDealers[highlightedIndex]));
+                }
+                else if (filteredDealers.Any())
+                {
+                    SelectDealer(availableDealers.IndexOf(filteredDealers[0]));
+                }
+                else
+                {
+                    isDropdownOpen = false;
+                }
+                break;
+                
+            case "ArrowDown":
+                if (filteredDealers.Any())
+                {
+                    highlightedIndex = Math.Min(highlightedIndex + 1, filteredDealers.Count - 1);
+                    await ScrollToHighlighted();
+                }
+                break;
+                
+            case "ArrowUp":
+                if (filteredDealers.Any())
+                {
+                    highlightedIndex = Math.Max(highlightedIndex - 1, 0);
+                    await ScrollToHighlighted();
+                }
+                break;
+                
+            case "Escape":
+                isDropdownOpen = false;
+                highlightedIndex = -1;
+                StateHasChanged();
+                break;
+        }
+    }
+
+    private async Task ScrollToHighlighted()
+    {
+        StateHasChanged();
+        await Task.Delay(10);
+        await JSRuntime.InvokeVoidAsync("scrollToHighlightedOption", "dropdown-options", highlightedIndex);
+    }
+
+    private List<Dealer> filteredDealers => string.IsNullOrEmpty(searchTerm) 
+        ? availableDealers 
+        : availableDealers.Where(d => d.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private void SelectDealer(int index)
+    {
+        selectedDealerIndex = index;
+        searchTerm = "";
+        isDropdownOpen = false;
+        highlightedIndex = -1;
+        OnDealerChanged();
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnClickOutside()
+    {
+        if (isDropdownOpen)
+        {
+            isDropdownOpen = false;
+            searchTerm = "";
+            highlightedIndex = -1;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose() { }
+
+}
+
+
