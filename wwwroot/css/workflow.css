@@ -1628,6 +1628,21 @@ select.form-control::-webkit-option:checked {
 .status-needs-refresh {
     background: var(--error-color);
     color: var(--text-primary);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-needs-refresh:hover {
+    background: #ff6b6b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);
+}
+
+.status-needs-refresh:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Landing Page Styles */

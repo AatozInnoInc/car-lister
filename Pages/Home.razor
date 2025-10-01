@@ -100,7 +100,11 @@
                                         }
                                         else
                                         {
-                                            <span class="status-badge status-needs-refresh">Needs Refresh</span>
+                                            <button class="status-badge status-needs-refresh"
+                                                    @onclick="() => NavigateToReconcile(client.Id)"
+                                                    title="Go to Daily Actions for this client">
+                                                Needs Refresh
+                                            </button>
                                         }
                                     </div>
                                 </div>
@@ -216,6 +220,18 @@
     private void NavigateToReconcile()
     {
         NavigationManager.NavigateTo("/reconcile");
+    }
+
+    private void NavigateToReconcile(string clientId)
+    {
+        if (!string.IsNullOrWhiteSpace(clientId))
+        {
+            NavigationManager.NavigateTo($"/reconcile?clientId={Uri.EscapeDataString(clientId)}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/reconcile");
+        }
     }
 
     private void NavigateToInventory()
