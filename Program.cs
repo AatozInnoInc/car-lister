@@ -14,6 +14,7 @@ builder.Services.AddScoped<DealerService>();
 builder.Services.AddScoped<CarService>();
 builder.Services.AddScoped<ClientService>();
 builder.Services.AddScoped<InventoryService>();
+builder.Services.AddSingleton<VehicleMetaMapper>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthenticationStateProvider>();
 builder.Services.AddScoped<FirebaseAuthService>();
 builder.Services.AddAuthorizationCore();
