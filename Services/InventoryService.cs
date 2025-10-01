@@ -143,7 +143,6 @@ public class InventoryService
                 return car;
             }
 
-            Console.WriteLine("Hydration: /api/scrape returned success=false or no data");
             return null;
         }
         catch (Exception ex)
@@ -164,7 +163,6 @@ public class InventoryService
                     continue;
                 }
                 var url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl;
-                Console.WriteLine($"Hydration: candidate '{car.FullTitle}', has={car.Images?.Count ?? 0}, url='{url}'");
                 if (string.IsNullOrWhiteSpace(url))
                 {
                     continue;
@@ -177,7 +175,6 @@ public class InventoryService
                     {
                         car.FullTitle = hydrated.FullTitle;
                     }
-                    Console.WriteLine($"Hydration: updated images -> {car.Images.Count}");
                 }
             }
             catch (Exception ex)
