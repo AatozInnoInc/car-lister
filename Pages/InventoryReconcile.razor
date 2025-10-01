@@ -247,7 +247,7 @@
                         @* Inline Photo Picker for photo selection on relevant changes *@
                         // Prefer the existing car instance so Car.Id matches the Firestore document id for selections
                         var carForPicker = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url)
-                            ?? scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
+                        ?? scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
                         if (carForPicker != null)
                         {
                             <div class="car-photo-section">
@@ -343,16 +343,16 @@
                     <div class="summary-details">
                         <h3>Summary</h3>
                         <div class="detail-grid">
-                        <div class="detail-item"><span class="label">New Vehicles:</span><span
-                                class="value">@summaryNewVehicles</span></div>
-                        <div class="detail-item"><span class="label">Sold Vehicles:</span><span
-                                class="value">@summarySoldVehicles</span></div>
-                        <div class="detail-item"><span class="label">Price Updates:</span><span
-                                class="value">@summaryPriceUpdates</span></div>
-                        <div class="detail-item"><span class="label">Photo Updates:</span><span
-                                class="value">@summaryPhotoUpdates</span></div>
-                        <div class="detail-item"><span class="label">Photo Selection Updates:</span><span
-                                class="value">@summarySelectionUpdates</span>
+                            <div class="detail-item"><span class="label">New Vehicles:</span><span
+                                    class="value">@summaryNewVehicles</span></div>
+                            <div class="detail-item"><span class="label">Sold Vehicles:</span><span
+                                    class="value">@summarySoldVehicles</span></div>
+                            <div class="detail-item"><span class="label">Price Updates:</span><span
+                                    class="value">@summaryPriceUpdates</span></div>
+                            <div class="detail-item"><span class="label">Photo Updates:</span><span
+                                    class="value">@summaryPhotoUpdates</span></div>
+                            <div class="detail-item"><span class="label">Photo Selection Updates:</span><span
+                                    class="value">@summarySelectionUpdates</span>
                             </div>
                         </div>
                     </div>
@@ -366,6 +366,10 @@
                     <button class="btn btn-secondary btn-large" @onclick="StartOver" disabled="@isSaving">
                         <span class="oi oi-loop"></span>
                         Start Over
+                    </button>
+                    <button class="btn btn-secondary btn-large" @onclick="NavigateToTlpExport" disabled="@(!isSaved)">
+                        <span class="oi oi-cloud-download"></span>
+                        TLP Export
                     </button>
                 </div>
             </div>
@@ -428,20 +432,20 @@
 
     private void InitializeVehicleMetaFromExisting()
     {
-            vehicleMetaByCarId.Clear();
-            foreach (var car in existingCars)
-            {
-                if (string.IsNullOrWhiteSpace(car.Id)) continue;
-                vehicleMetaByCarId[car.Id] = MetaMapper.MapFromCar(car);
-            }
+        vehicleMetaByCarId.Clear();
+        foreach (var car in existingCars)
+        {
+            if (string.IsNullOrWhiteSpace(car.Id)) continue;
+            vehicleMetaByCarId[car.Id] = MetaMapper.MapFromCar(car);
+        }
     }
 
     private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
-    {
-        new ProgressBar.StepInfo { Number = 1, Label = "Select Client" },
-        new ProgressBar.StepInfo { Number = 2, Label = "Review" },
-        new ProgressBar.StepInfo { Number = 3, Label = "Save" }
-    };
+{
+new ProgressBar.StepInfo { Number = 1, Label = "Select Client" },
+new ProgressBar.StepInfo { Number = 2, Label = "Review" },
+new ProgressBar.StepInfo { Number = 3, Label = "Save" }
+};
 
     protected override async Task OnInitializedAsync()
     {
@@ -969,6 +973,12 @@
         vehicleMetaByCarId.Clear();
 
         StateHasChanged();
+    }
+
+    private void NavigateToTlpExport()
+    {
+        var query = string.IsNullOrWhiteSpace(selectedClientId) ? "" : $"?clientId={Uri.EscapeDataString(selectedClientId)}";
+        NavigationManager.NavigateTo($"/tlp-export{query}");
     }
 
     // Helper methods
