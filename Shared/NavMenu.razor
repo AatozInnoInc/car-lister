@@ -69,6 +69,12 @@
                 </div>
 
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="tlp-export" @onclick="async () => await CollapseNavMenu()">
+                        <span class="oi oi-cloud-download" aria-hidden="true"></span> TLP Export
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
                     <button class="nav-link logout-button"
                         @onclick="async () => { await HandleLogout(); await CollapseNavMenu(); }">
                         <span class="oi oi-account-logout" aria-hidden="true"></span> Logout

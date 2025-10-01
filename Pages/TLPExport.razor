@@ -1,0 +1,442 @@
+@page "/tlp-export"
+@using Microsoft.AspNetCore.Authorization
+@using car_lister.Services
+@using car_lister.Models
+@inject NavigationManager NavigationManager
+@inject ClientService ClientService
+@inject InventoryService InventoryService
+@attribute [Authorize]
+
+<PageTitle>TLP Export - Car Lister</PageTitle>
+<link href="css/workflow.css" rel="stylesheet" />
+<link href="css/addlisting.css" rel="stylesheet" />
+
+<div class="onboarding-container">
+    <div class="header">
+        <button class="btn-back" @onclick="GoBack">
+            <span class="oi oi-arrow-left"></span>
+            Back
+        </button>
+        <h1>TLP Export</h1>
+        <p class="subtitle">Convert enhanced vehicles into TLP format for social posting</p>
+    </div>
+
+    <ProgressBar CurrentStep="currentStep" Steps="progressSteps" />
+
+    <div class="content">
+        @if (isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>@loadingMessage</p>
+            </div>
+        }
+        else
+        {
+            <div class="step-content client-setup">
+                <div class="step-header">
+                    <h2>Select Client</h2>
+                    <p>Choose a client, then prepare the TLP export</p>
+                </div>
+
+                <div class="form-container">
+                    <div class="form-group">
+                        <label for="client-select">Client</label>
+                        <div class="form-control p-0">
+                            <div class="dropdown w-100">
+                                <select id="client-select" class="form-control" @bind="selectedClientId" @bind:after="OnClientSelectionChanged">
+                                    <option value="">Select client</option>
+                                    @foreach (var client in clients)
+                                    {
+                                        var label = $"{client.Name}";
+                                        <option value="@client.Id">@label</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <small class="form-text">Exports will use selected photos and enhanced details when available.</small>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(selectedClientId))
+                    {
+                        var client = clients.FirstOrDefault(c => c.Id == selectedClientId);
+                        if (client != null)
+                        {
+                            <SummaryCard Title="@client.Name" IconClass="oi oi-briefcase" class="mt-1" Details="@GetClientSummaryDetails(client)" />
+                        }
+                    }
+                </div>
+
+                <StepNavigation ShowBackButton="false"
+                                OnNext="PrepareTlpAsync"
+                                NextButtonText="@((isPreparing ? "Preparing..." : (tlpVehicles.Count > 0 ? "Rebuild Export" : "Prepare TLP")))"
+                                IsNextDisabled="@(isPreparing || string.IsNullOrEmpty(selectedClientId))">
+                    @if (tlpVehicles.Count > 0)
+                    {
+                        <button class="btn btn-secondary btn-large ml-1" @onclick="DownloadCsv">
+                            <span class="oi oi-data-transfer-download"></span>
+                            Download CSV
+                        </button>
+                    }
+                </StepNavigation>
+            </div>
+
+            @if (tlpVehicles.Count > 0)
+            {
+                <div class="additional-info-summary mt-1">
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <span class="oi oi-info"></span>
+                            <h3>Export Summary</h3>
+                        </div>
+                        <div class="summary-details">
+                            <div class="detail-item"><span class="label">Vehicles Exported:</span><span class="value">@tlpVehicles.Count</span></div>
+                            <div class="detail-item"><span class="label">Client:</span><span class="value">@selectedClient?.Name</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-1">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Listing ID</th>
+                                <th>Title</th>
+                                <th>Price</th>
+                                <th>Images</th>
+                                <th>Posted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var v in tlpVehicles)
+                            {
+                                <tr>
+                                    <td>@v.ListingId</td>
+                                    <td>@v.Title</td>
+                                    <td>$@v.Price.ToString("N0")</td>
+                                    <td>@v.ImagesPreview</td>
+                                    <td>
+                                        <input type="checkbox" checked="@v.PostedToFacebook" @onchange="(args) => OnPostedToggle(v, args)" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private bool isLoading = false;
+    private string loadingMessage = "";
+    private bool isPreparing = false;
+    private int currentStep = 1;
+
+    private List<Client> clients = new List<Client>();
+    private string selectedClientId = "";
+    private Client? selectedClient = null;
+
+    private List<TlpVehicle> tlpVehicles = new List<TlpVehicle>();
+    private Dictionary<string, bool> postedStatusByListingId = new Dictionary<string, bool>();
+
+    private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
+    {
+        new ProgressBar.StepInfo { Number = 1, Label = "Select & Export" },
+        new ProgressBar.StepInfo { Number = 2, Label = "Done" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        loadingMessage = "Loading clients...";
+        try
+        {
+            clients = await ClientService.GetAllClientsAsync();
+            clients = clients
+                .OrderByDescending(c => c.UpdatedAt)
+                .ToList();
+
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            var clientIdFromQuery = GetQueryParameterValue(uri.Query, "clientId");
+            if (!string.IsNullOrWhiteSpace(clientIdFromQuery))
+            {
+                var match = clients.FirstOrDefault(c => string.Equals(c.Id, clientIdFromQuery, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    selectedClientId = match.Id;
+                    selectedClient = match;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(selectedClientId) && clients.Count > 0)
+            {
+                selectedClientId = clients.First().Id;
+                selectedClient = clients.First();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading clients: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void OnClientSelectionChanged()
+    {
+        selectedClient = clients.FirstOrDefault(c => c.Id == selectedClientId);
+        tlpVehicles.Clear();
+        postedStatusByListingId.Clear();
+        currentStep = 1;
+        StateHasChanged();
+    }
+
+    private async Task PrepareTlpAsync()
+    {
+        if (selectedClient == null)
+        {
+            return;
+        }
+
+        isPreparing = true;
+        tlpVehicles.Clear();
+        StateHasChanged();
+
+        try
+        {
+            var cars = await InventoryService.GetClientInventoryAsync(selectedClient.Id);
+            var ready = cars.Where(IsReadyForTlp).ToList();
+            tlpVehicles = ready.Select(car =>
+            {
+                var v = ToTlpVehicle(car, selectedClient);
+                if (postedStatusByListingId.TryGetValue(v.ListingId, out var posted))
+                {
+                    v.PostedToFacebook = posted;
+                }
+                return v;
+            }).ToList();
+            currentStep = 2;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error preparing TLP: {ex.Message}");
+        }
+        finally
+        {
+            isPreparing = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool IsReadyForTlp(ScrapedCar car)
+    {
+        var hasCore = !string.IsNullOrWhiteSpace(car.Id)
+            && car.Year > 0
+            && !string.IsNullOrWhiteSpace(car.Make)
+            && !string.IsNullOrWhiteSpace(car.Model)
+            && car.Price > 0;
+        return hasCore;
+    }
+
+    private TlpVehicle ToTlpVehicle(ScrapedCar car, Client client)
+    {
+        var images = (car.SelectedPhotoUrls != null && car.SelectedPhotoUrls.Count > 0 ? car.SelectedPhotoUrls : car.Images) ?? new List<string>();
+        var formattedImages = string.Join("|", images
+            .Where(u => !string.IsNullOrWhiteSpace(u) && u.Contains("http", StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.Trim())
+            .Take(10));
+
+        var description = !string.IsNullOrWhiteSpace(car.Description) ? car.Description : BuildBasicDescription(car);
+
+        return new TlpVehicle
+        {
+            Type = "vehicle",
+            Campaign = "cars-com-auto",
+            Platform = "facebook",
+            Title = BuildTitle(car),
+            PostingAs = "business",
+            VehicleType = "car",
+            OfferupCategory = "",
+            OfferupSubcategory = "",
+            Make = car.Make ?? string.Empty,
+            Model = car.Model ?? string.Empty,
+            Year = car.Year,
+            Mileage = car.Mileage,
+            Price = car.Price,
+            BodyStyle = car.BodyStyle ?? string.Empty,
+            ColorExt = car.ExteriorColor ?? string.Empty,
+            ColorInt = car.InteriorColor ?? string.Empty,
+            Condition = string.IsNullOrWhiteSpace(car.Condition) ? "Used" : car.Condition,
+            Fuel = string.IsNullOrWhiteSpace(car.FuelType) ? "Gasoline" : car.FuelType,
+            Transmission = car.Transmission ?? string.Empty,
+            TitleStatus = "clean",
+            Location = string.IsNullOrWhiteSpace(client.Location) ? "Winston-Salem, NC" : client.Location,
+            Description = description,
+            Images = formattedImages,
+            Groups = "main",
+            IncludeMoreAdsLink = true,
+            Id = car.Id ?? string.Empty,
+            ListingId = car.Id ?? string.Empty,
+            PostedToFacebook = false
+        };
+    }
+
+    private string BuildTitle(ScrapedCar car)
+    {
+        var parts = new List<string>();
+        if (car.Year > 0) parts.Add(car.Year.ToString());
+        if (!string.IsNullOrWhiteSpace(car.Make)) parts.Add(car.Make);
+        if (!string.IsNullOrWhiteSpace(car.Model)) parts.Add(car.Model);
+        return parts.Count > 0 ? string.Join(" ", parts) : (string.IsNullOrWhiteSpace(car.FullTitle) ? "Vehicle" : car.FullTitle);
+    }
+
+    private string BuildBasicDescription(ScrapedCar car)
+    {
+        var parts = new List<string>();
+        if (car.Mileage > 0) parts.Add($"{car.Mileage:N0} miles");
+        if (!string.IsNullOrWhiteSpace(car.ExteriorColor)) parts.Add($"{car.ExteriorColor} exterior");
+        if (!string.IsNullOrWhiteSpace(car.InteriorColor)) parts.Add($"{car.InteriorColor} interior");
+        if (!string.IsNullOrWhiteSpace(car.Transmission)) parts.Add(car.Transmission);
+        var details = parts.Count > 0 ? string.Join(", ", parts) + "." : "Great vehicle!";
+        var title = BuildTitle(car);
+        return $"{title}. {details}";
+    }
+
+    private void DownloadCsv()
+    {
+        if (tlpVehicles.Count == 0)
+        {
+            return;
+        }
+
+        var header = new string[]
+        {
+            "type","campaign","platform","title","postingAs","vehicleType","offerupCategory","offerupSubcategory","make","model","year","mileage","price","bodyStyle","colorExt","colorInt","condition","fuel","transmission","titleStatus","location","description","images","groups","includeMoreAdsLink","id","Listing ID","Posted to Facebook"
+        };
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(string.Join(',', header));
+        foreach (var v in tlpVehicles)
+        {
+            var row = new string[]
+            {
+                Csv(v.Type), Csv(v.Campaign), Csv(v.Platform), Csv(v.Title), Csv(v.PostingAs), Csv(v.VehicleType), Csv(v.OfferupCategory), Csv(v.OfferupSubcategory),
+                Csv(v.Make), Csv(v.Model), v.Year.ToString(), v.Mileage.ToString(), v.Price.ToString(), Csv(v.BodyStyle), Csv(v.ColorExt), Csv(v.ColorInt),
+                Csv(v.Condition), Csv(v.Fuel), Csv(v.Transmission), Csv(v.TitleStatus), Csv(v.Location), Csv(v.Description), Csv(v.Images), Csv(v.Groups),
+                v.IncludeMoreAdsLink ? "true" : "false", Csv(v.Id), Csv(v.ListingId), v.PostedToFacebook ? "true" : "false"
+            };
+            sb.AppendLine(string.Join(',', row));
+        }
+
+        var csv = sb.ToString();
+        var fileName = $"tlp-export-{(selectedClient?.Name ?? "client").Replace(' ', '-').ToLower()}-{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
+        var dataUrl = "data:text/csv;charset=utf-8," + Uri.EscapeDataString(csv);
+        NavigationManager.NavigateTo(dataUrl, true);
+    }
+
+    private static string Csv(string? value)
+    {
+        var s = value ?? string.Empty;
+        if (s.Contains('"') || s.Contains(',') || s.Contains('\n'))
+        {
+            s = s.Replace("\"", "\"\"");
+            return $"\"{s}\"";
+        }
+        return s;
+    }
+
+    private void OnPostedToggle(TlpVehicle vehicle, ChangeEventArgs args)
+    {
+        try
+        {
+            bool newValue = vehicle.PostedToFacebook;
+            if (args?.Value is bool b)
+            {
+                newValue = b;
+            }
+            else if (args?.Value is string s)
+            {
+                newValue = s.Equals("true", StringComparison.OrdinalIgnoreCase) || s.Equals("on", StringComparison.OrdinalIgnoreCase);
+            }
+            vehicle.PostedToFacebook = newValue;
+            if (!string.IsNullOrWhiteSpace(vehicle.ListingId))
+            {
+                postedStatusByListingId[vehicle.ListingId] = newValue;
+            }
+        }
+        catch { }
+    }
+
+    private List<SummaryCard.DetailItem> GetClientSummaryDetails(Client client)
+    {
+        var refreshedToday = client.UpdatedAt.Date == DateTime.UtcNow.Date;
+        return new List<SummaryCard.DetailItem>
+        {
+            new SummaryCard.DetailItem { Label = "Last Updated", Value = client.UpdatedAt.ToString("MMM dd, yyyy HH:mm 'UTC'") },
+            new SummaryCard.DetailItem { Label = "Status", Value = refreshedToday ? "Refreshed Today" : "Needs Refresh" }
+        };
+    }
+
+    private static string? GetQueryParameterValue(string queryString, string key)
+    {
+        if (string.IsNullOrWhiteSpace(queryString) || string.IsNullOrWhiteSpace(key)) return null;
+        if (queryString.StartsWith("?")) queryString = queryString.Substring(1);
+        var parts = queryString.Split('&', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var part in parts)
+        {
+            var kv = part.Split('=', 2);
+            var k = Uri.UnescapeDataString(kv[0]);
+            if (string.Equals(k, key, StringComparison.OrdinalIgnoreCase))
+            {
+                var v = kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : string.Empty;
+                return v;
+            }
+        }
+        return "";
+    }
+
+    private class TlpVehicle
+    {
+        public string Type { get; set; } = "vehicle";
+        public string Campaign { get; set; } = "cars-com-auto";
+        public string Platform { get; set; } = "facebook";
+        public string Title { get; set; } = "";
+        public string PostingAs { get; set; } = "business";
+        public string VehicleType { get; set; } = "car";
+        public string OfferupCategory { get; set; } = "";
+        public string OfferupSubcategory { get; set; } = "";
+        public string Make { get; set; } = "";
+        public string Model { get; set; } = "";
+        public int Year { get; set; }
+        public int Mileage { get; set; }
+        public double Price { get; set; }
+        public string BodyStyle { get; set; } = "";
+        public string ColorExt { get; set; } = "";
+        public string ColorInt { get; set; } = "";
+        public string Condition { get; set; } = "Used";
+        public string Fuel { get; set; } = "Gasoline";
+        public string Transmission { get; set; } = "";
+        public string TitleStatus { get; set; } = "clean";
+        public string Location { get; set; } = "Winston-Salem, NC";
+        public string Description { get; set; } = "";
+        public string Images { get; set; } = "";
+        public string Groups { get; set; } = "main";
+        public bool IncludeMoreAdsLink { get; set; } = true;
+        public string Id { get; set; } = "";
+        public string ListingId { get; set; } = "";
+        public bool PostedToFacebook { get; set; } = false;
+
+        public string ImagesPreview => string.IsNullOrWhiteSpace(Images) ? "0" : Images.Split('|').Length.ToString();
+    }
+}
+
+
