@@ -437,13 +437,26 @@
             .OrderByDescending(c => c.UpdatedAt)
             .ToList();
 
-            // Preselect first client if available and auto-run refresh
-            if (clients.Count > 0)
+            // Try to preselect from querystring: /reconcile?clientId=...
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            var clientIdFromQuery = GetQueryParameterValue(uri.Query, "clientId");
+            if (!string.IsNullOrWhiteSpace(clientIdFromQuery))
+            {
+                var match = clients.FirstOrDefault(c => string.Equals(c.Id, clientIdFromQuery, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    selectedClientId = match.Id;
+                    selectedClient = match;
+                }
+            }
+
+            // Fallback: preselect first client if none selected
+            if (string.IsNullOrWhiteSpace(selectedClientId) && clients.Count > 0)
             {
                 selectedClientId = clients.First().Id;
                 selectedClient = clients.First();
-                StateHasChanged();
             }
+                StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -684,6 +697,24 @@
         var setA = new HashSet<string>(a ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
         var setB = new HashSet<string>(b ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
         return setA.SetEquals(setB);
+    }
+
+    private static string? GetQueryParameterValue(string queryString, string key)
+    {
+        if (string.IsNullOrWhiteSpace(queryString) || string.IsNullOrWhiteSpace(key)) return null;
+        if (queryString.StartsWith("?")) queryString = queryString.Substring(1);
+        var parts = queryString.Split('&', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var part in parts)
+        {
+            var kv = part.Split('=', 2);
+            var k = Uri.UnescapeDataString(kv[0]);
+            if (string.Equals(k, key, StringComparison.OrdinalIgnoreCase))
+            {
+                var v = kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : string.Empty;
+                return v;
+            }
+        }
+        return "";
     }
 
     private string GetCarUrlKey(ScrapedCar car)
