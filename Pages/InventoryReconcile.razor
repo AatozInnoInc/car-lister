@@ -269,6 +269,11 @@
                                     </div>
                                 </div>
 
+                                @{
+                                    var meta = GetVehicleMeta(carForPicker);
+                                }
+                                <VehicleMetaEditor Meta="@meta" Car="@carForPicker" ShowOriginalBadges="false" />
+
                                 <PhotoPicker Car="@carForPicker" Title="@($"Select Photos — {carForPicker.FullTitle}")"
                                     SelectedPhotos="@selectedPhotos" SelectedPhotosChanged="@OnSelectedPhotosChanged"
                                     ShowNavigation="false" />
@@ -405,6 +410,8 @@
     // Photo selection state
     private Dictionary<string, List<string>> selectedPhotos = new Dictionary<string, List<string>>();
 
+    private Dictionary<string, VehicleMeta> vehicleMetaByCarId = new Dictionary<string, VehicleMeta>();
+
     private void InitializeSelectedPhotosFromExisting()
     {
         selectedPhotos.Clear();
@@ -417,6 +424,16 @@
                 selectedPhotos[carId] = new List<string>(car.SelectedPhotoUrls);
         }
         StateHasChanged();
+    }
+
+    private void InitializeVehicleMetaFromExisting()
+    {
+            vehicleMetaByCarId.Clear();
+            foreach (var car in existingCars)
+            {
+                if (string.IsNullOrWhiteSpace(car.Id)) continue;
+                vehicleMetaByCarId[car.Id] = MetaMapper.MapFromCar(car);
+            }
     }
 
     private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
@@ -456,7 +473,7 @@
                 selectedClientId = clients.First().Id;
                 selectedClient = clients.First();
             }
-                StateHasChanged();
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -565,6 +582,7 @@
             existingCars = await InventoryService.GetClientInventoryAsync(selectedClient.Id);
 
             InitializeSelectedPhotosFromExisting();
+            InitializeVehicleMetaFromExisting();
 
             ComputeDiffs();
 
@@ -799,6 +817,17 @@
         int skippedUpdates = 0;
         try
         {
+            // Apply meta overrides to new vehicles if present before adding
+            foreach (var car in newVehicles)
+            {
+                var meta = TryGetVehicleMeta(car.Id, car);
+                if (meta != null)
+                {
+                    car.ExteriorColor = string.IsNullOrWhiteSpace(meta.ExteriorColor) ? car.ExteriorColor : meta.ExteriorColor;
+                    car.InteriorColor = string.IsNullOrWhiteSpace(meta.InteriorColor) ? car.InteriorColor : meta.InteriorColor;
+                    car.BodyStyle = string.IsNullOrWhiteSpace(meta.BodyStyle) ? car.BodyStyle : meta.BodyStyle;
+                }
+            }
             // Adds
             if (newVehicles.Count > 0)
             {
@@ -813,6 +842,12 @@
                 {
                     // Merge in existing selected photos to avoid wiping
                     newCar.SelectedPhotoUrls = oldCar.SelectedPhotoUrls ?? new List<string>();
+                    // Merge vehicle-level meta
+                    var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+                    if (meta != null)
+                    {
+                        MetaMapper.ApplyMetaToCar(newCar, meta);
+                    }
                     // Use the Firestore document ID for updates
                     newCar.Id = oldCar.Id;
                     await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
@@ -828,6 +863,12 @@
                 // Only update if photos are actually different
                 if (!PhotosEqual(oldCar.Images, newCar.Images))
                 {
+                    // Merge vehicle-level meta
+                    var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+                    if (meta != null)
+                    {
+                        MetaMapper.ApplyMetaToCar(newCar, meta);
+                    }
                     // Use the Firestore document ID for updates
                     newCar.Id = oldCar.Id;
                     await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
@@ -861,6 +902,12 @@
 
                 // Persist selection change (including clearing selections)
                 car.SelectedPhotoUrls = newSelectedPhotos;
+                // Apply vehicle-level meta if changed
+                var metaSel = TryGetVehicleMeta(car.Id, car);
+                if (metaSel != null)
+                {
+                    car = MetaMapper.ApplyMetaToCar(car, metaSel);
+                }
                 await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, car);
             }
 
@@ -919,6 +966,7 @@
         currentChangeIndex = 0;
         reviewMode = "summary";
         selectedPhotos.Clear();
+        vehicleMetaByCarId.Clear();
 
         StateHasChanged();
     }
@@ -1086,5 +1134,37 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
                 NewPhotos = car.Images
             };
         }
+    }
+}
+
+@code {
+    [Inject] private VehicleMetaMapper MetaMapper { get; set; } = new VehicleMetaMapper();
+
+    private VehicleMeta GetVehicleMeta(ScrapedCar car)
+    {
+        var id = car.Id;
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            id = car.Id = string.IsNullOrEmpty(car.Id) ? Guid.NewGuid().ToString() : car.Id;
+        }
+        if (!vehicleMetaByCarId.TryGetValue(id, out var meta))
+        {
+            meta = MetaMapper.MapFromCar(car);
+            vehicleMetaByCarId[id] = meta;
+        }
+        return meta;
+    }
+
+    private VehicleMeta? TryGetVehicleMeta(string carId, ScrapedCar fallbackCar)
+    {
+        if (string.IsNullOrWhiteSpace(carId)) return null;
+        if (vehicleMetaByCarId.TryGetValue(carId, out var meta)) return meta;
+        if (fallbackCar != null)
+        {
+            var constructed = MetaMapper.MapFromCar(fallbackCar);
+            vehicleMetaByCarId[carId] = constructed;
+            return constructed;
+        }
+        return null;
     }
 }
