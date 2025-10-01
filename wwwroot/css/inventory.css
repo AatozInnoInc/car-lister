@@ -9,17 +9,17 @@
 }
 
 /* Header Section */
-.header {
+.inventory-container .header {
     text-align: center;
     margin-bottom: 3rem;
     position: relative;
 }
 
-.btn-back {
+.inventory-container .btn-back {
     position: absolute;
     left: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0.25rem;
+    transform: none;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
@@ -33,12 +33,12 @@
     gap: 0.5rem;
 }
 
-.btn-back:hover {
+.inventory-container .btn-back:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-50%) scale(1.05);
+    transform: scale(1.03);
 }
 
-.header h1 {
+.inventory-container .header h1 {
     font-size: 3rem;
     margin-bottom: 0.5rem;
     background: linear-gradient(120deg, #00ff87 0%, #60efff 100%);
@@ -47,18 +47,18 @@
     background-clip: text;
 }
 
-.subtitle {
+.inventory-container .subtitle {
     font-size: 1.2rem;
     color: #a0a0a0;
     margin: 0;
 }
 
 /* Search Section */
-.search-section {
+.inventory-container .search-section {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 1.5rem;
     padding: 2rem;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
@@ -140,6 +140,7 @@
     justify-content: space-between;
     align-items: center;
     min-height: 3rem;
+    border-radius: 0.5rem;
 }
 
 .dropdown-trigger:hover {
@@ -162,8 +163,8 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(26, 26, 46, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(22, 28, 44, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 0.75rem;
     margin-top: 0.5rem;
     backdrop-filter: blur(20px);
@@ -171,6 +172,7 @@
     max-height: 300px;
     overflow: hidden;
     animation: dropdownSlide 0.2s ease-out;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes dropdownSlide {
@@ -178,6 +180,7 @@
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -187,7 +190,7 @@
 .search-input-container {
     position: relative;
     padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .search-input {
@@ -217,7 +220,7 @@
     color: white;
     cursor: pointer;
     transition: all 0.2s ease;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -349,8 +352,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-state p {
@@ -389,11 +397,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 1rem;
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .results-header h2 {
@@ -415,19 +424,20 @@
 }
 
 .car-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(18, 22, 35, 0.7);
     border-radius: 1rem;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .car-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    border-color: rgba(0, 255, 135, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border-color: rgba(109, 213, 237, 0.2);
+    background: rgba(20, 26, 40, 0.78);
 }
 
 .car-image {
@@ -446,13 +456,13 @@
 
 .car-card:hover .car-image img,
 .car-card:hover .no-image img {
-    transform: scale(1.05);
+    transform: scale(1.01);
 }
 
 .no-image {
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -461,13 +471,13 @@
 }
 
 .car-info {
-    padding: 1.5rem;
+    padding: 1.25rem 1.25rem 0.75rem 1.25rem;
 }
 
 .car-title {
     margin: 0 0 0.5rem 0;
     font-size: 1.2rem;
-    color: #e0e0e0;
+    color: #e9edf1;
     line-height: 1.3;
 }
 
@@ -479,7 +489,7 @@
 }
 
 .car-location {
-    color: #a0a0a0;
+    color: #b8c1cc;
     font-size: 0.9rem;
 }
 
@@ -546,12 +556,38 @@
     font-size: 1.1rem;
 }
 
+/* Inventory tile details and actions */
+.car-details {
+    padding: 0 1.25rem 0.75rem 1.25rem;
+}
+
+.car-details .detail-row {
+    padding-left: 0.25rem;
+    margin: 0.15rem 0;
+    color: #c9d1db;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem 1.25rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-actions .btn {
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -563,36 +599,36 @@
     .inventory-container {
         padding: 1rem;
     }
-    
+
     .header h1 {
         font-size: 2rem;
     }
-    
+
     .search-form {
         grid-template-columns: 1fr;
     }
-    
+
     .cars-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .results-header {
         flex-direction: column;
         gap: 1rem;
         text-align: center;
     }
-    
+
     .pagination {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .btn-back {
         position: relative;
         transform: none;
         margin-bottom: 1rem;
     }
-    
+
     /* Mobile dropdown improvements */
     .dropdown-content {
         position: fixed;
@@ -603,7 +639,7 @@
         max-height: 70vh;
         z-index: 9999;
     }
-    
+
     .dropdown-options {
         max-height: 50vh;
     }
@@ -613,12 +649,12 @@
     .header h1 {
         font-size: 1.5rem;
     }
-    
+
     .search-section {
         padding: 1.5rem;
     }
-    
+
     .car-card {
         margin: 0 0.5rem;
     }
-} 
+}
