@@ -1,0 +1,58 @@
+@using car_lister.Models
+@using car_lister.Services
+@inject VehicleMetaMapper Mapper
+
+<div class="summary-card mt-1">
+    <div class="summary-header">
+        <span class="oi oi-brush"></span>
+        <h3>Facebook Marketplace Details</h3>
+    </div>
+    <div class="summary-details">
+        <div class="detail-item" style="display:flex; gap: 1rem; flex-wrap: wrap; align-items:center;">
+            <div class="form-group" style="min-width:220px;">
+                <label>Exterior Color</label>
+                <select class="form-control" @bind="Meta.ExteriorColor">
+                    <option value="">Select exterior color...</option>
+                    @foreach (var c in VehicleMetaMapper.FacebookColors)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group" style="min-width:220px;">
+                <label>Interior Color</label>
+                <select class="form-control" @bind="Meta.InteriorColor">
+                    <option value="">Select interior color...</option>
+                    @foreach (var c in VehicleMetaMapper.FacebookColors)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group" style="min-width:220px;">
+                <label>Body Style</label>
+                <select class="form-control" @bind="Meta.BodyStyle">
+                    <option value="">Select body style...</option>
+                    @foreach (var s in VehicleMetaMapper.BodyStyles)
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <small class="form-text">These apply to all photos for this vehicle.</small>
+    </div>
+    @if (ShowOriginalBadges && Car != null)
+    {
+        <div class="summary-details" style="margin-top: 0.5rem;">
+            <small class="form-text">Current scraped: ext <strong>@Car.ExteriorColor</strong>, int <strong>@Car.InteriorColor</strong>, body <strong>@Car.BodyStyle</strong></small>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public VehicleMeta Meta { get; set; } = new VehicleMeta();
+    [Parameter] public ScrapedCar? Car { get; set; }
+    [Parameter] public bool ShowOriginalBadges { get; set; } = false;
+}
+
