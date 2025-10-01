@@ -209,17 +209,6 @@ window.firestore = {
                     id: doc.id
                 };
 
-                // Add logging to debug image data from Firestore
-                console.log(`Firestore - Car: ${carData.fullTitle || 'Unknown'}`);
-                console.log(`Firestore - Images count: ${carData.images?.length || 0}`);
-                if (carData.images && carData.images.length > 0) {
-                    console.log(`Firestore - First image: ${carData.images[0]}`);
-                    if (carData.images.length > 1) {
-                        console.log(`Firestore - Second image: ${carData.images[1]}`);
-                        console.log(`Firestore - Total images: ${carData.images.length}`);
-                    }
-                }
-
                 cars.push(carData);
             });
             return JSON.stringify(cars);
