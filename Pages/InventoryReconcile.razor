@@ -113,6 +113,8 @@
                                     class="value">@priceChanges.Count</span></div>
                             <div class="detail-item"><span class="label">Photo Changes:</span><span
                                     class="value">@photoChanges.Count</span></div>
+                            <div class="detail-item"><span class="label">Metadata Changes:</span><span
+                                    class="value">@metadataChanges.Count</span></div>
                             <div class="detail-item"><span class="label">Photo Selection Needed:</span><span
                                     class="value">@allChanges.Count(c => c.ChangeType == "Photo Selection Needed")</span>
                             </div>
@@ -157,6 +159,10 @@
                                 else if (change.ChangeType == "Photo Selection Needed")
                                 {
                                     <span class="action-badge action-badge-select">SELECT</span>
+                                }
+                                else if (change.ChangeType == "Metadata Change")
+                                {
+                                    <span class="action-badge action-badge-select">SPECIFY</span>
                                 }
                             </div>
                             <div class="summary-details">
@@ -238,6 +244,19 @@
                                             class="value text-danger font-weight-bold">No photos selected</span></div>
                                     <div class="detail-item"><span class="label">Action:</span><span
                                             class="value text-info font-weight-bold">📸 Select photos</span></div>
+                                    <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
+                                                target="_blank" rel="noopener noreferrer">View listing</a></span></div>
+                                }
+                                else if (change.ChangeType == "Metadata Change")
+                                {
+                                    <div class="detail-item"><span class="label">Exterior Color:</span><span
+                                            class="value">@(string.IsNullOrWhiteSpace(change.OldExteriorColor) ? "❌ Not specified" : change.OldExteriorColor)</span></div>
+                                    <div class="detail-item"><span class="label">Interior Color:</span><span
+                                            class="value">@(string.IsNullOrWhiteSpace(change.OldInteriorColor) ? "❌ Not specified" : change.OldInteriorColor)</span></div>
+                                    <div class="detail-item"><span class="label">Body Style:</span><span
+                                            class="value">@(string.IsNullOrWhiteSpace(change.OldBodyStyle) ? "❌ Not specified" : change.OldBodyStyle)</span></div>
+                                    <div class="detail-item"><span class="label">Action:</span><span
+                                            class="value text-info font-weight-bold">📝 Specify metadata</span></div>
                                     <div class="detail-item"><span class="label">URL:</span><span class="value"><a href="@change.Url"
                                                 target="_blank" rel="noopener noreferrer">View listing</a></span></div>
                                 }
@@ -351,6 +370,8 @@
                                     class="value">@summaryPriceUpdates</span></div>
                             <div class="detail-item"><span class="label">Photo Updates:</span><span
                                     class="value">@summaryPhotoUpdates</span></div>
+                            <div class="detail-item"><span class="label">Metadata Updates:</span><span
+                                    class="value">@summaryMetadataUpdates</span></div>
                             <div class="detail-item"><span class="label">Photo Selection Updates:</span><span
                                     class="value">@summarySelectionUpdates</span>
                             </div>
@@ -392,6 +413,7 @@
     private int summarySoldVehicles = 0;
     private int summaryPriceUpdates = 0;
     private int summaryPhotoUpdates = 0;
+    private int summaryMetadataUpdates = 0;
     private int summarySelectionUpdates = 0;
 
     private List<Client> clients = new List<Client>();
@@ -406,6 +428,7 @@
     private List<ScrapedCar> soldVehicles = new List<ScrapedCar>();
     private List<(ScrapedCar OldCar, ScrapedCar NewCar)> priceChanges = new List<(ScrapedCar, ScrapedCar)>();
     private List<(ScrapedCar OldCar, ScrapedCar NewCar)> photoChanges = new List<(ScrapedCar, ScrapedCar)>();
+    private List<(ScrapedCar OldCar, ScrapedCar NewCar)> metadataChanges = new List<(ScrapedCar, ScrapedCar)>();
 
     private List<ChangeItem> allChanges = new List<ChangeItem>();
     private int currentChangeIndex = 0;
@@ -441,11 +464,11 @@
     }
 
     private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
-{
-new ProgressBar.StepInfo { Number = 1, Label = "Select Client" },
-new ProgressBar.StepInfo { Number = 2, Label = "Review" },
-new ProgressBar.StepInfo { Number = 3, Label = "Save" }
-};
+    {
+        new ProgressBar.StepInfo { Number = 1, Label = "Select Client" },
+        new ProgressBar.StepInfo { Number = 2, Label = "Review" },
+        new ProgressBar.StepInfo { Number = 3, Label = "Save" }
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -455,8 +478,8 @@ new ProgressBar.StepInfo { Number = 3, Label = "Save" }
         {
             clients = await ClientService.GetAllClientsAsync();
             clients = clients
-            .OrderByDescending(c => c.UpdatedAt)
-            .ToList();
+                .OrderByDescending(c => c.UpdatedAt)
+                .ToList();
 
             // Try to preselect from querystring: /reconcile?clientId=...
             var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
@@ -624,6 +647,7 @@ new ProgressBar.StepInfo { Number = 3, Label = "Save" }
         soldVehicles.Clear();
         priceChanges.Clear();
         photoChanges.Clear();
+        metadataChanges.Clear();
         allChanges.Clear();
         currentChangeIndex = 0;
         reviewMode = "summary";
@@ -676,6 +700,13 @@ new ProgressBar.StepInfo { Number = 3, Label = "Save" }
                 photoChanges.Add((old, now));
                 allChanges.Add(ChangeItem.PhotoChange(old, now));
             }
+
+            // Check for metadata changes - either missing metadata or user has changed it
+            if (HasMetadataChanges(old, now))
+            {
+                metadataChanges.Add((old, now));
+                allChanges.Add(ChangeItem.MetadataChange(old, now));
+            }
         }
 
         // Cars that exist in DB but have no selected photos (need photo selection)
@@ -719,6 +750,23 @@ new ProgressBar.StepInfo { Number = 3, Label = "Save" }
         var setA = new HashSet<string>(a ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
         var setB = new HashSet<string>(b ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
         return setA.SetEquals(setB);
+    }
+
+    private static bool VehicleMetadataEqual(ScrapedCar a, ScrapedCar b)
+    {
+        return string.Equals(a.ExteriorColor ?? "", b.ExteriorColor ?? "", StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(a.InteriorColor ?? "", b.InteriorColor ?? "", StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(a.BodyStyle ?? "", b.BodyStyle ?? "", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasMetadataChanges(ScrapedCar oldCar, ScrapedCar newCar)
+    {
+        // Only detect cars that are MISSING metadata (empty or null) - these need user input
+        bool hasMissingMetadata = string.IsNullOrWhiteSpace(oldCar.ExteriorColor) || 
+                                 string.IsNullOrWhiteSpace(oldCar.InteriorColor) || 
+                                 string.IsNullOrWhiteSpace(oldCar.BodyStyle);
+
+        return hasMissingMetadata;
     }
 
     private static string? GetQueryParameterValue(string queryString, string key)
@@ -884,6 +932,27 @@ new ProgressBar.StepInfo { Number = 3, Label = "Save" }
                 }
             }
 
+            foreach (var (oldCar, newCar) in metadataChanges)
+            {
+                // Only update if metadata is actually different
+                if (!VehicleMetadataEqual(oldCar, newCar))
+                {
+                    // Merge vehicle-level meta
+                    var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+                    if (meta != null)
+                        MetaMapper.ApplyMetaToCar(newCar, meta);
+
+                    // Use the Firestore document ID for updates
+                    newCar.Id = oldCar.Id;
+                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                }
+                else
+                {
+                    skippedUpdates++;
+                    Console.WriteLine($"Skipping metadata update for {newCar.FullTitle} - metadata is identical");
+                }
+            }
+
             // Photo selections (cars that needed photo selection)
             foreach (var carId in selectedPhotos.Keys)
             {
@@ -959,6 +1028,7 @@ new ProgressBar.StepInfo { Number = 3, Label = "Save" }
         summarySoldVehicles = 0;
         summaryPriceUpdates = 0;
         summaryPhotoUpdates = 0;
+        summaryMetadataUpdates = 0;
         summarySelectionUpdates = 0;
         scrapedNow.Clear();
         existingCars.Clear();
@@ -966,6 +1036,7 @@ new ProgressBar.StepInfo { Number = 3, Label = "Save" }
         soldVehicles.Clear();
         priceChanges.Clear();
         photoChanges.Clear();
+        metadataChanges.Clear();
         allChanges.Clear();
         currentChangeIndex = 0;
         reviewMode = "summary";
@@ -1034,6 +1105,7 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         summarySoldVehicles = soldVehicles.Count;
         summaryPriceUpdates = priceChanges.Count;
         summaryPhotoUpdates = photoChanges.Count;
+        summaryMetadataUpdates = metadataChanges.Count;
         summarySelectionUpdates = GetPhotoSelectionChangesCount();
     }
 
@@ -1046,6 +1118,7 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
             "New Vehicle" => "change-card-add",
             "Price Change" => "change-card-update",
             "Photo Change" => "change-card-update",
+            "Metadata Change" => "change-card-select",
             "Photo Selection Needed" => "change-card-select",
             _ => ""
         };
@@ -1059,6 +1132,7 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
             "New Vehicle" => "change-header-add",
             "Price Change" => "change-header-update",
             "Photo Change" => "change-header-update",
+            "Metadata Change" => "change-header-select",
             "Photo Selection Needed" => "change-header-select",
             _ => ""
         };
@@ -1072,6 +1146,7 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
             "New Vehicle" => "oi oi-plus text-success",
             "Price Change" => "oi oi-dollar text-warning",
             "Photo Change" => "oi oi-image text-warning",
+            "Metadata Change" => "oi oi-brush text-info",
             "Photo Selection Needed" => "oi oi-camera text-info",
             _ => "oi oi-info"
         };
@@ -1081,13 +1156,19 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
 @code {
     private class ChangeItem
     {
-        public string ChangeType { get; set; } = ""; // New Vehicle, Sold Vehicle, Price Change, Photo Change
+        public string ChangeType { get; set; } = ""; // New Vehicle, Sold Vehicle, Price Change, Photo Change, Metadata Change
         public string Title { get; set; } = "";
         public string Url { get; set; } = "";
         public double? OldPrice { get; set; }
         public double? NewPrice { get; set; }
         public List<string>? OldPhotos { get; set; }
         public List<string>? NewPhotos { get; set; }
+        public string? OldExteriorColor { get; set; }
+        public string? NewExteriorColor { get; set; }
+        public string? OldInteriorColor { get; set; }
+        public string? NewInteriorColor { get; set; }
+        public string? OldBodyStyle { get; set; }
+        public string? NewBodyStyle { get; set; }
 
         public static ChangeItem NewVehicle(ScrapedCar car)
         {
@@ -1142,6 +1223,22 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
                 Url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl,
                 OldPhotos = car.Images,
                 NewPhotos = car.Images
+            };
+        }
+
+        public static ChangeItem MetadataChange(ScrapedCar oldCar, ScrapedCar newCar)
+        {
+            return new ChangeItem
+            {
+                ChangeType = "Metadata Change",
+                Title = newCar.FullTitle,
+                Url = string.IsNullOrWhiteSpace(newCar.OriginalUrl) ? newCar.ListingUrl : newCar.OriginalUrl,
+                OldExteriorColor = oldCar.ExteriorColor,
+                NewExteriorColor = newCar.ExteriorColor,
+                OldInteriorColor = oldCar.InteriorColor,
+                NewInteriorColor = newCar.InteriorColor,
+                OldBodyStyle = oldCar.BodyStyle,
+                NewBodyStyle = newCar.BodyStyle
             };
         }
     }
