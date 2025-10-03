@@ -892,22 +892,24 @@
                 // Only update if there's actually a price difference
                 if (Math.Abs(newCar.Price - oldCar.Price) > 0.01)
                 {
-                    // Merge in existing selected photos to avoid wiping
-                    newCar.SelectedPhotoUrls = oldCar.SelectedPhotoUrls ?? new List<string>();
-                    // Merge vehicle-level meta
+                    // IMPORTANT: Only update the price, preserve all other existing data
+                    oldCar.Price = newCar.Price;
+                    
+                    // Also merge any user-specified metadata changes
                     var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
                     if (meta != null)
                     {
-                        MetaMapper.ApplyMetaToCar(newCar, meta);
+                        if (!string.IsNullOrWhiteSpace(meta.ExteriorColor)) oldCar.ExteriorColor = meta.ExteriorColor;
+                        if (!string.IsNullOrWhiteSpace(meta.InteriorColor)) oldCar.InteriorColor = meta.InteriorColor;
+                        if (!string.IsNullOrWhiteSpace(meta.BodyStyle)) oldCar.BodyStyle = meta.BodyStyle;
                     }
-                    // Use the Firestore document ID for updates
-                    newCar.Id = oldCar.Id;
-                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                    
+                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, oldCar);
                 }
                 else
                 {
                     skippedUpdates++;
-                    Console.WriteLine($"Skipping price update for {newCar.FullTitle} - no significant price change");
+                    Console.WriteLine($"Skipping price update for {oldCar.FullTitle} - no significant price change");
                 }
             }
             foreach (var (oldCar, newCar) in photoChanges)
@@ -915,41 +917,58 @@
                 // Only update if photos are actually different
                 if (!PhotosEqual(oldCar.Images, newCar.Images))
                 {
-                    // Merge vehicle-level meta
+                    // IMPORTANT: Only update the images, preserve all other existing data
+                    oldCar.Images = newCar.Images;
+                    
+                    // Also merge any user-specified metadata changes
                     var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
                     if (meta != null)
                     {
-                        MetaMapper.ApplyMetaToCar(newCar, meta);
+                        if (!string.IsNullOrWhiteSpace(meta.ExteriorColor)) oldCar.ExteriorColor = meta.ExteriorColor;
+                        if (!string.IsNullOrWhiteSpace(meta.InteriorColor)) oldCar.InteriorColor = meta.InteriorColor;
+                        if (!string.IsNullOrWhiteSpace(meta.BodyStyle)) oldCar.BodyStyle = meta.BodyStyle;
                     }
-                    // Use the Firestore document ID for updates
-                    newCar.Id = oldCar.Id;
-                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                    
+                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, oldCar);
                 }
                 else
                 {
                     skippedUpdates++;
-                    Console.WriteLine($"Skipping photo update for {newCar.FullTitle} - photos are identical");
+                    Console.WriteLine($"Skipping photo update for {oldCar.FullTitle} - photos are identical");
                 }
             }
 
             foreach (var (oldCar, newCar) in metadataChanges)
             {
-                // Only update if metadata is actually different
-                if (!VehicleMetadataEqual(oldCar, newCar))
+                // Get the user-specified metadata from the editor
+                var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+                if (meta != null)
                 {
-                    // Merge vehicle-level meta
-                    var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
-                    if (meta != null)
-                        MetaMapper.ApplyMetaToCar(newCar, meta);
-
-                    // Use the Firestore document ID for updates
-                    newCar.Id = oldCar.Id;
-                    await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, newCar);
+                    // Check if user has actually specified metadata (any non-empty value)
+                    bool hasUserSpecifiedMetadata = !string.IsNullOrWhiteSpace(meta.ExteriorColor) ||
+                                                   !string.IsNullOrWhiteSpace(meta.InteriorColor) ||
+                                                   !string.IsNullOrWhiteSpace(meta.BodyStyle);
+                    
+                    if (hasUserSpecifiedMetadata)
+                    {
+                        // IMPORTANT: Update the EXISTING car to preserve all data (selected photos, etc.)
+                        // Only update the metadata fields
+                        if (!string.IsNullOrWhiteSpace(meta.ExteriorColor)) oldCar.ExteriorColor = meta.ExteriorColor;
+                        if (!string.IsNullOrWhiteSpace(meta.InteriorColor)) oldCar.InteriorColor = meta.InteriorColor;
+                        if (!string.IsNullOrWhiteSpace(meta.BodyStyle)) oldCar.BodyStyle = meta.BodyStyle;
+                        
+                        await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, oldCar);
+                    }
+                    else
+                    {
+                        skippedUpdates++;
+                        Console.WriteLine($"Skipping metadata update for {oldCar.FullTitle} - no metadata specified by user");
+                    }
                 }
                 else
                 {
                     skippedUpdates++;
-                    Console.WriteLine($"Skipping metadata update for {newCar.FullTitle} - metadata is identical");
+                    Console.WriteLine($"Skipping metadata update for {oldCar.FullTitle} - no metadata found");
                 }
             }
 
@@ -973,14 +992,18 @@
                     continue;
                 }
 
-                // Persist selection change (including clearing selections)
+                // IMPORTANT: Only update selected photos, preserve all other existing data
                 car.SelectedPhotoUrls = newSelectedPhotos;
-                // Apply vehicle-level meta if changed
+                
+                // Also apply any user-specified metadata changes
                 var metaSel = TryGetVehicleMeta(car.Id, car);
                 if (metaSel != null)
                 {
-                    car = MetaMapper.ApplyMetaToCar(car, metaSel);
+                    if (!string.IsNullOrWhiteSpace(metaSel.ExteriorColor)) car.ExteriorColor = metaSel.ExteriorColor;
+                    if (!string.IsNullOrWhiteSpace(metaSel.InteriorColor)) car.InteriorColor = metaSel.InteriorColor;
+                    if (!string.IsNullOrWhiteSpace(metaSel.BodyStyle)) car.BodyStyle = metaSel.BodyStyle;
                 }
+                
                 await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, car);
             }
 
@@ -1099,13 +1122,35 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         return changes;
     }
 
+    private int GetMetadataChangesCount()
+    {
+        int changes = 0;
+        foreach (var (oldCar, newCar) in metadataChanges)
+        {
+            var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+            if (meta != null)
+            {
+                // Check if user has actually specified metadata (any non-empty value)
+                bool hasUserSpecifiedMetadata = !string.IsNullOrWhiteSpace(meta.ExteriorColor) ||
+                                               !string.IsNullOrWhiteSpace(meta.InteriorColor) ||
+                                               !string.IsNullOrWhiteSpace(meta.BodyStyle);
+                
+                if (hasUserSpecifiedMetadata)
+                {
+                    changes++;
+                }
+            }
+        }
+        return changes;
+    }
+
     private void CaptureSummarySnapshot()
     {
         summaryNewVehicles = newVehicles.Count;
         summarySoldVehicles = soldVehicles.Count;
         summaryPriceUpdates = priceChanges.Count;
         summaryPhotoUpdates = photoChanges.Count;
-        summaryMetadataUpdates = metadataChanges.Count;
+        summaryMetadataUpdates = GetMetadataChangesCount();
         summarySelectionUpdates = GetPhotoSelectionChangesCount();
     }
 
