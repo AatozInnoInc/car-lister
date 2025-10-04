@@ -45,9 +45,6 @@
                             <span class="oi oi-check"></span>
                         </div>
                     }
-                    <div class="photo-hover-overlay">
-                        <span class="oi oi-eye"></span>
-                    </div>
                     <div class="photo-quick-select" @onclick:stopPropagation="true"
                         @onclick="() => TogglePhotoSelection(photoUrl)">
                         @if (isSelected)
@@ -58,6 +55,9 @@
                         {
                             <span class="oi oi-plus"></span>
                         }
+                    </div>
+                    <div class="photo-hover-overlay">
+                        <span class="oi oi-eye"></span>
                     </div>
                 </div>
             }
