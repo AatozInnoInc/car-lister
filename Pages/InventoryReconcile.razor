@@ -267,9 +267,7 @@
                         @* Inline Photo Picker for photo selection on relevant changes (but NOT for sold vehicles) *@
                         @if (change.ChangeType != "Sold Vehicle")
                         {
-                            // Prefer the scraped car (has latest colors + merged Firestore ID)
-                            var carForPicker = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url)
-                            ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
+                            var carForPicker = FindCarByUrl(change.Url);
                             if (carForPicker != null)
                             {
                                 <div class="car-photo-section" id="current-car-section">
@@ -859,6 +857,28 @@
         return "";
     }
 
+    /// <summary>
+    /// Finds a car by its URL key, preferring scraped data (which has latest colors + merged Firestore IDs)
+    /// over existing data. Returns null if not found.
+    /// </summary>
+    private ScrapedCar? FindCarByUrl(string urlKey)
+    {
+        if (string.IsNullOrWhiteSpace(urlKey))
+            return null;
+            
+        return scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == urlKey)
+            ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == urlKey);
+    }
+
+    /// <summary>
+    /// Finds a car by extracting the URL key from the provided car, then searching for it.
+    /// Useful when you have a car from metadataChanges or other tuples.
+    /// </summary>
+    private ScrapedCar? FindCarByUrl(ScrapedCar car)
+    {
+        return FindCarByUrl(GetCarUrlKey(car));
+    }
+
     private List<ScrapedCar> ConvertScrapedCarsToInternalFormat(List<ScrapedCar> apiCars, Client client)
     {
         var converted = new List<ScrapedCar>();
@@ -1256,9 +1276,7 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         if (currentChange.ChangeType != "Metadata Change")
             return true; // Allow navigation for non-metadata changes
 
-        // Find the car using the SAME logic as display (prefer scraped, fallback to existing)
-        var car = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == currentChange.Url)
-               ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == currentChange.Url);
+        var car = FindCarByUrl(currentChange.Url);
         if (car == null)
             return true; // Can't find car, allow navigation
 
@@ -1279,11 +1297,7 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         // Check all cars that need metadata (metadataChanges)
         foreach (var (oldCar, newCar) in metadataChanges)
         {
-            // Find the car using the SAME logic as display (prefer scraped, fallback to existing)
-            var urlKey = GetCarUrlKey(oldCar);
-            var car = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == urlKey)
-                   ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == urlKey);
-            
+            var car = FindCarByUrl(oldCar);
             if (car == null)
                 continue; // Skip if car not found
                 
@@ -1311,11 +1325,7 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         
         foreach (var (oldCar, newCar) in metadataChanges)
         {
-            // Find the car using the SAME logic as display (prefer scraped, fallback to existing)
-            var urlKey = GetCarUrlKey(oldCar);
-            var car = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == urlKey)
-                   ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == urlKey);
-            
+            var car = FindCarByUrl(oldCar);
             if (car == null)
                 continue; // Skip if car not found
                 
