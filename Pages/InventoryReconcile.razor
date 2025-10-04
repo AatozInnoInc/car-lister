@@ -267,9 +267,9 @@
                         @* Inline Photo Picker for photo selection on relevant changes (but NOT for sold vehicles) *@
                         @if (change.ChangeType != "Sold Vehicle")
                         {
-                            // Prefer the existing car instance so Car.Id matches the Firestore document id for selections
-                            var carForPicker = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url)
-                            ?? scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
+                            // Prefer the scraped car (has latest colors + merged Firestore ID)
+                            var carForPicker = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url)
+                            ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
                             if (carForPicker != null)
                             {
                                 <div class="car-photo-section" id="current-car-section">
@@ -291,7 +291,7 @@
                                         </div>
                                     </div>
 
-                                    <VehicleMetaEditor Meta="@GetVehicleMeta(carForPicker)" Car="@carForPicker" OnMetaChanged="OnMetadataChanged" />
+                                    <VehicleMetaEditor Meta="@GetVehicleMeta(carForPicker)" Car="@carForPicker" ShowOriginalBadges="true" OnMetaChanged="OnMetadataChanged" />
 
                                     <PhotoPicker Car="@carForPicker" Title="@($"Select Photos — {carForPicker.FullTitle}")"
                                         SelectedPhotos="@selectedPhotos" SelectedPhotosChanged="@OnSelectedPhotosChanged"
@@ -617,12 +617,18 @@
                         var url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl;
                         if (!string.IsNullOrWhiteSpace(url))
                         {
-                            Console.WriteLine("Hydrating by calling ScrapeCarByUrlAsync directly. Remove if this is never used");
                             var hydrated = await InventoryService.ScrapeCarByUrlAsync(url);
                             if (hydrated != null && hydrated.Images != null && hydrated.Images.Count > (car.Images?.Count ?? 0))
                             {
                                 car.Images = hydrated.Images;
                                 car.FullTitle = string.IsNullOrWhiteSpace(car.FullTitle) ? hydrated.FullTitle : car.FullTitle;
+                                // Also copy color and body style data
+                                if (!string.IsNullOrWhiteSpace(hydrated.ExteriorColor))
+                                    car.ExteriorColor = hydrated.ExteriorColor;
+                                if (!string.IsNullOrWhiteSpace(hydrated.InteriorColor))
+                                    car.InteriorColor = hydrated.InteriorColor;
+                                if (!string.IsNullOrWhiteSpace(hydrated.BodyStyle))
+                                    car.BodyStyle = hydrated.BodyStyle;
                             }
                         }
                     }
@@ -636,6 +642,19 @@
             scrapedNow = allScrapedCars.Where(c => c.Images != null && c.Images.Count >= 3).ToList();
             var excludedCount = allScrapedCars.Count - scrapedNow.Count;
             existingCars = await InventoryService.GetClientInventoryAsync(selectedClient.Id);
+
+            // Merge Firestore IDs FROM existing cars INTO scraped cars (so scraped cars have both ID and colors)
+            var existingByUrl = existingCars.ToDictionary(c => GetCarUrlKey(c), c => c, StringComparer.OrdinalIgnoreCase);
+            foreach (var scrapedCar in scrapedNow)
+            {
+                var urlKey = GetCarUrlKey(scrapedCar);
+                if (!string.IsNullOrEmpty(urlKey) && existingByUrl.TryGetValue(urlKey, out var existingCar))
+                {
+                    // Found matching existing car - copy the Firestore ID
+                    scrapedCar.Id = existingCar.Id;
+                }
+            }
+
             // Also filter existing cars to only include those with 3+ photos
             existingCars = existingCars.Where(c => c.Images != null && c.Images.Count >= 3).ToList();
 

@@ -159,21 +159,29 @@ public class InventoryService
             try
             {
                 if (car.Images != null && car.Images.Count > 1)
-                {
                     continue;
-                }
                 var url = string.IsNullOrWhiteSpace(car.OriginalUrl) ? car.ListingUrl : car.OriginalUrl;
                 if (string.IsNullOrWhiteSpace(url))
-                {
                     continue;
-                }
+
                 var hydrated = await ScrapeCarByUrlAsync(url);
-                if (hydrated?.Images != null && hydrated.Images.Count > (car.Images?.Count ?? 0))
+                
+                if (hydrated != null)
                 {
-                    car.Images = hydrated.Images;
-                    if (string.IsNullOrWhiteSpace(car.FullTitle) && !string.IsNullOrWhiteSpace(hydrated.FullTitle))
+                    // Always copy color and body style data when available
+                    if (!string.IsNullOrWhiteSpace(hydrated.ExteriorColor))
+                        car.ExteriorColor = hydrated.ExteriorColor;
+                    if (!string.IsNullOrWhiteSpace(hydrated.InteriorColor))
+                        car.InteriorColor = hydrated.InteriorColor;
+                    if (!string.IsNullOrWhiteSpace(hydrated.BodyStyle))
+                        car.BodyStyle = hydrated.BodyStyle;
+                    
+                    // Copy images and title only if we got more images
+                    if (hydrated.Images != null && hydrated.Images.Count > (car.Images?.Count ?? 0))
                     {
-                        car.FullTitle = hydrated.FullTitle;
+                        car.Images = hydrated.Images;
+                        if (string.IsNullOrWhiteSpace(car.FullTitle) && !string.IsNullOrWhiteSpace(hydrated.FullTitle))
+                            car.FullTitle = hydrated.FullTitle;
                     }
                 }
             }

@@ -1,14 +1,16 @@
-import requests
-import logging
 import json
+import logging
 import re
-import uuid
-from typing import Optional, List
-from urllib.parse import urlparse
-from .models import ScrapedCar, InventorySearchRequest, InventorySearchResult
 import time
+import uuid
 from datetime import datetime
+from typing import List, Optional
+from urllib.parse import urlparse
+
+import requests
 from bs4 import BeautifulSoup
+
+from .models import InventorySearchRequest, InventorySearchResult, ScrapedCar
 
 logger = logging.getLogger(__name__)
 
@@ -309,6 +311,7 @@ class CarGurusScraper:
                 # Fallback: synthesize parameters for dealer inventory AJAX endpoint
                 logger.info("Synthesizing dealer inventory AJAX parameters (fallback)")
                 import uuid as _uuid
+
                 # Map inventory type to CarGurus newUsed
                 inv = (inventory_type or "ALL").upper()
                 new_used_value = {
@@ -771,7 +774,7 @@ class CarGurusScraper:
             JSON data as dict, or None if failed
         """
         import time
-        
+
         # Construct the API URL
         api_url = f"https://www.cargurus.com/Cars/detailListingJson.action"
         params = {
@@ -823,7 +826,10 @@ class CarGurusScraper:
             listing = json_data.get('listing', {})
             
             # Extract car information from autoEntityInfo for more accurate data
-            auto_entity_info = listing.get('autoEntityInfo', {})
+            # Check both at root level and inside listing
+            auto_entity_info = json_data.get('autoEntityInfo', {})
+            if not auto_entity_info:
+                auto_entity_info = listing.get('autoEntityInfo', {})
             
             # Extract year, make, model, and trim from autoEntityInfo
             year = auto_entity_info.get('year', listing.get('year', 0))
@@ -867,12 +873,18 @@ class CarGurusScraper:
             # Extract all images
             images = self._extract_images_from_json(listing)
             
+            # Extract vehicle appearance details
+            exterior_color = listing.get('localizedExteriorColor', '')
+            interior_color = listing.get('localizedInteriorColor', '')
+            body_style = auto_entity_info.get('bodyStyle', '')
+            
             # Validate that we have at least basic information
             if not make or not model or year == 0:
                 logger.warning(f"Insufficient car data extracted from JSON")
                 return None
             
             logger.info(f"Extracted car title: {fullTitle}")
+            logger.info(f"Extracted colors - Exterior: {exterior_color}, Interior: {interior_color}, Body Style: {body_style}")
             
             return ScrapedCar(
                 make=make,
@@ -884,7 +896,10 @@ class CarGurusScraper:
                 stats=stats,
                 images=images,
                 originalUrl=url,
-                fullTitle=fullTitle  # Add the constructed title
+                fullTitle=fullTitle,  # Add the constructed title
+                exteriorColor=exterior_color,
+                interiorColor=interior_color,
+                bodyStyle=body_style
             )
             
         except Exception as e:
@@ -1636,6 +1651,12 @@ class CarGurusScraper:
             if engine:
                 stats.append({"header": "Engine", "value": engine})
             
+            # Extract vehicle appearance details
+            exterior_color = car_data.get('localizedExteriorColor', '')
+            interior_color = car_data.get('localizedInteriorColor', '')
+            # Note: bodyStyle is not in the tile data, but may be added if available
+            body_style = car_data.get('bodyStyle', '')
+            
             # Extract images (collect all, not just primary)
             images = []
             original_picture = car_data.get('originalPictureData', {})
@@ -1699,6 +1720,7 @@ class CarGurusScraper:
                 return None
             
             logger.info(f"Extracted car: {full_title} - ${price:,} - URL: {original_url}")
+            logger.info(f"Extracted colors - Exterior: {exterior_color}, Interior: {interior_color}, Body Style: {body_style}")
             
             return ScrapedCar(
                 make=make,
@@ -1710,7 +1732,10 @@ class CarGurusScraper:
                 stats=stats,
                 images=images,
                 originalUrl=original_url,
-                fullTitle=full_title
+                fullTitle=full_title,
+                exteriorColor=exterior_color,
+                interiorColor=interior_color,
+                bodyStyle=body_style
             )
                 
         except Exception as e:

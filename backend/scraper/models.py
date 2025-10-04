@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class ScrapedCar(BaseModel):
     """
@@ -30,6 +32,11 @@ class ScrapedCar(BaseModel):
     originalUrl: str = Field(..., description="Original CarGurus URL")
     fullTitle: str = Field(default="", description="Complete car title (Year Make Model Trim)")
     scrapedAt: datetime = Field(default_factory=datetime.now, description="Scraping timestamp")
+    
+    # Vehicle appearance details from CarGurus
+    exteriorColor: str = Field(default="", description="Exterior color from CarGurus")
+    interiorColor: str = Field(default="", description="Interior color from CarGurus")
+    bodyStyle: str = Field(default="", description="Body style from CarGurus")
     
     model_config = ConfigDict(
         json_schema_extra={
