@@ -20,7 +20,7 @@
                 </select>
                 @if (ShowOriginalBadges && Car != null && !string.IsNullOrWhiteSpace(Car.ExteriorColor))
                 {
-                    <small class="form-text" style="margin-top: 0.25rem;">Scraped: <strong>@Car.ExteriorColor</strong></small>
+                    <small class="form-text" style="margin-top: 0.25rem;">Original: <strong>@Car.ExteriorColor</strong></small>
                 }
             </div>
             <div class="form-group" style="min-width:220px;">
@@ -34,7 +34,7 @@
                 </select>
                 @if (ShowOriginalBadges && Car != null && !string.IsNullOrWhiteSpace(Car.InteriorColor))
                 {
-                    <small class="form-text" style="margin-top: 0.25rem;">Scraped: <strong>@Car.InteriorColor</strong></small>
+                    <small class="form-text" style="margin-top: 0.25rem;">Original: <strong>@Car.InteriorColor</strong></small>
                 }
             </div>
             <div class="form-group" style="min-width:220px;">
@@ -48,7 +48,7 @@
                 </select>
                 @if (ShowOriginalBadges && Car != null && !string.IsNullOrWhiteSpace(Car.BodyStyle))
                 {
-                    <small class="form-text" style="margin-top: 0.25rem;">Scraped: <strong>@Car.BodyStyle</strong></small>
+                    <small class="form-text" style="margin-top: 0.25rem;">Original: <strong>@Car.BodyStyle</strong></small>
                 }
             </div>
         </div>
