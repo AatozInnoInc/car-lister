@@ -293,6 +293,16 @@
 
                                     <VehicleMetaEditor Meta="@GetVehicleMeta(carForPicker)" Car="@carForPicker" ShowOriginalBadges="true" OnMetaChanged="OnMetadataChanged" />
 
+                                    @if (!IsCurrentCarMetadataComplete() && allChanges.Count > 0 &&
+                                          currentChangeIndex < allChanges.Count &&
+                                          allChanges[currentChangeIndex].ChangeType == "Metadata Change")
+                                    {
+                                        <div class="alert alert-warning mt-2" style="margin-bottom: 1rem;">
+                                            <span class="oi oi-warning"></span>
+                                            <strong>Required:</strong> Please select all three Facebook Marketplace fields (Exterior Color, Interior Color, and Body Style) to proceed.
+                                        </div>
+                                    }
+
                                     <PhotoPicker Car="@carForPicker" Title="@($"Select Photos — {carForPicker.FullTitle}")"
                                         SelectedPhotos="@selectedPhotos" SelectedPhotosChanged="@OnSelectedPhotosChanged"
                                         ShowNavigation="false" />
@@ -308,7 +318,7 @@
                             </button>
                             <span class="car-counter">@(currentChangeIndex + 1) of @allChanges.Count</span>
                             <button class="btn btn-sm btn-secondary" @onclick="NextChange"
-                                disabled="@(currentChangeIndex >= allChanges.Count - 1 || !IsCurrentCarMetadataComplete())">
+                                disabled="@(currentChangeIndex >= allChanges.Count - 1 || !_isNextButtonEnabled)">
                                 Next
                                 <span class="oi oi-chevron-right"></span>
                             </button>
@@ -353,7 +363,7 @@
 
                 <div class="step-actions">
                     <button class="btn btn-primary btn-large" @onclick="NextStep" 
-                            disabled="@(allChanges.Count == 0 || (metadataChanges.Count > 0 && !IsAllRequiredMetadataFilled()))">
+                            disabled="@(allChanges.Count == 0 || !_isContinueToSaveEnabled)">
                         <span class="oi oi-arrow-right"></span>
                         Continue to Save
                     </button>
@@ -434,6 +444,8 @@
     private string saveMessage = "";
     private string saveMessageType = ""; // "success" | "error"
     private bool hasRefreshed = false;
+    private bool _isNextButtonEnabled = false;
+    private bool _isContinueToSaveEnabled = false;
     private int summaryNewVehicles = 0;
     private int summarySoldVehicles = 0;
     private int summaryPriceUpdates = 0;
@@ -777,6 +789,9 @@
                 }
             }
         }
+        
+        // Initialize button enabled states after computing changes
+        _isContinueToSaveEnabled = IsAllRequiredMetadataFilled();
     }
 
     private static bool PhotosEqual(List<string> a, List<string> b)
@@ -880,6 +895,8 @@
     {
         reviewMode = "iterative";
         currentChangeIndex = 0;
+        _isNextButtonEnabled = IsCurrentCarMetadataComplete();
+        _isContinueToSaveEnabled = IsAllRequiredMetadataFilled();
         StateHasChanged();
     }
 
@@ -890,6 +907,8 @@
         if (currentChangeIndex > 0)
         {
             currentChangeIndex--;
+            _isNextButtonEnabled = IsCurrentCarMetadataComplete();
+            _isContinueToSaveEnabled = IsAllRequiredMetadataFilled();
             StateHasChanged();
             await ScrollToCarSection();
         }
@@ -900,6 +919,8 @@
         if (currentChangeIndex < allChanges.Count - 1)
         {
             currentChangeIndex++;
+            _isNextButtonEnabled = IsCurrentCarMetadataComplete();
+            _isContinueToSaveEnabled = IsAllRequiredMetadataFilled();
             StateHasChanged();
             await ScrollToCarSection();
         }
@@ -1174,6 +1195,10 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
 
     private void OnMetadataChanged()
     {
+        // Recalculate button enabled states
+        _isNextButtonEnabled = IsCurrentCarMetadataComplete();
+        _isContinueToSaveEnabled = IsAllRequiredMetadataFilled();
+        // Force synchronous re-render to ensure button states update immediately
         StateHasChanged();
     }
 
@@ -1231,8 +1256,9 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         if (currentChange.ChangeType != "Metadata Change")
             return true; // Allow navigation for non-metadata changes
 
-        // Find the car and check if its metadata is complete
-        var car = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == currentChange.Url);
+        // Find the car using the SAME logic as display (prefer scraped, fallback to existing)
+        var car = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == currentChange.Url)
+               ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == currentChange.Url);
         if (car == null)
             return true; // Can't find car, allow navigation
 
@@ -1251,12 +1277,17 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
     private bool IsAllRequiredMetadataFilled()
     {
         // Check all cars that need metadata (metadataChanges)
-        int carIndex = 0;
         foreach (var (oldCar, newCar) in metadataChanges)
         {
-            carIndex++;
-
-            var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+            // Find the car using the SAME logic as display (prefer scraped, fallback to existing)
+            var urlKey = GetCarUrlKey(oldCar);
+            var car = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == urlKey)
+                   ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == urlKey);
+            
+            if (car == null)
+                continue; // Skip if car not found
+                
+            var meta = TryGetVehicleMeta(car.Id, car);
             if (meta == null)
                 return false;
 
@@ -1280,13 +1311,21 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         
         foreach (var (oldCar, newCar) in metadataChanges)
         {
-            var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+            // Find the car using the SAME logic as display (prefer scraped, fallback to existing)
+            var urlKey = GetCarUrlKey(oldCar);
+            var car = scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == urlKey)
+                   ?? existingCars.FirstOrDefault(c => GetCarUrlKey(c) == urlKey);
+            
+            if (car == null)
+                continue; // Skip if car not found
+                
+            var meta = TryGetVehicleMeta(car.Id, car);
             if (meta == null || 
                 string.IsNullOrWhiteSpace(meta.ExteriorColor) ||
                 string.IsNullOrWhiteSpace(meta.InteriorColor) ||
                 string.IsNullOrWhiteSpace(meta.BodyStyle))
             {
-                incompleteCars.Add(oldCar.FullTitle);
+                incompleteCars.Add(car.FullTitle);
             }
         }
 
@@ -1450,8 +1489,22 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         }
         if (!vehicleMetaByCarId.TryGetValue(id, out var meta))
         {
+            // Create new meta from the car (which has fresh scraped color data)
             meta = MetaMapper.MapFromCar(car);
             vehicleMetaByCarId[id] = meta;
+        }
+        else
+        {
+            // Meta already exists (from InitializeVehicleMetaFromExisting)
+            // If it's empty, populate it with intelligent guesses from the current car's data
+            if (string.IsNullOrWhiteSpace(meta.ExteriorColor) && !string.IsNullOrWhiteSpace(car.ExteriorColor))
+                meta.ExteriorColor = MetaMapper.MapColor(car.ExteriorColor);
+            
+            if (string.IsNullOrWhiteSpace(meta.InteriorColor) && !string.IsNullOrWhiteSpace(car.InteriorColor))
+                meta.InteriorColor = MetaMapper.MapColor(car.InteriorColor);
+            
+            if (string.IsNullOrWhiteSpace(meta.BodyStyle) && !string.IsNullOrWhiteSpace(car.BodyStyle))
+                meta.BodyStyle = MetaMapper.MapBodyStyle(car.BodyStyle);
         }
         return meta;
     }
