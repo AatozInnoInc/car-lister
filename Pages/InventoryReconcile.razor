@@ -5,6 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject ClientService ClientService
 @inject InventoryService InventoryService
+@inject IJSRuntime JSRuntime
 @attribute [Authorize]
 
 <PageTitle>Inventory Reconciliation - Car Lister</PageTitle>
@@ -271,7 +272,7 @@
                             ?? scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
                             if (carForPicker != null)
                             {
-                                <div class="car-photo-section">
+                                <div class="car-photo-section" id="current-car-section">
                                     <div class="car-header">
                                         <div class="car-info">
                                             <h3>
@@ -865,21 +866,41 @@
 
 
 
-    private void PreviousChange()
+    private async Task PreviousChange()
     {
         if (currentChangeIndex > 0)
         {
             currentChangeIndex--;
             StateHasChanged();
+            await ScrollToCarSection();
         }
     }
 
-    private void NextChange()
+    private async Task NextChange()
     {
         if (currentChangeIndex < allChanges.Count - 1)
         {
             currentChangeIndex++;
             StateHasChanged();
+            await ScrollToCarSection();
+        }
+    }
+
+    private async Task ScrollToCarSection()
+    {
+        try
+        {
+            await Task.Delay(100); // Small delay to ensure DOM has updated
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                const element = document.getElementById('current-car-section');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error scrolling to car section: {ex.Message}");
         }
     }
 
