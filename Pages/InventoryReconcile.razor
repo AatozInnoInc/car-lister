@@ -263,40 +263,40 @@
                             </div>
                         </div>
 
-                        @* Inline Photo Picker for photo selection on relevant changes *@
-                        // Prefer the existing car instance so Car.Id matches the Firestore document id for selections
-                        var carForPicker = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url)
-                        ?? scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
-                        if (carForPicker != null)
+                        @* Inline Photo Picker for photo selection on relevant changes (but NOT for sold vehicles) *@
+                        @if (change.ChangeType != "Sold Vehicle")
                         {
-                            <div class="car-photo-section">
-                                <div class="car-header">
-                                    <div class="car-info">
-                                        <h3>
-                                            <a href="@carForPicker.OriginalUrl" target="_blank" rel="noopener noreferrer"
-                                                class="car-title-link">
-                                                @carForPicker.FullTitle
-                                                <span class="oi oi-external-link"
-                                                    style="font-size: 0.8em; margin-left: 0.5rem; opacity: 0.7;"></span>
-                                            </a>
-                                        </h3>
-                                        <div class="car-meta">
-                                            <span class="stock-number">Stock: @carForPicker.StockNumber</span>
-                                            <span class="price">$@carForPicker.Price.ToString("N0")</span>
-                                            <span class="photo-count">@carForPicker.Images.Count photos</span>
+                            // Prefer the existing car instance so Car.Id matches the Firestore document id for selections
+                            var carForPicker = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == change.Url)
+                            ?? scrapedNow.FirstOrDefault(c => GetCarUrlKey(c) == change.Url);
+                            if (carForPicker != null)
+                            {
+                                <div class="car-photo-section">
+                                    <div class="car-header">
+                                        <div class="car-info">
+                                            <h3>
+                                                <a href="@carForPicker.OriginalUrl" target="_blank" rel="noopener noreferrer"
+                                                    class="car-title-link">
+                                                    @carForPicker.FullTitle
+                                                    <span class="oi oi-external-link"
+                                                        style="font-size: 0.8em; margin-left: 0.5rem; opacity: 0.7;"></span>
+                                                </a>
+                                            </h3>
+                                            <div class="car-meta">
+                                                <span class="stock-number">Stock: @carForPicker.StockNumber</span>
+                                                <span class="price">$@carForPicker.Price.ToString("N0")</span>
+                                                <span class="photo-count">@carForPicker.Images.Count photos</span>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    <VehicleMetaEditor Meta="@GetVehicleMeta(carForPicker)" Car="@carForPicker" OnMetaChanged="OnMetadataChanged" />
+
+                                    <PhotoPicker Car="@carForPicker" Title="@($"Select Photos — {carForPicker.FullTitle}")"
+                                        SelectedPhotos="@selectedPhotos" SelectedPhotosChanged="@OnSelectedPhotosChanged"
+                                        ShowNavigation="false" />
                                 </div>
-
-                                @{
-                                    var meta = GetVehicleMeta(carForPicker);
-                                }
-                                <VehicleMetaEditor Meta="@meta" Car="@carForPicker" ShowOriginalBadges="false" />
-
-                                <PhotoPicker Car="@carForPicker" Title="@($"Select Photos — {carForPicker.FullTitle}")"
-                                    SelectedPhotos="@selectedPhotos" SelectedPhotosChanged="@OnSelectedPhotosChanged"
-                                    ShowNavigation="false" />
-                            </div>
+                            }
                         }
 
                         <div class="car-navigation mt-1">
@@ -307,7 +307,7 @@
                             </button>
                             <span class="car-counter">@(currentChangeIndex + 1) of @allChanges.Count</span>
                             <button class="btn btn-sm btn-secondary" @onclick="NextChange"
-                                disabled="@(currentChangeIndex >= allChanges.Count - 1)">
+                                disabled="@(currentChangeIndex >= allChanges.Count - 1 || !IsCurrentCarMetadataComplete())">
                                 Next
                                 <span class="oi oi-chevron-right"></span>
                             </button>
@@ -327,8 +327,32 @@
 
                 @* Inline picker used above; dedicated photo selection mode removed *@
 
+                @* Validation message for incomplete metadata - only show in iterative review mode *@
+                @if (reviewMode == "iterative" && metadataChanges.Count > 0 && !IsAllRequiredMetadataFilled())
+                {
+                    var incompleteCars = GetCarsWithIncompleteMetadata();
+                    <div class="alert alert-warning mt-1">
+                        <strong>⚠️ Required Information Missing</strong>
+                        <p>Please specify Exterior Color, Interior Color, and Body Style for all vehicles before continuing.</p>
+                        @if (incompleteCars.Count <= 5)
+                        {
+                            <ul style="margin-bottom: 0;">
+                                @foreach (var carTitle in incompleteCars)
+                                {
+                                    <li>@carTitle</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p><strong>@incompleteCars.Count vehicles</strong> need complete metadata.</p>
+                        }
+                    </div>
+                }
+
                 <div class="step-actions">
-                    <button class="btn btn-primary btn-large" @onclick="NextStep" disabled="@(allChanges.Count == 0)">
+                    <button class="btn btn-primary btn-large" @onclick="NextStep" 
+                            disabled="@(allChanges.Count == 0 || (metadataChanges.Count > 0 && !IsAllRequiredMetadataFilled()))">
                         <span class="oi oi-arrow-right"></span>
                         Continue to Save
                     </button>
@@ -605,8 +629,14 @@
             }
             catch { }
 
-            scrapedNow = ConvertScrapedCarsToInternalFormat(searchResult.Cars, selectedClient);
+            var allScrapedCars = ConvertScrapedCarsToInternalFormat(searchResult.Cars, selectedClient);
+
+            // Filter out cars with less than 3 photos
+            scrapedNow = allScrapedCars.Where(c => c.Images != null && c.Images.Count >= 3).ToList();
+            var excludedCount = allScrapedCars.Count - scrapedNow.Count;
             existingCars = await InventoryService.GetClientInventoryAsync(selectedClient.Id);
+            // Also filter existing cars to only include those with 3+ photos
+            existingCars = existingCars.Where(c => c.Images != null && c.Images.Count >= 3).ToList();
 
             InitializeSelectedPhotosFromExisting();
             InitializeVehicleMetaFromExisting();
@@ -1102,6 +1132,11 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
         StateHasChanged();
     }
 
+    private void OnMetadataChanged()
+    {
+        StateHasChanged();
+    }
+
     private int GetPhotoSelectionChangesCount()
     {
         int changes = 0;
@@ -1142,6 +1177,80 @@ Value = refreshedToday ? "Refreshed Today" : "Needs Refresh"
             }
         }
         return changes;
+    }
+
+    private bool IsCurrentCarMetadataComplete()
+    {
+        // If we're not in iterative review mode, or no changes, always allow navigation
+        if (reviewMode != "iterative" || allChanges.Count == 0 || currentChangeIndex >= allChanges.Count)
+            return true;
+
+        var currentChange = allChanges[currentChangeIndex];
+        
+        // Only check metadata for "Metadata Change" type cars
+        if (currentChange.ChangeType != "Metadata Change")
+            return true; // Allow navigation for non-metadata changes
+
+        // Find the car and check if its metadata is complete
+        var car = existingCars.FirstOrDefault(c => GetCarUrlKey(c) == currentChange.Url);
+        if (car == null)
+            return true; // Can't find car, allow navigation
+
+        var meta = TryGetVehicleMeta(car.Id, car);
+        if (meta == null)
+            return false; // No metadata, block navigation
+
+        // All three fields must be filled
+        bool isComplete = !string.IsNullOrWhiteSpace(meta.ExteriorColor) &&
+                          !string.IsNullOrWhiteSpace(meta.InteriorColor) &&
+                          !string.IsNullOrWhiteSpace(meta.BodyStyle);
+
+        return isComplete;
+    }
+
+    private bool IsAllRequiredMetadataFilled()
+    {
+        // Check all cars that need metadata (metadataChanges)
+        int carIndex = 0;
+        foreach (var (oldCar, newCar) in metadataChanges)
+        {
+            carIndex++;
+
+            var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+            if (meta == null)
+                return false;
+
+            // All three fields are REQUIRED
+            if (string.IsNullOrWhiteSpace(meta.ExteriorColor))
+                return false;
+
+            if (string.IsNullOrWhiteSpace(meta.InteriorColor))
+                return false;
+
+            if (string.IsNullOrWhiteSpace(meta.BodyStyle))
+                return false;
+        }
+
+        return true; // All cars have complete metadata
+    }
+
+    private List<string> GetCarsWithIncompleteMetadata()
+    {
+        var incompleteCars = new List<string>();
+        
+        foreach (var (oldCar, newCar) in metadataChanges)
+        {
+            var meta = TryGetVehicleMeta(oldCar.Id, oldCar);
+            if (meta == null || 
+                string.IsNullOrWhiteSpace(meta.ExteriorColor) ||
+                string.IsNullOrWhiteSpace(meta.InteriorColor) ||
+                string.IsNullOrWhiteSpace(meta.BodyStyle))
+            {
+                incompleteCars.Add(oldCar.FullTitle);
+            }
+        }
+
+        return incompleteCars;
     }
 
     private void CaptureSummarySnapshot()

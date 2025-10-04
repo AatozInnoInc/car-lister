@@ -11,7 +11,7 @@
         <div class="detail-item" style="display:flex; gap: 1rem; flex-wrap: wrap; align-items:center;">
             <div class="form-group" style="min-width:220px;">
                 <label>Exterior Color</label>
-                <select class="form-control" @bind="Meta.ExteriorColor">
+                <select class="form-control" value="@Meta.ExteriorColor" @onchange="OnExteriorColorChanged">
                     <option value="">Select exterior color...</option>
                     @foreach (var c in VehicleMetaMapper.FacebookColors)
                     {
@@ -21,7 +21,7 @@
             </div>
             <div class="form-group" style="min-width:220px;">
                 <label>Interior Color</label>
-                <select class="form-control" @bind="Meta.InteriorColor">
+                <select class="form-control" value="@Meta.InteriorColor" @onchange="OnInteriorColorChanged">
                     <option value="">Select interior color...</option>
                     @foreach (var c in VehicleMetaMapper.FacebookColors)
                     {
@@ -31,7 +31,7 @@
             </div>
             <div class="form-group" style="min-width:220px;">
                 <label>Body Style</label>
-                <select class="form-control" @bind="Meta.BodyStyle">
+                <select class="form-control" value="@Meta.BodyStyle" @onchange="OnBodyStyleChanged">
                     <option value="">Select body style...</option>
                     @foreach (var s in VehicleMetaMapper.BodyStyles)
                     {
@@ -51,8 +51,34 @@
 </div>
 
 @code {
-    [Parameter] public VehicleMeta Meta { get; set; } = new VehicleMeta();
+    [Parameter] public VehicleMeta Meta { get; set; } = new();
+    
     [Parameter] public ScrapedCar? Car { get; set; }
+    
     [Parameter] public bool ShowOriginalBadges { get; set; } = false;
+    [Parameter] public EventCallback OnMetaChanged { get; set; }
+
+    private async Task OnExteriorColorChanged(ChangeEventArgs e)
+    {
+        Meta.ExteriorColor = e.Value?.ToString() ?? "";
+        await NotifyMetaChanged();
+    }
+
+    private async Task OnInteriorColorChanged(ChangeEventArgs e)
+    {
+        Meta.InteriorColor = e.Value?.ToString() ?? "";
+        await NotifyMetaChanged();
+    }
+
+    private async Task OnBodyStyleChanged(ChangeEventArgs e)
+    {
+        Meta.BodyStyle = e.Value?.ToString() ?? "";
+        await NotifyMetaChanged();
+    }
+
+    private async Task NotifyMetaChanged()
+    {
+        await OnMetaChanged.InvokeAsync();
+    }
 }
 
