@@ -23,6 +23,11 @@
     background: #064e3b;
 }
 
+.vehicle-card.updated {
+    border-color: #1e40af;
+    background: #1e3a8a;
+}
+
 .vehicle-card.error {
     border-color: #991b1b;
     background: #7f1d1d;
@@ -83,6 +88,12 @@
     background: #064e3b;
     color: #6ee7b7;
     border: 1px solid #065f46;
+}
+
+.status-badge.updated {
+    background: #1e3a8a;
+    color: #93c5fd;
+    border: 1px solid #1e40af;
 }
 
 .status-badge.error {
@@ -158,7 +169,31 @@
     color: #6ee7b7;
 }
 
+.vehicle-card.updated .vehicle-card-success {
+    background: #1e3a8a;
+    border: 1px solid #1e40af;
+    color: #93c5fd;
+}
+
 .vehicle-card-success .oi {
     font-size: 1rem;
+}
+
+.vehicle-card-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+.vehicle-card-info .oi {
+    font-size: 1rem;
+    color: #60a5fa;
 }
 

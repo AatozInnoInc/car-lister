@@ -115,15 +115,18 @@
 
                 <div class="mt-1">
                     <div class="vehicle-cards-container">
-                        @foreach (var v in tlpVehicles)
-                        {
+                            @foreach (var v in tlpVehicles)
+                            {
                             var hasError = !string.IsNullOrWhiteSpace(v.PublishError);
-                            var isPublished = !string.IsNullOrWhiteSpace(v.TlpId);
+                            var hasExistingTlpId = !string.IsNullOrWhiteSpace(v.TlpId);
+                            var wasJustPublished = v.JustProcessed && !v.WasUpdated;
+                            var wasJustUpdated = v.JustProcessed && v.WasUpdated;
+                            var willUpdate = hasExistingTlpId && !v.JustProcessed;
+                            var willPublish = !hasExistingTlpId && !v.JustProcessed;
                             var missingImages = string.IsNullOrWhiteSpace(v.Images);
                             var missingDescription = string.IsNullOrWhiteSpace(v.Description);
-                            var isReady = !hasError && !isPublished && !missingImages && !missingDescription;
                             
-                            <div class="vehicle-card @(hasError ? "error" : isPublished ? "published" : "")">
+                            <div class="vehicle-card @(hasError ? "error" : wasJustUpdated ? "updated" : (wasJustPublished || hasExistingTlpId) ? "published" : "")">
                                 <div class="vehicle-card-header">
                                     <div class="vehicle-info">
                                         <h4 class="vehicle-title">@v.Title</h4>
@@ -141,11 +144,32 @@
                                                 <span>Failed</span>
                                             </div>
                                         }
-                                        else if (isPublished)
+                                        else if (wasJustUpdated)
+                                        {
+                                            <div class="status-badge updated">
+                                                <span class="oi oi-reload"></span>
+                                                <span>Updated</span>
+                                            </div>
+                                        }
+                                        else if (wasJustPublished)
                                         {
                                             <div class="status-badge success">
                                                 <span class="oi oi-check"></span>
                                                 <span>Published</span>
+                                            </div>
+                                        }
+                                        else if (willUpdate && !missingImages && !missingDescription)
+                                        {
+                                            <div class="status-badge ready">
+                                                <span class="oi oi-reload"></span>
+                                                <span>Will Update</span>
+                                            </div>
+                                        }
+                                        else if (willPublish && !missingImages && !missingDescription)
+                                        {
+                                            <div class="status-badge ready">
+                                                <span class="oi oi-circle-check"></span>
+                                                <span>Will Publish</span>
                                             </div>
                                         }
                                         else if (missingImages)
@@ -184,11 +208,32 @@
                                         </div>
                                     </div>
                                 }
-                                else if (isPublished)
+                                else if (wasJustPublished)
                                 {
                                     <div class="vehicle-card-success">
                                         <span class="oi oi-check"></span>
                                         <span>Successfully published to LazyPoster</span>
+                                    </div>
+                                }
+                                else if (wasJustUpdated)
+                                {
+                                    <div class="vehicle-card-success">
+                                        <span class="oi oi-reload"></span>
+                                        <span>Successfully updated in LazyPoster</span>
+                                    </div>
+                                }
+                                else if (willUpdate && !missingImages && !missingDescription)
+                                {
+                                    <div class="vehicle-card-info">
+                                        <span class="oi oi-reload"></span>
+                                        <span>Update listing when you click Publish to TLP</span>
+                                    </div>
+                                }
+                                else if (willPublish && !missingImages && !missingDescription)
+                                {
+                                    <div class="vehicle-card-info">
+                                        <span class="oi oi-cloud-upload"></span>
+                                        <span>Publish to LazyPoster when you click Publish to TLP</span>
                                     </div>
                                 }
                             </div>
@@ -513,6 +558,8 @@
                     }
 
                     vehicle.PublishError = "";
+                    vehicle.WasUpdated = isUpdate;
+                    vehicle.JustProcessed = true;
                     publishedCount++;
                     
                     // Save TlpListingId to database
@@ -611,6 +658,8 @@
         public string TlpId { get; set; } = "";
         public string PublishError { get; set; } = "";
         public bool PostedToFacebook { get; set; } = false;
+        public bool WasUpdated { get; set; } = false;
+        public bool JustProcessed { get; set; } = false; // Track if action was just performed in this session
 
         public string ImagesPreview => string.IsNullOrWhiteSpace(Images) ? "0" : Images.Split('|').Length.ToString();
     }
