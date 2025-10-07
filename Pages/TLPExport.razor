@@ -214,6 +214,7 @@
 
     private List<TlpVehicle> tlpVehicles = new List<TlpVehicle>();
     private Dictionary<string, bool> postedStatusByListingId = new Dictionary<string, bool>();
+    private Dictionary<string, ScrapedCar> carsByListingId = new Dictionary<string, ScrapedCar>();
     private int publishedCount = 0;
 
     private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
@@ -271,6 +272,7 @@
         selectedClient = clients.FirstOrDefault(c => c.Id == selectedClientId);
         tlpVehicles.Clear();
         postedStatusByListingId.Clear();
+        carsByListingId.Clear();
         publishedCount = 0;
         currentStep = 1;
         StateHasChanged();
@@ -285,6 +287,7 @@
 
         isPreparing = true;
         tlpVehicles.Clear();
+        carsByListingId.Clear();
         StateHasChanged();
 
         try
@@ -297,6 +300,11 @@
                 if (postedStatusByListingId.TryGetValue(v.ListingId, out var posted))
                 {
                     v.PostedToFacebook = posted;
+                }
+                // Store reference to the original car object
+                if (!string.IsNullOrWhiteSpace(car.Id))
+                {
+                    carsByListingId[car.Id] = car;
                 }
                 return v;
             }).ToList();
@@ -362,7 +370,7 @@
             IncludeMoreAdsLink = true,
             Id = car.Id ?? string.Empty,
             ListingId = car.Id ?? string.Empty,
-            TlpId = "",
+            TlpId = car.TlpListingId ?? string.Empty,
             PublishError = "",
             PostedToFacebook = false
         };
@@ -434,7 +442,7 @@
 
     private async Task PublishToTlpAsync()
     {
-        if (tlpVehicles.Count == 0 || string.IsNullOrEmpty(campaignName))
+        if (tlpVehicles.Count == 0 || string.IsNullOrEmpty(campaignName) || selectedClient == null)
         {
             return;
         }
@@ -443,8 +451,9 @@
         publishedCount = 0;
         StateHasChanged();
 
+        // Include vehicles with or without TlpId (for both new and updates), as long as they have images and description
         var vehiclesToPublish = tlpVehicles
-            .Where(v => string.IsNullOrWhiteSpace(v.TlpId) && !string.IsNullOrWhiteSpace(v.Images) && !string.IsNullOrWhiteSpace(v.Description))
+            .Where(v => !string.IsNullOrWhiteSpace(v.Images) && !string.IsNullOrWhiteSpace(v.Description))
             .ToList();
 
         Console.WriteLine($"Publishing {vehiclesToPublish.Count} vehicles to TLP...");
@@ -480,19 +489,51 @@
                     IncludeMoreAdsLink = vehicle.IncludeMoreAdsLink
                 };
 
-                var response = await LazyPosterService.AddListingAsync(listing);
+                LazyPosterResponse response;
+                bool isUpdate = !string.IsNullOrWhiteSpace(vehicle.TlpId);
 
-                if (response.Success && !string.IsNullOrWhiteSpace(response.TlpId))
+                // Use edit if TlpId exists, otherwise add new
+                if (isUpdate)
                 {
-                    vehicle.TlpId = response.TlpId;
+                    Console.WriteLine($"🔄 Updating {vehicle.Title} with TLP ID: {vehicle.TlpId}");
+                    response = await LazyPosterService.EditListingAsync(vehicle.TlpId, listing);
+                }
+                else
+                {
+                    Console.WriteLine($"➕ Adding {vehicle.Title}");
+                    response = await LazyPosterService.AddListingAsync(listing);
+                }
+
+                if (response.Success)
+                {
+                    // For new listings, we get the TLP ID from the response
+                    if (!isUpdate && !string.IsNullOrWhiteSpace(response.TlpId))
+                    {
+                        vehicle.TlpId = response.TlpId;
+                    }
+
                     vehicle.PublishError = "";
                     publishedCount++;
-                    Console.WriteLine($"✅ Published {vehicle.Title} with TLP ID: {response.TlpId}");
+                    
+                    // Save TlpListingId to database
+                    if (carsByListingId.TryGetValue(vehicle.ListingId, out var car))
+                    {
+                        car.TlpListingId = vehicle.TlpId;
+                        var saved = await InventoryService.UpdateCarInClientInventoryAsync(selectedClient.Id, car);
+                        if (saved)
+                        {
+                            Console.WriteLine($"✅ {(isUpdate ? "Updated" : "Published")} {vehicle.Title} with TLP ID: {vehicle.TlpId} and saved to database");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"⚠️ {(isUpdate ? "Updated" : "Published")} {vehicle.Title} but failed to save to database");
+                        }
+                    }
                 }
                 else
                 {
                     vehicle.PublishError = response.ErrorMessage ?? "Unknown error";
-                    Console.WriteLine($"❌ Failed to publish {vehicle.Title}: {vehicle.PublishError}");
+                    Console.WriteLine($"❌ Failed to {(isUpdate ? "update" : "publish")} {vehicle.Title}: {vehicle.PublishError}");
                 }
 
                 StateHasChanged();
@@ -500,7 +541,7 @@
             catch (Exception ex)
             {
                 vehicle.PublishError = ex.Message;
-                Console.WriteLine($"❌ Exception publishing {vehicle.Title}: {ex.Message}");
+                Console.WriteLine($"❌ Exception {(string.IsNullOrWhiteSpace(vehicle.TlpId) ? "publishing" : "updating")} {vehicle.Title}: {ex.Message}");
             }
         }
 
