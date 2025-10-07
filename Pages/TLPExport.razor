@@ -11,6 +11,7 @@
 <PageTitle>TLP Export - Car Lister</PageTitle>
 <link href="css/workflow.css" rel="stylesheet" />
 <link href="css/addlisting.css" rel="stylesheet" />
+<link href="css/tlp-export.css" rel="stylesheet" />
 
 <div class="onboarding-container">
     <div class="header">
@@ -113,52 +114,86 @@
                 </div>
 
                 <div class="mt-1">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Listing ID</th>
-                                <th>Title</th>
-                                <th>Price</th>
-                                <th>Images</th>
-                                <th>TLP ID</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var v in tlpVehicles)
-                            {
-                                <tr>
-                                    <td>@v.ListingId</td>
-                                    <td>@v.Title</td>
-                                    <td>$@v.Price.ToString("N0")</td>
-                                    <td>@v.ImagesPreview</td>
-                                    <td>@(string.IsNullOrWhiteSpace(v.TlpId) ? "-" : v.TlpId)</td>
-                                    <td>
-                                        @if (!string.IsNullOrWhiteSpace(v.PublishError))
+                    <div class="vehicle-cards-container">
+                        @foreach (var v in tlpVehicles)
+                        {
+                            var hasError = !string.IsNullOrWhiteSpace(v.PublishError);
+                            var isPublished = !string.IsNullOrWhiteSpace(v.TlpId);
+                            var missingImages = string.IsNullOrWhiteSpace(v.Images);
+                            var missingDescription = string.IsNullOrWhiteSpace(v.Description);
+                            var isReady = !hasError && !isPublished && !missingImages && !missingDescription;
+                            
+                            <div class="vehicle-card @(hasError ? "error" : isPublished ? "published" : "")">
+                                <div class="vehicle-card-header">
+                                    <div class="vehicle-info">
+                                        <h4 class="vehicle-title">@v.Title</h4>
+                                        <div class="vehicle-meta">
+                                            <span class="price">$@v.Price.ToString("N0")</span>
+                                            <span class="separator">•</span>
+                                            <span class="images">@v.ImagesPreview photo@(v.ImagesPreview == "1" ? "" : "s")</span>
+                                        </div>
+                                    </div>
+                                    <div class="vehicle-status">
+                                        @if (hasError)
                                         {
-                                            <span style="color: #dc3545;" title="@v.PublishError">❌ Error</span>
+                                            <div class="status-badge error">
+                                                <span class="oi oi-warning"></span>
+                                                <span>Failed</span>
+                                            </div>
                                         }
-                                        else if (!string.IsNullOrWhiteSpace(v.TlpId))
+                                        else if (isPublished)
                                         {
-                                            <span style="color: #28a745;">✓ Published</span>
+                                            <div class="status-badge success">
+                                                <span class="oi oi-check"></span>
+                                                <span>Published</span>
+                                            </div>
                                         }
-                                        else if (string.IsNullOrWhiteSpace(v.Images))
+                                        else if (missingImages)
                                         {
-                                            <span style="color: #ffc107;">⚠ No Images</span>
+                                            <div class="status-badge warning">
+                                                <span class="oi oi-info"></span>
+                                                <span>No Photos</span>
+                                            </div>
                                         }
-                                        else if (string.IsNullOrWhiteSpace(v.Description))
+                                        else if (missingDescription)
                                         {
-                                            <span style="color: #ffc107;">⚠ No Description</span>
+                                            <div class="status-badge warning">
+                                                <span class="oi oi-info"></span>
+                                                <span>No Description</span>
+                                            </div>
                                         }
                                         else
                                         {
-                                            <span style="color: #6c757d;">Ready</span>
+                                            <div class="status-badge ready">
+                                                <span class="oi oi-circle-check"></span>
+                                                <span>Ready</span>
+                                            </div>
                                         }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                                    </div>
+                                </div>
+                                
+                                @if (hasError)
+                                {
+                                    <div class="vehicle-card-error">
+                                        <div class="error-icon">
+                                            <span class="oi oi-warning"></span>
+                                        </div>
+                                        <div class="error-content">
+                                            <strong>Publishing Error</strong>
+                                            <p>@v.PublishError</p>
+                                        </div>
+                                    </div>
+                                }
+                                else if (isPublished)
+                                {
+                                    <div class="vehicle-card-success">
+                                        <span class="oi oi-check"></span>
+                                        <span>Successfully published to LazyPoster</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             }
         }
