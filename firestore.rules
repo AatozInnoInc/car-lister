@@ -62,7 +62,9 @@ service cloud.firestore {
              (!('photoUrls' in car) || 
               car.photoUrls is list) &&            // photoUrls must be list if present
              (!('selectedPhotoUrls' in car) || 
-              car.selectedPhotoUrls is list);      // selectedPhotoUrls must be list if present
+              car.selectedPhotoUrls is list) &&    // selectedPhotoUrls must be list if present
+             (!('tlpListingId' in car) || 
+              car.tlpListingId is string);         // tlpListingId must be string if present
     }
   }
 } 

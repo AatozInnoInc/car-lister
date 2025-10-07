@@ -112,6 +112,10 @@ namespace car_lister.Models
         [JsonPropertyName("id")]
         public string Id { get; set; } = "";
 
+        // TLP (LazyPoster) Integration
+        [JsonPropertyName("tlpListingId")]
+        public string TlpListingId { get; set; } = "";
+
         // Note: Firestore document id is represented by the 'Id' property
     }
 }
