@@ -5,6 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject ClientService ClientService
 @inject InventoryService InventoryService
+@inject LazyPosterService LazyPosterService
 @attribute [Authorize]
 
 <PageTitle>TLP Export - Car Lister</PageTitle>
@@ -57,6 +58,12 @@
                         <small class="form-text">Exports will use selected photos and enhanced details when available.</small>
                     </div>
 
+                    <div class="form-group">
+                        <label for="campaign-name">Campaign Name</label>
+                        <input type="text" id="campaign-name" class="form-control" @bind="campaignName" placeholder="Test Campaign" />
+                        <small class="form-text">Name for the TLP campaign (used when publishing to LazyPoster).</small>
+                    </div>
+
                     @if (!string.IsNullOrEmpty(selectedClientId))
                     {
                         var client = clients.FirstOrDefault(c => c.Id == selectedClientId);
@@ -73,9 +80,13 @@
                                 IsNextDisabled="@(isPreparing || string.IsNullOrEmpty(selectedClientId))">
                     @if (tlpVehicles.Count > 0)
                     {
-                        <button class="btn btn-secondary btn-large ml-1" @onclick="DownloadCsv">
+                        <button class="btn btn-secondary btn-large ml-1" @onclick="DownloadCsv" disabled="@isPublishing">
                             <span class="oi oi-data-transfer-download"></span>
                             Download CSV
+                        </button>
+                        <button class="btn btn-primary btn-large ml-1" @onclick="PublishToTlpAsync" disabled="@(isPublishing || string.IsNullOrEmpty(campaignName))">
+                            <span class="oi oi-cloud-upload"></span>
+                            @(isPublishing ? "Publishing..." : "Publish to TLP")
                         </button>
                     }
                 </StepNavigation>
@@ -92,6 +103,11 @@
                         <div class="summary-details">
                             <div class="detail-item"><span class="label">Vehicles Exported:</span><span class="value">@tlpVehicles.Count</span></div>
                             <div class="detail-item"><span class="label">Client:</span><span class="value">@selectedClient?.Name</span></div>
+                            <div class="detail-item"><span class="label">Campaign:</span><span class="value">@campaignName</span></div>
+                            @if (publishedCount > 0)
+                            {
+                                <div class="detail-item"><span class="label">Published:</span><span class="value">@publishedCount / @tlpVehicles.Count</span></div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -104,7 +120,8 @@
                                 <th>Title</th>
                                 <th>Price</th>
                                 <th>Images</th>
-                                <th>Posted</th>
+                                <th>TLP ID</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -115,8 +132,28 @@
                                     <td>@v.Title</td>
                                     <td>$@v.Price.ToString("N0")</td>
                                     <td>@v.ImagesPreview</td>
+                                    <td>@(string.IsNullOrWhiteSpace(v.TlpId) ? "-" : v.TlpId)</td>
                                     <td>
-                                        <input type="checkbox" checked="@v.PostedToFacebook" @onchange="(args) => OnPostedToggle(v, args)" />
+                                        @if (!string.IsNullOrWhiteSpace(v.PublishError))
+                                        {
+                                            <span style="color: #dc3545;" title="@v.PublishError">❌ Error</span>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(v.TlpId))
+                                        {
+                                            <span style="color: #28a745;">✓ Published</span>
+                                        }
+                                        else if (string.IsNullOrWhiteSpace(v.Images))
+                                        {
+                                            <span style="color: #ffc107;">⚠ No Images</span>
+                                        }
+                                        else if (string.IsNullOrWhiteSpace(v.Description))
+                                        {
+                                            <span style="color: #ffc107;">⚠ No Description</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #6c757d;">Ready</span>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -132,14 +169,17 @@
     private bool isLoading = false;
     private string loadingMessage = "";
     private bool isPreparing = false;
+    private bool isPublishing = false;
     private int currentStep = 1;
 
     private List<Client> clients = new List<Client>();
     private string selectedClientId = "";
     private Client? selectedClient = null;
+    private string campaignName = "Test Campaign";
 
     private List<TlpVehicle> tlpVehicles = new List<TlpVehicle>();
     private Dictionary<string, bool> postedStatusByListingId = new Dictionary<string, bool>();
+    private int publishedCount = 0;
 
     private List<ProgressBar.StepInfo> progressSteps = new List<ProgressBar.StepInfo>
     {
@@ -196,6 +236,7 @@
         selectedClient = clients.FirstOrDefault(c => c.Id == selectedClientId);
         tlpVehicles.Clear();
         postedStatusByListingId.Clear();
+        publishedCount = 0;
         currentStep = 1;
         StateHasChanged();
     }
@@ -260,7 +301,7 @@
         return new TlpVehicle
         {
             Type = "vehicle",
-            Campaign = "cars-com-auto",
+            Campaign = campaignName,
             Platform = "facebook",
             Title = BuildTitle(car),
             PostingAs = "business",
@@ -286,6 +327,8 @@
             IncludeMoreAdsLink = true,
             Id = car.Id ?? string.Empty,
             ListingId = car.Id ?? string.Empty,
+            TlpId = "",
+            PublishError = "",
             PostedToFacebook = false
         };
     }
@@ -354,26 +397,82 @@
         return s;
     }
 
-    private void OnPostedToggle(TlpVehicle vehicle, ChangeEventArgs args)
+    private async Task PublishToTlpAsync()
     {
-        try
+        if (tlpVehicles.Count == 0 || string.IsNullOrEmpty(campaignName))
         {
-            bool newValue = vehicle.PostedToFacebook;
-            if (args?.Value is bool b)
+            return;
+        }
+
+        isPublishing = true;
+        publishedCount = 0;
+        StateHasChanged();
+
+        var vehiclesToPublish = tlpVehicles
+            .Where(v => string.IsNullOrWhiteSpace(v.TlpId) && !string.IsNullOrWhiteSpace(v.Images) && !string.IsNullOrWhiteSpace(v.Description))
+            .ToList();
+
+        Console.WriteLine($"Publishing {vehiclesToPublish.Count} vehicles to TLP...");
+
+        foreach (var vehicle in vehiclesToPublish)
+        {
+            try
             {
-                newValue = b;
+                var listing = new LazyPosterListing
+                {
+                    Type = vehicle.Type,
+                    Campaign = campaignName,
+                    Platform = new List<string> { "facebook" },
+                    PostingAs = vehicle.PostingAs,
+                    VehicleType = vehicle.VehicleType,
+                    Title = vehicle.Title,
+                    Price = vehicle.Price,
+                    Make = vehicle.Make,
+                    Model = vehicle.Model,
+                    Year = vehicle.Year,
+                    Mileage = vehicle.Mileage,
+                    BodyStyle = vehicle.BodyStyle,
+                    ColorExt = vehicle.ColorExt,
+                    ColorInt = vehicle.ColorInt,
+                    Condition = vehicle.Condition,
+                    Fuel = vehicle.Fuel,
+                    Transmission = vehicle.Transmission,
+                    TitleStatus = vehicle.TitleStatus,
+                    Location = vehicle.Location,
+                    Description = vehicle.Description,
+                    Images = vehicle.Images.Split('|').Where(s => !string.IsNullOrWhiteSpace(s)).ToList(),
+                    Groups = string.IsNullOrWhiteSpace(vehicle.Groups) ? new List<string>() : new List<string> { vehicle.Groups },
+                    IncludeMoreAdsLink = vehicle.IncludeMoreAdsLink
+                };
+
+                var response = await LazyPosterService.AddListingAsync(listing);
+
+                if (response.Success && !string.IsNullOrWhiteSpace(response.TlpId))
+                {
+                    vehicle.TlpId = response.TlpId;
+                    vehicle.PublishError = "";
+                    publishedCount++;
+                    Console.WriteLine($"✅ Published {vehicle.Title} with TLP ID: {response.TlpId}");
+                }
+                else
+                {
+                    vehicle.PublishError = response.ErrorMessage ?? "Unknown error";
+                    Console.WriteLine($"❌ Failed to publish {vehicle.Title}: {vehicle.PublishError}");
+                }
+
+                StateHasChanged();
             }
-            else if (args?.Value is string s)
+            catch (Exception ex)
             {
-                newValue = s.Equals("true", StringComparison.OrdinalIgnoreCase) || s.Equals("on", StringComparison.OrdinalIgnoreCase);
-            }
-            vehicle.PostedToFacebook = newValue;
-            if (!string.IsNullOrWhiteSpace(vehicle.ListingId))
-            {
-                postedStatusByListingId[vehicle.ListingId] = newValue;
+                vehicle.PublishError = ex.Message;
+                Console.WriteLine($"❌ Exception publishing {vehicle.Title}: {ex.Message}");
             }
         }
-        catch { }
+
+        isPublishing = false;
+        StateHasChanged();
+
+        Console.WriteLine($"Publishing complete: {publishedCount}/{vehiclesToPublish.Count} succeeded");
     }
 
     private List<SummaryCard.DetailItem> GetClientSummaryDetails(Client client)
@@ -433,6 +532,8 @@
         public bool IncludeMoreAdsLink { get; set; } = true;
         public string Id { get; set; } = "";
         public string ListingId { get; set; } = "";
+        public string TlpId { get; set; } = "";
+        public string PublishError { get; set; } = "";
         public bool PostedToFacebook { get; set; } = false;
 
         public string ImagesPreview => string.IsNullOrWhiteSpace(Images) ? "0" : Images.Split('|').Length.ToString();
