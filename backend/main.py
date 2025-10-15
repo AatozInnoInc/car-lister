@@ -44,15 +44,15 @@ else:
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5000"
     ]
-    allow_credentials = True
+    allow_credentials = False  # Changed to False to avoid preflight issues
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
     allow_credentials=allow_credentials,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*"]
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
+    max_age=3600  # Cache preflight requests for 1 hour
 )
 
 # Request/Response models
