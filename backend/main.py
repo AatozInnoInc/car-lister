@@ -24,35 +24,19 @@ import os
 
 # Get the environment to determine CORS settings
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+logger.info(f"Starting with ENVIRONMENT={ENVIRONMENT}")
 
-if ENVIRONMENT == "development":
-    # Allow all origins for development
-    allow_origins = ["*"]
-    allow_credentials = False
-else:
-    # Specific origins for production
-    allow_origins = [
-        "https://car-lister-be093.web.app",
-        "https://car-lister-be093.firebaseapp.com",
-        "https://car-lister.web.app",
-        "https://car-lister.firebaseapp.com",
-        "https://car-lister-api.onrender.com",
-        "http://localhost:5212",
-        "http://localhost:3000",
-        "http://localhost:5000",
-        "http://127.0.0.1:5212",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5000"
-    ]
-    allow_credentials = False  # Changed to False to avoid preflight issues
+# TEMPORARY: Allow all origins to diagnose CORS issue
+# TODO: Revert to specific origin list after testing
+logger.info("CORS: Allowing ALL origins for debugging")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins,
-    allow_credentials=allow_credentials,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
-    max_age=3600  # Cache preflight requests for 1 hour
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    max_age=3600
 )
 
 # Request/Response models
