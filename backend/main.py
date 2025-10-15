@@ -61,7 +61,14 @@ async def root():
 @app.get("/api/cors-test")
 async def cors_test():
     """Test endpoint to verify CORS is working"""
-    return {"message": "CORS is working!", "timestamp": "2024-01-01T00:00:00Z"}
+    logger.info("GET request received for /api/cors-test")
+    return {"message": "CORS is working!", "timestamp": "2024-01-01T00:00:00Z", "environment": ENVIRONMENT}
+
+@app.get("/api/dealer/inventory/test")
+async def dealer_inventory_test():
+    """Test endpoint to verify dealer inventory route is accessible"""
+    logger.info("GET request received for /api/dealer/inventory/test")
+    return {"message": "Dealer inventory endpoint is accessible", "environment": ENVIRONMENT}
 
 @app.post("/api/scrape")
 async def scrape_cargurus(request: ScrapeRequest):
@@ -147,6 +154,12 @@ async def search_inventory(request: InventorySearchRequest):
             processingTime=0.0
         )
 
+@app.options("/api/dealer/inventory")
+async def dealer_inventory_options():
+    """Handle preflight OPTIONS request"""
+    logger.info("OPTIONS request received for /api/dealer/inventory")
+    return {"message": "OK"}
+
 @app.post("/api/dealer/inventory")
 async def scrape_dealer_inventory(request: DealerInventoryRequest):
     """
@@ -159,6 +172,7 @@ async def scrape_dealer_inventory(request: DealerInventoryRequest):
         InventorySearchResult with list of cars and pagination info
     """
     try:
+        logger.info(f"POST request received for /api/dealer/inventory")
         logger.info(f"Starting dealer inventory scrape: Dealer ID={request.dealerEntityId}, Name={request.dealerName}, Page={request.pageNumber}")
         
         # Validate request parameters
