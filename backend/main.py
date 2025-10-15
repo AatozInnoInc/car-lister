@@ -24,7 +24,6 @@ import os
 
 # Get the environment to determine CORS settings
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
-logger.info(f"Starting with ENVIRONMENT={ENVIRONMENT}")
 
 # Configure CORS with specific allowed origins
 allow_origins = [
@@ -32,7 +31,7 @@ allow_origins = [
     "https://car-lister-be093.firebaseapp.com",
     "https://car-lister.web.app",
     "https://car-lister.firebaseapp.com",
-    "https://car-lister.onrender.com",  # Fixed: was car-lister-api
+    "https://car-lister.onrender.com",
     "http://localhost:5212",
     "http://localhost:3000",
     "http://localhost:5000",
@@ -40,8 +39,6 @@ allow_origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5000"
 ]
-
-logger.info(f"CORS allowed origins: {allow_origins}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -74,14 +71,7 @@ async def root():
 @app.get("/api/cors-test")
 async def cors_test():
     """Test endpoint to verify CORS is working"""
-    logger.info("GET request received for /api/cors-test")
-    return {"message": "CORS is working!", "timestamp": "2024-01-01T00:00:00Z", "environment": ENVIRONMENT}
-
-@app.get("/api/dealer/inventory/test")
-async def dealer_inventory_test():
-    """Test endpoint to verify dealer inventory route is accessible"""
-    logger.info("GET request received for /api/dealer/inventory/test")
-    return {"message": "Dealer inventory endpoint is accessible", "environment": ENVIRONMENT}
+    return {"message": "CORS is working!", "timestamp": "2024-01-01T00:00:00Z"}
 
 @app.post("/api/scrape")
 async def scrape_cargurus(request: ScrapeRequest):
@@ -167,12 +157,6 @@ async def search_inventory(request: InventorySearchRequest):
             processingTime=0.0
         )
 
-@app.options("/api/dealer/inventory")
-async def dealer_inventory_options():
-    """Handle preflight OPTIONS request"""
-    logger.info("OPTIONS request received for /api/dealer/inventory")
-    return {"message": "OK"}
-
 @app.post("/api/dealer/inventory")
 async def scrape_dealer_inventory(request: DealerInventoryRequest):
     """
@@ -185,7 +169,6 @@ async def scrape_dealer_inventory(request: DealerInventoryRequest):
         InventorySearchResult with list of cars and pagination info
     """
     try:
-        logger.info(f"POST request received for /api/dealer/inventory")
         logger.info(f"Starting dealer inventory scrape: Dealer ID={request.dealerEntityId}, Name={request.dealerName}, Page={request.pageNumber}")
         
         # Validate request parameters

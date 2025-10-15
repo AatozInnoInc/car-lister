@@ -654,7 +654,11 @@
             existingCars = await InventoryService.GetClientInventoryAsync(selectedClient.Id);
 
             // Merge Firestore IDs FROM existing cars INTO scraped cars (so scraped cars have both ID and colors)
-            var existingByUrl = existingCars.ToDictionary(c => GetCarUrlKey(c), c => c, StringComparer.OrdinalIgnoreCase);
+            // Handle duplicates by grouping and taking the first of each URL
+            var existingByUrl = existingCars
+                .GroupBy(c => GetCarUrlKey(c), StringComparer.OrdinalIgnoreCase)
+                .Where(g => !string.IsNullOrEmpty(g.Key))
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
             foreach (var scrapedCar in scrapedNow)
             {
                 var urlKey = GetCarUrlKey(scrapedCar);

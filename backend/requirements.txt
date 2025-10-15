@@ -1,6 +1,6 @@
 # Core FastAPI dependencies
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
 
 # Web scraping dependencies
 requests==2.31.0
@@ -9,6 +9,7 @@ html5lib==1.1
 
 # Data validation and serialization
 pydantic==2.8.2
+pydantic-settings==2.5.2
 
 # Environment and configuration
 python-dotenv==1.0.0 
