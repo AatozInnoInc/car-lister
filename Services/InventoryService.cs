@@ -23,7 +23,7 @@ public class InventoryService
         var baseUri = _navigationManager.BaseUri ?? string.Empty;
         return (baseUri.Contains("localhost") || baseUri.Contains("127.0.0.1"))
                 ? "http://localhost:8000"
-                : "https://car-lister-api.onrender.com";
+                : "https://car-lister.onrender.com";
     }
 
     public async Task<InventorySearchResult> SearchDealerInventoryAsync(InventorySearchRequest request)

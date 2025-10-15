@@ -342,7 +342,7 @@
             var request = new { url = url };
             var baseUrl = NavigationManager.BaseUri.Contains("localhost") 
                 ? "http://localhost:8000" 
-                : "https://car-lister-api.onrender.com";
+                : "https://car-lister.onrender.com";
             
             var response = await httpClient.PostAsJsonAsync($"{baseUrl}/api/scrape", request);
             

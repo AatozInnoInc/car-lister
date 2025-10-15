@@ -26,13 +26,26 @@ import os
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 logger.info(f"Starting with ENVIRONMENT={ENVIRONMENT}")
 
-# TEMPORARY: Allow all origins to diagnose CORS issue
-# TODO: Revert to specific origin list after testing
-logger.info("CORS: Allowing ALL origins for debugging")
+# Configure CORS with specific allowed origins
+allow_origins = [
+    "https://car-lister-be093.web.app",
+    "https://car-lister-be093.firebaseapp.com",
+    "https://car-lister.web.app",
+    "https://car-lister.firebaseapp.com",
+    "https://car-lister.onrender.com",  # Fixed: was car-lister-api
+    "http://localhost:5212",
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "http://127.0.0.1:5212",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5000"
+]
+
+logger.info(f"CORS allowed origins: {allow_origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

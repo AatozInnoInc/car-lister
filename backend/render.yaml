@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: car-lister-api
+    name: car-lister
     runtime: python
     rootDir: backend
     plan: free

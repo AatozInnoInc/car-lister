@@ -106,3 +106,9 @@ wwwroot/css/app.css.map
 # Resources
 searchPreflight.action_preview_response.json
 
+# Firebase secrets
+firebase-service-account.json
+
+# Google Scripts (stored elsewhere)
+wwwroot/js/google-scripts/
+
