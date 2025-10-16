@@ -104,19 +104,26 @@
             
             if (success)
             {
-                // For localhost, the popup will have completed, so we can navigate immediately
-                // For production, this will redirect to Google
+                // Wait for Firebase auth state to propagate
+                await Task.Delay(300);
+                
+                // Notify the auth state provider to refresh
                 ((FirebaseAuthenticationStateProvider)AuthStateProvider).NotifyAuthenticationStateChanged();
-                NavigationManager.NavigateTo("/");
+                
+                // Small delay to let Blazor process the auth state
+                await Task.Delay(200);
+                
+                // Navigate to home page with force reload for clean state
+                NavigationManager.NavigateTo("/", forceLoad: true);
             }
             else
             {
-                errorMessage = "Failed to sign in with Google. Please try again.";
+                errorMessage = "Sign in was cancelled. Please try again if you want to continue.";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = "An error occurred during sign in. Please try again.";
+            errorMessage = "An error occurred during sign in. Please refresh the page and try again.";
         }
         finally
         {

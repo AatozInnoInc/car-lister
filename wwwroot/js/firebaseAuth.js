@@ -8,32 +8,61 @@ window.firebaseAuth = {
     signInWithGoogle: async function () {
         try {
             this.ensureInitialized();
+            
+            // Check if we're already signed in
+            const currentUser = firebase.auth().currentUser;
+            if (currentUser) {
+                return true;
+            }
+            
             const provider = new firebase.auth.GoogleAuthProvider();
+            
+            // Force account selection to avoid issues with multiple Google accounts
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
             
             // Use popup instead of redirect for better Blazor WebAssembly compatibility
             const result = await firebase.auth().signInWithPopup(provider);
             
             if (result.user) {
-                console.log("User signed in successfully:", result.user.email);
                 return true;
             }
+            
             return false;
         } catch (error) {
-            console.error("Error signing in with Google:", error);
+            // Handle popup closed by user - don't treat as error
+            if (error.code === 'auth/popup-closed-by-user') {
+                return false;
+            }
+            
+            // Handle cancelled by user
+            if (error.code === 'auth/cancelled-popup-request') {
+                return false;
+            }
             
             // If popup is blocked, fall back to redirect
             if (error.code === 'auth/popup-blocked') {
-                console.log("Popup blocked, falling back to redirect");
                 try {
                     const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({
+                        prompt: 'select_account'
+                    });
+                    // Set flag to indicate we're expecting a redirect result
+                    sessionStorage.setItem('pendingRedirect', 'true');
                     await firebase.auth().signInWithRedirect(provider);
+                    // Return true because redirect was initiated successfully
+                    // The actual auth result will be handled by RedirectHandler
                     return true;
                 } catch (redirectError) {
                     console.error("Error with redirect fallback:", redirectError);
+                    sessionStorage.removeItem('pendingRedirect');
                     return false;
                 }
             }
             
+            // Log other errors but don't retry automatically
+            console.error("Error signing in with Google:", error);
             return false;
         }
     },

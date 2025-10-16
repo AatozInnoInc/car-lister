@@ -16,9 +16,9 @@ public class FirebaseAuthenticationStateProvider : AuthenticationStateProvider
     {
         try
         {
-            // First, handle any pending redirect result
-            var redirectResult = await _firebaseService.HandleRedirectResult();
-            
+            // Check if user is authenticated
+            // Note: Redirect handling is now done entirely in JavaScript (index.html)
+            // to avoid race conditions and duplicate processing
             var isAuthenticated = await _firebaseService.IsUserAuthenticated();
 
             if (!isAuthenticated)

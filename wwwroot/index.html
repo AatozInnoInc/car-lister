@@ -44,16 +44,12 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
         <script>
-            const currentHost = window.location.hostname;
-            const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
-
-            // For localhost, we need to use the firebaseapp.com domain for auth
-            // For production, we can use either domain
-            const authDomain = isLocalhost ? "car-lister-be093.firebaseapp.com" : "car-lister-be093.web.app";
-
+            // CRITICAL: Always use firebaseapp.com for authDomain
+            // Using web.app causes the OAuth iframe to load the Blazor app,
+            // which triggers authorization checks and breaks the OAuth flow
             const firebaseConfig = {
                 apiKey: "AIzaSyDXflKHASqzAR05HCvgOLIa20_RkGgfooY",
-                authDomain: authDomain,
+                authDomain: "car-lister-be093.firebaseapp.com",
                 projectId: "car-lister-be093",
                 storageBucket: "car-lister-be093.firebasestorage.app",
                 messagingSenderId: "452093902586",
@@ -69,51 +65,79 @@
                 // Add initialization check
                 window.firebaseInitialized = true;
 
+                // Track if we've already handled a redirect to prevent loops
+                window.redirectHandled = window.redirectHandled || false;
+
                 // Handle Firebase auth redirect (fallback for when popup is blocked)
                 window.RedirectHandler = {
                     handleRedirect: async function () {
                         try {
-                            console.log('RedirectHandler: Current URL:', window.location.href);
+                            // Don't handle if we've already processed a redirect in this session
+                            if (window.redirectHandled) {
+                                return;
+                            }
 
-                            // Check if this is a Firebase auth redirect
-                            if (window.location.href.includes('/__/auth/')) {
-                                console.log('RedirectHandler: Detected Firebase auth redirect, waiting for Firebase to initialize...');
+                            const currentUrl = window.location.href;
 
-                                // Wait for Firebase to be ready
-                                let attempts = 0;
-                                while (!window.firebaseInitialized && attempts < 50) {
-                                    await new Promise(resolve => setTimeout(resolve, 100));
-                                    attempts++;
+                            // IMPORTANT: Do NOT intercept Firebase internal iframe URLs
+                            // These are part of the auth flow, not the redirect result
+                            if (currentUrl.includes('/__/auth/iframe') || 
+                                currentUrl.includes('/__/auth/handler')) {
+                                return;
+                            }
+
+                            // Only check for redirect result if we have indicators of an OAuth redirect
+                            // This prevents interfering with popup-based auth flows
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const hasOAuthParams = urlParams.has('code') || 
+                                                  urlParams.has('state') || 
+                                                  window.location.hash.includes('access_token');
+                            
+                            // Also check if we're coming from a sign-in redirect
+                            const isFromRedirect = sessionStorage.getItem('pendingRedirect') === 'true';
+                            
+                            if (!hasOAuthParams && !isFromRedirect) {
+                                return;
+                            }
+
+                            const result = await firebase.auth().getRedirectResult();
+                            
+                            // Clear the pending redirect flag
+                            sessionStorage.removeItem('pendingRedirect');
+                            
+                            // If we got a user from redirect, mark as handled and navigate
+                            if (result && result.user) {
+                                window.redirectHandled = true;
+                                
+                                // Don't force navigation if already on a valid page
+                                if (window.location.pathname === '/login' || window.location.pathname === '/') {
+                                    window.location.href = '/';
                                 }
-
-                                if (window.firebaseInitialized) {
-                                    console.log('RedirectHandler: Firebase ready:', window.firebaseInitialized);
-                                    console.log('RedirectHandler: Handling redirect result...');
-
-                                    // Handle the redirect result
-                                    const result = await firebase.auth().getRedirectResult();
-                                    if (result.user) {
-                                        console.log('RedirectHandler: User authenticated:', result.user.email);
-                                        // Redirect to the main app
-                                        window.location.href = '/';
-                                    } else {
-                                        console.log('RedirectHandler: No user in redirect result, redirecting to login');
-                                        window.location.href = '/login';
-                                    }
-                                } else {
-                                    console.log('RedirectHandler: Firebase not ready, redirecting to login');
-                                    window.location.href = '/login';
-                                }
+                            } else if (result && result.credential) {
+                                // We got a credential but no user (shouldn't happen, but handle it)
+                                window.redirectHandled = true;
                             }
                         } catch (error) {
-                            console.error('RedirectHandler: Error handling redirect:', error);
-                            window.location.href = '/login';
+                            console.error('Error handling redirect:', error);
+                            sessionStorage.removeItem('pendingRedirect');
+                            // Only redirect to login if we're in a clearly broken state
+                            if (error.code === 'auth/invalid-api-key' || 
+                                error.code === 'auth/app-deleted') {
+                                window.location.href = '/login';
+                            }
                         }
                     }
                 };
 
                 // Set up authentication state listener
+                let authStateListenerInitialized = false;
                 firebase.auth().onAuthStateChanged(function (user) {
+                    if (!authStateListenerInitialized) {
+                        authStateListenerInitialized = true;
+                        // Don't auto-redirect on first initialization, let Blazor handle routing
+                        return;
+                    }
+                    
                     if (user) {
                         // Notify Blazor about authentication state change
                         if (window.Blazor && window.Blazor._internal && window.Blazor._internal.dotNetDispatcher) {
@@ -126,7 +150,7 @@
                     }
                 });
 
-                // Handle redirect on page load
+                // Handle redirect on page load (only once per session)
                 window.RedirectHandler.handleRedirect();
 
             } catch (error) {
